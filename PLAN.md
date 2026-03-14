@@ -79,14 +79,15 @@ All repos are public.  All tools listed below are free and open source.
 - [ ] Pin exact versions in `requirements.txt` (currently uses `>=` — reproducibility risk)
 
 ### 2.4 Agent evaluation
-- [ ] Promptfoo eval suite (MIT, CLI tool)
-  - Test: does Threat Hunter classify correctly against known incidents?
-  - Test: does Security Engineer generate valid Cedar syntax?
-  - Test: does Threat Analyst follow humaniser rules?
-  - Declarative YAML configs, runs in CI
-- [ ] Cisco MCP Scanner (`pip install cisco-ai-mcp-scanner`)
-  - Scan the Sentinel MCP server for tool poisoning / documentation-vs-implementation mismatches
-  - Run as CI step
+- [x] Promptfoo eval suite (MIT, CLI tool)
+  - Test: prompt injection resistance (8 adversarial test cases)
+  - Test: role boundary enforcement (8 cross-agent violation tests)
+  - Test: output quality (blog template, humaniser rules, Cedar annotations, OWASP classification)
+  - Declarative YAML configs, runs in CI (manual dispatch — costs LLM tokens)
+- [x] Cisco MCP Scanner (`pip install cisco-ai-mcp-scanner`)
+  - Static YARA scan of all 11 MCP tool definitions
+  - CI workflow runs on push to pipeline/agents/guardrails/evals paths
+  - Export script generates tool JSON from FastMCP server without env vars
 
 ---
 

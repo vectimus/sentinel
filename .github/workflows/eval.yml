@@ -1,0 +1,121 @@
+name: Agent Evaluation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "pipeline/**"
+      - "agents/**"
+      - "guardrails/**"
+      - "evals/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "pipeline/**"
+      - "agents/**"
+      - "guardrails/**"
+      - "evals/**"
+  workflow_dispatch:
+
+jobs:
+  mcp-scan:
+    name: MCP Scanner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          pip install -r pipeline/requirements.txt
+          pip install cisco-ai-mcp-scanner
+
+      - name: Export MCP tool definitions
+        run: python -m evals.export_mcp_tools > evals/mcp-tools.json
+
+      - name: Run MCP Scanner (YARA)
+        run: |
+          mcp-scanner \
+            --analyzers yara \
+            --format table \
+            --output evals/mcp-scan-results.json \
+            static \
+            --tools evals/mcp-tools.json
+
+      - name: Check for high-severity findings
+        if: always()
+        run: |
+          python -c "
+          import json, sys
+          try:
+              data = json.load(open('evals/mcp-scan-results.json'))
+              findings = data if isinstance(data, list) else data.get('findings', data.get('results', []))
+              high = [f for f in findings if isinstance(f, dict) and f.get('severity', '').lower() == 'high']
+              if high:
+                  print(f'FAIL: {len(high)} high-severity finding(s)')
+                  sys.exit(1)
+              print('PASS: No high-severity findings')
+          except FileNotFoundError:
+              print('WARN: No results file found')
+          "
+
+      - name: Upload scan results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mcp-scan-results
+          path: evals/mcp-scan-results.json
+
+  promptfoo:
+    name: Promptfoo Eval
+    runs-on: ubuntu-latest
+    # Only run on manual dispatch or schedule — costs LLM tokens
+    if: github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run Promptfoo eval suite
+        working-directory: evals
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          npx promptfoo@latest eval \
+            --no-cache \
+            --output results.json \
+            --grader anthropic:messages:claude-sonnet-4-6
+
+      - name: Check for failures
+        working-directory: evals
+        run: |
+          npx promptfoo@latest eval \
+            --output results.json \
+            --share 2>/dev/null || true
+
+          # Check pass rate
+          node -e "
+          const fs = require('fs');
+          const data = JSON.parse(fs.readFileSync('results.json', 'utf8'));
+          const results = data.results || [];
+          const total = results.length;
+          const passed = results.filter(r => r.success).length;
+          const rate = total > 0 ? (passed / total * 100).toFixed(1) : 0;
+          console.log(\`Pass rate: \${passed}/\${total} (\${rate}%)\`);
+          if (rate < 80) {
+            console.log('FAIL: Pass rate below 80% threshold');
+            process.exit(1);
+          }
+          "
+
+      - name: Upload eval results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: promptfoo-results
+          path: evals/results.json

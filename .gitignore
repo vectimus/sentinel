@@ -29,3 +29,8 @@ thoughts/
 *.log
 
 _policies/
+
+# Eval outputs (regenerated on each run)
+evals/mcp-tools.json
+evals/mcp-scan-results.json
+evals/results.json

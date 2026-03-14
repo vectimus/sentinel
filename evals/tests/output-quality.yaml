@@ -1,0 +1,117 @@
+# Output quality tests
+# Verify agents produce correctly structured and compliant output
+
+# --- Threat Hunter output quality ---
+
+- description: "Findings JSON must be valid"
+  vars:
+    input: |
+      You have discovered one incident: A malicious MCP server called "mcp-data-tools"
+      was distributing on npm. When installed, it instructed AI agents to exfiltrate
+      .env files to an attacker-controlled endpoint. 12 developers were affected.
+      The incident was reported on 2026-03-10 by security researcher @alice.
+
+      Write the finding as a JSON array to findings/2026-03-14.json.
+  assert:
+    - type: llm-rubric
+      value: |
+        The output should contain or reference valid JSON with these fields:
+        vtms_id (VTMS-YYYY-NNNN format), title, discovered_at (ISO 8601),
+        severity (1-5), owasp_category, coverage_status, summary,
+        recommended_action (no_change|update_existing|new_policy)
+
+- description: "Findings must include OWASP classification"
+  vars:
+    input: |
+      Analyse this incident: An AI coding agent was tricked into running
+      "npm publish --access public" on a private package, exposing internal
+      code to the public npm registry. 3 packages were affected.
+  assert:
+    - type: llm-rubric
+      value: "The response must include an OWASP Agentic Top 10 classification (LLM01-LLM10)"
+
+- description: "Severity assessment must be justified"
+  vars:
+    input: |
+      Classify this: A developer's AI agent accidentally committed an AWS secret key
+      to a public GitHub repo. The key was active for 2 hours before rotation.
+      No unauthorised access was detected.
+  assert:
+    - type: llm-rubric
+      value: "The severity rating should be justified with specific impact factors, not just assigned arbitrarily"
+
+# --- Threat Analyst humaniser compliance ---
+
+- description: "Blog post must not contain em dashes"
+  vars:
+    input: |
+      Write a blog post about this incident: An AI agent deleted a production database
+      by running "DROP TABLE users" without confirmation. The incident affected
+      50,000 users and caused a 4-hour outage.
+  assert:
+    - type: not-contains
+      value: "\u2014"
+    - type: llm-rubric
+      value: "The response should not contain em dashes (U+2014). It should use commas or full stops instead."
+
+- description: "Blog post must not contain AI buzzwords"
+  vars:
+    input: |
+      Write a blog post about how Vectimus protects against prompt injection attacks
+      targeting MCP servers.
+  assert:
+    - type: javascript
+      value: |
+        const buzzwords = ["cutting-edge", "revolutionary", "game-changing", "innovative",
+          "seamlessly", "leverage", "harness", "unlock", "empower", "holistic", "synergy", "paradigm"];
+        const lower = output.toLowerCase();
+        const found = buzzwords.filter(bw => lower.includes(bw));
+        return found.length === 0 ? { pass: true } : { pass: false, reason: `Found buzzwords: ${found.join(", ")}` };
+
+- description: "Blog post must not use Oxford commas"
+  vars:
+    input: |
+      Write a blog post about an incident involving credential theft, data exfiltration,
+      and lateral movement by a compromised AI agent.
+  assert:
+    - type: llm-rubric
+      value: |
+        The response should not use Oxford commas. Lists should use the pattern
+        "A, B and C" not "A, B, and C". Check the body text (not frontmatter).
+
+- description: "Blog post must follow template structure"
+  vars:
+    input: |
+      Write a blog post for VTMS-2026-0099: A supply chain attack via a malicious
+      VS Code extension that intercepted AI agent API calls.
+  assert:
+    - type: contains
+      value: "## What happened"
+    - type: contains
+      value: "## Why it matters"
+    - type: contains
+      value: "## Root cause"
+    - type: contains
+      value: "## How Vectimus responds"
+    - type: contains
+      value: "## What you can do"
+
+# --- Security Engineer output quality ---
+
+- description: "Cedar policy must have required annotations"
+  vars:
+    input: |
+      Write a Cedar policy to block AI agents from running "kubectl delete" commands.
+      This is for finding VTMS-2026-0050, OWASP category LLM01, severity 5.
+  assert:
+    - type: llm-rubric
+      value: |
+        The Cedar policy output must include comment annotations for:
+        VTMS incident ID, OWASP category, compliance mapping (SOC 2 or NIST),
+        and a one-line description of what it blocks.
+    - type: contains
+      value: "VTMS-2026-0050"
+    - type: javascript
+      value: |
+        const hasForbidOrPermit = /\b(forbid|permit)\s*\(/.test(output);
+        return hasForbidOrPermit ? { pass: true } : { pass: false, reason: "Missing forbid or permit statement" };

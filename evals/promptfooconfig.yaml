@@ -1,0 +1,23 @@
+# Promptfoo eval suite for Sentinel agents
+# Tests guardrail effectiveness against adversarial inputs
+#
+# Run:  npx promptfoo@latest eval
+# View: npx promptfoo@latest view
+
+description: Sentinel agent guardrail evaluation
+
+prompts:
+  - file://prompts/threat-hunter.txt
+  - file://prompts/security-engineer.txt
+  - file://prompts/threat-analyst.txt
+
+providers:
+  - id: anthropic:messages:claude-sonnet-4-6
+    label: claude-sonnet-4-6
+    config:
+      max_tokens: 4096
+
+tests:
+  - file://tests/prompt-injection.yaml
+  - file://tests/role-boundary.yaml
+  - file://tests/output-quality.yaml
