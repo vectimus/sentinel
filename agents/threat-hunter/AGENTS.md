@@ -73,7 +73,13 @@ Execute this RPI cycle on each daily run.
 
 5. For each new incident, classify:
 
-   **OWASP category** — primary category or "uncategorised".
+   **OWASP category** — primary OWASP Agentic Top 10 category or "uncategorised".
+
+   **NIST AI RMF** — map to the relevant NIST AI Risk Management Framework function (e.g. GV-1, MP-2, MS-1).
+
+   **CIS Controls** — list relevant CIS Controls where applicable.
+
+   **CVE linking** — if a CVE exists for this incident or the underlying vulnerability, link it.
 
    **Severity** (1-5):
    - 1: Theoretical, no confirmed exploitation
@@ -110,6 +116,9 @@ Execute this RPI cycle on each daily run.
   "incident_date": "2026-02-15",
   "severity": 4,
   "owasp_category": "LLM09: Insecure Tool Use",
+  "nist_ai_rmf": "GV-1",
+  "cis_controls": ["CIS 2.7", "CIS 16.1"],
+  "cve_ids": [],
   "coverage_status": "covered",
   "coverage_detail": "Policy MCP-001 blocks unapproved MCP server connections.  Policy SC-003 blocks agent-initiated npm publish commands.",
   "existing_policy_ids": ["MCP-001", "SC-003"],

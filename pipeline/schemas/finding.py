@@ -18,6 +18,9 @@ class Finding(BaseModel):
     incident_date: str | None = None
     severity: int = Field(ge=1, le=5)
     owasp_category: str
+    nist_ai_rmf: str | None = Field(default=None, description="NIST AI RMF function (e.g. GV-1, MP-2)")
+    cis_controls: list[str] = Field(default_factory=list, description="Relevant CIS Controls")
+    cve_ids: list[str] = Field(default_factory=list, description="Linked CVE identifiers")
     coverage_status: str = Field(description="covered | partial | gap")
     coverage_detail: str | None = None
     existing_policy_ids: list[str] = Field(default_factory=list)

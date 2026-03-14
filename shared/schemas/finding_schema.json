@@ -36,6 +36,23 @@
     "owasp_category": {
       "type": "string"
     },
+    "nist_ai_rmf": {
+      "type": ["string", "null"],
+      "description": "NIST AI RMF function (e.g. GV-1, MP-2)"
+    },
+    "cis_controls": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Relevant CIS Controls"
+    },
+    "cve_ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^CVE-\\d{4}-\\d{4,}$"
+      },
+      "description": "Linked CVE identifiers"
+    },
     "coverage_status": {
       "type": "string",
       "enum": ["covered", "partial", "gap"]

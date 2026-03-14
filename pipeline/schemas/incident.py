@@ -13,6 +13,9 @@ class Incident(BaseModel):
     incident_date: str | None = None
     severity: int = Field(ge=1, le=5)
     owasp_category: str | None = None
+    nist_ai_rmf: str | None = None
+    cis_controls: str | None = None  # JSON-encoded list
+    cve_ids: str | None = None  # JSON-encoded list
     coverage_status: str
     coverage_detail: str | None = None
     existing_policy_ids: str | None = None  # JSON-encoded list

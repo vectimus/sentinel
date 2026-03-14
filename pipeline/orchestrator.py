@@ -1,9 +1,10 @@
 """Sentinel pipeline orchestrator.
 
-Coordinates three agents in a staged pipeline:
-1. Threat Hunter (sequential — must complete first)
-2. Security Engineer + Threat Analyst (parallel)
-3. Notification digest
+Coordinates three agents in a staged, sequential pipeline:
+1. Threat Hunter — discover and classify incidents
+2. Security Engineer — draft policies, sandbox verify, open PRs
+3. Threat Analyst — write advisories using verified policy and sandbox results
+4. Notification digest
 """
 
 from __future__ import annotations
@@ -91,14 +92,13 @@ async def main() -> None:
 
     logger.info("Sentinel pipeline starting for %s", date)
 
-    # Stage 1: Threat Hunter (sequential)
+    # Stage 1: Threat Hunter
     logger.info("Stage 1: Running Threat Hunter")
     try:
         findings_path = await run_threat_hunter(config, date)
         logger.info("Threat Hunter complete: %s", findings_path)
     except Exception as e:
         logger.error("Threat Hunter failed: %s", e)
-        # Send error notification and exit — no findings means no point continuing
         pushover = PushoverClient(config.pushover_user_key, config.pushover_app_token)
         try:
             pushover.send(
@@ -110,35 +110,28 @@ async def main() -> None:
             pushover.close()
         sys.exit(1)
 
-    # Stage 2: Security Engineer + Threat Analyst (parallel)
-    logger.info("Stage 2: Running Security Engineer and Threat Analyst in parallel")
-
+    # Stage 2: Security Engineer (sequential — Threat Analyst needs its output)
+    logger.info("Stage 2: Running Security Engineer")
     engineer_result = None
+    try:
+        engineer_result = await run_security_engineer(config, findings_path)
+        logger.info("Security Engineer complete: %d PRs created", engineer_result["prs_created"])
+    except Exception as e:
+        logger.error("Security Engineer failed: %s", e)
+        errors.append(f"Security Engineer: {e}")
+
+    # Stage 3: Threat Analyst (sequential — uses Security Engineer's sandbox results and PRs)
+    logger.info("Stage 3: Running Threat Analyst")
     analyst_result = None
+    try:
+        analyst_result = await run_threat_analyst(config, findings_path)
+        logger.info("Threat Analyst complete: %d PRs created", analyst_result["prs_created"])
+    except Exception as e:
+        logger.error("Threat Analyst failed: %s", e)
+        errors.append(f"Threat Analyst: {e}")
 
-    async def run_engineer() -> dict | None:
-        try:
-            return await run_security_engineer(config, findings_path)
-        except Exception as e:
-            logger.error("Security Engineer failed: %s", e)
-            errors.append(f"Security Engineer: {e}")
-            return None
-
-    async def run_analyst() -> dict | None:
-        try:
-            return await run_threat_analyst(config, findings_path)
-        except Exception as e:
-            logger.error("Threat Analyst failed: %s", e)
-            errors.append(f"Threat Analyst: {e}")
-            return None
-
-    engineer_result, analyst_result = await asyncio.gather(
-        run_engineer(),
-        run_analyst(),
-    )
-
-    # Stage 3: Notification
-    logger.info("Stage 3: Sending notifications")
+    # Stage 4: Notification digest
+    logger.info("Stage 4: Sending notifications")
     elapsed = time.monotonic() - start
     digest = _build_digest(date, findings_path, engineer_result, analyst_result, elapsed, errors)
 

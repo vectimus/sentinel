@@ -18,6 +18,8 @@ Each agent has its own directory and self-contained `AGENTS.md`.  At runtime, ea
 
 ## Pipeline Architecture
 
+Three agents execute in a staged, sequential pipeline.  Each stage depends on the output of the one before it.
+
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                  GitHub Actions (daily cron)                  │
@@ -25,30 +27,32 @@ Each agent has its own directory and self-contained `AGENTS.md`.  At runtime, ea
 │                                                              │
 │  ┌────────────────────────────────────────────────────────┐  │
 │  │              STAGE 1: Threat Hunter                     │  │
-│  │              (sequential — must complete first)         │  │
 │  │                                                        │  │
 │  │  Output: findings/<date>.json                          │  │
 │  │  Writes: D1 incidents table, R2 source archive         │  │
 │  └───────────────────────┬────────────────────────────────┘  │
 │                          │                                    │
 │                 findings/<date>.json                          │
-│                    │              │                           │
-│  ┌─────────────────┴──┐  ┌───────┴────────────────────────┐  │
-│  │  STAGE 2a:         │  │  STAGE 2b:                     │  │
-│  │  Security Engineer │  │  Threat Analyst                │  │
-│  │  (parallel)        │  │  (parallel)                    │  │
-│  │                    │  │                                │  │
-│  │  PRs → vectimus/   │  │  PRs → vectimus/      │  │
-│  │        policies    │  │  vectimus-website     │  │
-│  │                    │  │                                │  │
-│  │  Updates: D1       │  │  Updates: D1, R2              │  │
-│  │  (policy status,   │  │  (content links,              │  │
-│  │   VERSION,         │  │   draft archive)              │  │
-│  │   CHANGELOG)       │  │                                │  │
-│  └────────────────────┘  └────────────────────────────────┘  │
+│                          │                                    │
+│  ┌───────────────────────┴────────────────────────────────┐  │
+│  │              STAGE 2: Security Engineer                  │  │
+│  │                                                        │  │
+│  │  Sandbox verification → PRs → vectimus/policies        │  │
+│  │  Updates: D1 (policy status, VERSION, CHANGELOG)       │  │
+│  └───────────────────────┬────────────────────────────────┘  │
+│                          │                                    │
+│              sandbox results + policy PRs                     │
+│                          │                                    │
+│  ┌───────────────────────┴────────────────────────────────┐  │
+│  │              STAGE 3: Threat Analyst                     │  │
+│  │                                                        │  │
+│  │  Uses verified policy and sandbox results               │  │
+│  │  Advisory content → PRs → vectimus/vectimus-website    │  │
+│  │  Updates: D1 (content links), R2 (draft archive)       │  │
+│  └────────────────────────────────────────────────────────┘  │
 │                                                              │
 │  ┌────────────────────────────────────────────────────────┐  │
-│  │              STAGE 3: Notification                      │  │
+│  │              STAGE 4: Notification                      │  │
 │  │                                                        │  │
 │  │  Pushover digest + critical alerts                     │  │
 │  │  GitHub Actions job summary                            │  │
