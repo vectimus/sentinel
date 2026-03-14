@@ -102,25 +102,24 @@ All repos are public.  All tools listed below are free and open source.
 - [x] OpenTelemetry instrumentation via `openinference-instrumentation-claude-agent-sdk`
 
 ### 3.2 Deep analysis
-- [ ] CodeQL on PRs (free for public repos via `github/codeql-action`)
-  - Custom queries for agent-specific security patterns
-- [ ] Trivy for dependency + container scanning (`aquasecurity/trivy-action`)
+- [x] CodeQL on PRs (free for public repos via `github/codeql-action`)
+  - Python security-extended queries, weekly schedule + push/PR
+- [x] Trivy for dependency + container scanning (`aquasecurity/trivy-action`)
+  - Scans requirements.txt + full repo filesystem (vuln, secret, misconfig)
+  - SARIF results uploaded to GitHub Security tab
 
 ### 3.3 Hallucination detection
-- [ ] DeepEval faithfulness metrics (Apache 2.0)
-  - Verify agents aren't fabricating CVE IDs, VTMS references, policy names
-  - Pytest plugin, runs alongside unit tests
-- [ ] Inspect AI sandboxed evals (MIT, UK AISI)
-  - Cybersecurity evaluation suite
-  - Sandboxed execution (Docker) for safe agent testing
+- [x] DeepEval faithfulness metrics (Apache 2.0)
+  - 5 tests: finding summary faithfulness, coverage assessment, Cedar annotations, blog post grounding, fabricated statistics detection
+  - Auto-skips without API key, runs with `ANTHROPIC_API_KEY` or `OPENAI_API_KEY`
+- [ ] Inspect AI sandboxed evals (MIT, UK AISI) — deferred, Docker dependency
 
 ### 3.4 Red-teaming
-- [ ] Augustus (Apache 2.0, Praetorian)
-  - 210+ adversarial probes across 47 attack categories
-  - Single Go binary, run against each agent's system prompt
-- [ ] DeepTeam (open source, Confident AI)
-  - 50+ vulnerability types, 20+ automated attack methods
-  - Python package, scheduled CI runs
+- [x] DeepTeam (open source, Confident AI)
+  - 9 tests across 3 agents: excessive agency, tool exploitation, prompt injection, tool orchestration abuse, shell/SQL injection, BFLA, prompt leakage, PII leakage, tool metadata poisoning
+  - 6 attack strategies: PromptInjection, SystemOverride, Base64, ROT13, Roleplay, PermissionEscalation
+  - Auto-skips without API key
+- [ ] Augustus (Apache 2.0, Praetorian) — deferred, Go binary dependency
 
 ---
 
