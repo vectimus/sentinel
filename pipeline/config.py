@@ -43,9 +43,10 @@ class Config:
     def from_env(cls) -> "Config":
         """Load configuration from environment variables."""
         return cls(
-            anthropic_api_key=os.environ.get(
-                "ANTHROPIC_API_KEY",
-                os.environ.get("CLAUDE_CODE_OAUTH_TOKEN", ""),
+            anthropic_api_key=(
+                os.environ.get("ANTHROPIC_API_KEY")
+                or os.environ.get("CLAUDE_CODE_OAUTH_TOKEN")
+                or ""
             ),
             model=os.environ.get("SENTINEL_MODEL", "claude-sonnet-4-6"),
             cloudflare_account_id=os.environ["CLOUDFLARE_ACCOUNT_ID"],
@@ -55,8 +56,8 @@ class Config:
             r2_secret_access_key=os.environ["R2_SECRET_ACCESS_KEY"],
             r2_endpoint_url=os.environ["R2_ENDPOINT_URL"],
             r2_bucket_name=os.environ.get("R2_BUCKET_NAME", "vectimus-research-archive"),
-            pushover_user_key=os.environ["PUSHOVER_USER_KEY"],
-            pushover_app_token=os.environ["PUSHOVER_APP_TOKEN"],
+            pushover_user_key=os.environ.get("PUSHOVER_USER_KEY", ""),
+            pushover_app_token=os.environ.get("PUSHOVER_APP_TOKEN", ""),
             bot_github_token=os.environ["BOT_GITHUB_TOKEN"],
             policies_repo_path=os.environ.get("POLICIES_REPO_PATH", "_policies"),
         )

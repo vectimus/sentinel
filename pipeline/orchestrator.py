@@ -89,8 +89,10 @@ async def main() -> None:
     start = time.monotonic()
 
     # Support CLAUDE_CODE_OAUTH_TOKEN as an alternative to ANTHROPIC_API_KEY
-    if not os.environ.get("ANTHROPIC_API_KEY") and os.environ.get("CLAUDE_CODE_OAUTH_TOKEN"):
-        os.environ["ANTHROPIC_API_KEY"] = os.environ["CLAUDE_CODE_OAUTH_TOKEN"]
+    if not os.environ.get("ANTHROPIC_API_KEY"):
+        oauth_token = os.environ.get("CLAUDE_CODE_OAUTH_TOKEN", "")
+        if oauth_token:
+            os.environ["ANTHROPIC_API_KEY"] = oauth_token
 
     config = Config.from_env()
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -108,15 +110,18 @@ async def main() -> None:
         logger.info("Threat Hunter complete: %s", findings_path)
     except Exception as e:
         logger.error("Threat Hunter failed: %s", e)
-        pushover = PushoverClient(config.pushover_user_key, config.pushover_app_token)
-        try:
-            pushover.send(
-                message=f"Threat Hunter failed: {e}",
-                title="Sentinel Pipeline Error",
-                priority=1,
-            )
-        finally:
-            pushover.close()
+        if config.pushover_user_key and config.pushover_app_token:
+            pushover = PushoverClient(config.pushover_user_key, config.pushover_app_token)
+            try:
+                pushover.send(
+                    message=f"Threat Hunter failed: {e}",
+                    title="Sentinel Pipeline Error",
+                    priority=1,
+                )
+            finally:
+                pushover.close()
+        else:
+            logger.warning("Pushover not configured — skipping error alert")
         sys.exit(1)
 
     # Validate findings before passing to downstream agents
@@ -160,13 +165,16 @@ async def main() -> None:
 
     logger.info("Digest:\n%s", digest)
 
-    pushover = PushoverClient(config.pushover_user_key, config.pushover_app_token)
-    try:
-        pushover.send_digest(digest)
-    except Exception as e:
-        logger.error("Failed to send digest: %s", e)
-    finally:
-        pushover.close()
+    if config.pushover_user_key and config.pushover_app_token:
+        pushover = PushoverClient(config.pushover_user_key, config.pushover_app_token)
+        try:
+            pushover.send_digest(digest)
+        except Exception as e:
+            logger.error("Failed to send digest: %s", e)
+        finally:
+            pushover.close()
+    else:
+        logger.info("Pushover not configured — digest printed to log only")
 
     _write_github_summary(digest)
 
