@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Sentinel Finding",
+  "type": "object",
+  "required": [
+    "vtms_id",
+    "title",
+    "discovered_at",
+    "severity",
+    "owasp_category",
+    "coverage_status",
+    "summary",
+    "recommended_action"
+  ],
+  "properties": {
+    "vtms_id": {
+      "type": "string",
+      "pattern": "^VTMS-\\d{4}-\\d{4}$"
+    },
+    "title": {
+      "type": "string"
+    },
+    "discovered_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "incident_date": {
+      "type": ["string", "null"],
+      "format": "date"
+    },
+    "severity": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "owasp_category": {
+      "type": "string"
+    },
+    "coverage_status": {
+      "type": "string",
+      "enum": ["covered", "partial", "gap"]
+    },
+    "coverage_detail": {
+      "type": ["string", "null"]
+    },
+    "existing_policy_ids": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "gap_description": {
+      "type": ["string", "null"]
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["url", "title"],
+        "properties": {
+          "url": { "type": "string", "format": "uri" },
+          "title": { "type": "string" },
+          "r2_key": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "tools_involved": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "summary": {
+      "type": "string"
+    },
+    "recommended_action": {
+      "type": "string",
+      "enum": ["no_change", "update_existing", "new_policy"]
+    },
+    "recommended_policy_description": {
+      "type": ["string", "null"]
+    },
+    "content_worthy": {
+      "type": "boolean"
+    },
+    "content_angle": {
+      "type": ["string", "null"],
+      "enum": ["covered_by_vectimus", "new_policy_needed", "trend_piece", null]
+    }
+  }
+}

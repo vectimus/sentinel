@@ -1,0 +1,11 @@
+name = "vectimus-api"
+main = "src/index.ts"
+compatibility_date = "2026-03-14"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "vectimus-incidents"
+database_id = "<your-database-id>"
+
+[site]
+bucket = "./dashboard"
