@@ -1,0 +1,14 @@
+{
+  "principal": {"type": "Agent", "id": "coding_agent"},
+  "action": {"type": "Action", "id": "shell_command"},
+  "resource": {
+    "type": "Resource",
+    "id": "tf_plan",
+    "attrs": {
+      "command": "terraform plan",
+      "working_directory": "/home/deploy/infrastructure/production",
+      "target_environment": "production"
+    }
+  },
+  "expected": "ALLOW"
+}
