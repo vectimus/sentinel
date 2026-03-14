@@ -79,6 +79,15 @@ jobs:
           POLICIES_REPO_PATH: ${{ github.workspace }}/_policies
         run: python -m pipeline.orchestrator
 
+      - name: Upload traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sentinel-traces-${{ github.run_id }}
+          path: traces/
+          retention-days: 90
+          if-no-files-found: ignore
+
       - name: Commit findings
         run: |
           git config user.name "vectimus-sentinel"

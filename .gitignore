@@ -34,3 +34,6 @@ _policies/
 evals/mcp-tools.json
 evals/mcp-scan-results.json
 evals/results.json
+
+# Trace exports (uploaded as CI artifacts)
+traces/

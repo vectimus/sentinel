@@ -94,12 +94,12 @@ All repos are public.  All tools listed below are free and open source.
 ## Tier 3 — Production hardening
 
 ### 3.1 Observability
-- [ ] Langfuse (MIT, self-hosted)
-  - Trace every agent tool call
-  - Token cost tracking per agent
-  - Full reasoning chain capture
-  - Compliance audit trail
-- [ ] OpenTelemetry instrumentation via OpenLLMetry
+- [x] Arize Phoenix (ELv2, in-process) — replaced Langfuse for zero-infra simplicity
+  - Auto-instruments Claude Agent SDK via OpenInference
+  - Traces every LLM call, tool call, agent span with full parent-child nesting
+  - Exports traces as JSON artifacts on each pipeline run (90-day retention)
+  - Disable via `SENTINEL_DISABLE_TRACING=1` env var
+- [x] OpenTelemetry instrumentation via `openinference-instrumentation-claude-agent-sdk`
 
 ### 3.2 Deep analysis
 - [ ] CodeQL on PRs (free for public repos via `github/codeql-action`)

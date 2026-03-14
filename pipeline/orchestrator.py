@@ -23,6 +23,7 @@ from pipeline.agents.threat_hunter import run_threat_hunter
 from pipeline.agents.security_engineer import run_security_engineer
 from pipeline.agents.threat_analyst import run_threat_analyst
 from pipeline.tools.pushover_client import PushoverClient
+from pipeline.tracing import init_tracing, export_traces, shutdown as shutdown_tracing
 
 logging.basicConfig(
     level=logging.INFO,
@@ -89,6 +90,9 @@ async def main() -> None:
     config = Config.from_env()
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     errors: list[str] = []
+
+    # Start observability tracing
+    init_tracing(project_name=f"sentinel-{date}")
 
     logger.info("Sentinel pipeline starting for %s", date)
 
@@ -160,6 +164,12 @@ async def main() -> None:
         pushover.close()
 
     _write_github_summary(digest)
+
+    # Export traces and shut down Phoenix
+    trace_file = export_traces(date)
+    if trace_file:
+        logger.info("Traces exported to %s", trace_file)
+    shutdown_tracing()
 
     if errors:
         logger.warning("Pipeline completed with errors: %s", errors)
