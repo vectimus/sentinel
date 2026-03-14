@@ -1,12 +1,14 @@
-"""Cedar CLI sandbox wrapper for policy validation and authorization testing."""
+"""Cedar sandbox for policy validation and authorization testing.
+
+Uses cedarpy (pure Python) instead of the Cedar CLI binary — no Rust toolchain needed.
+"""
 
 from __future__ import annotations
 
-import json
-import subprocess
-import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+
+import cedarpy
 
 
 @dataclass
@@ -22,10 +24,7 @@ class ValidationResult:
 
 
 class CedarSandbox:
-    """Wraps the Cedar CLI binary for policy testing."""
-
-    def __init__(self, cedar_bin: str = "cedar") -> None:
-        self.cedar_bin = cedar_bin
+    """Cedar policy testing via cedarpy."""
 
     def authorize(
         self,
@@ -42,68 +41,58 @@ class CedarSandbox:
         """
         policies_dir = Path(policies_dir)
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as entities_file:
-            json.dump(entities, entities_file)
-            entities_path = entities_file.name
+        # Load all .cedar policy files
+        policies = ""
+        for cedar_file in sorted(policies_dir.glob("**/*.cedar")):
+            policies += cedar_file.read_text() + "\n"
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as request_file:
-            json.dump(request, request_file)
-            request_path = request_file.name
+        response = cedarpy.is_authorized(
+            {
+                "principal": request["principal"],
+                "action": request["action"],
+                "resource": request["resource"],
+                "context": request.get("context", {}),
+            },
+            policies,
+            entities,
+        )
 
-        cmd = [
-            self.cedar_bin,
-            "authorize",
-            "--policies", str(policies_dir),
-            "--entities", entities_path,
-            "--principal", request["principal"],
-            "--action", request["action"],
-            "--resource", request["resource"],
-        ]
+        decision = "ALLOW" if response.decision == cedarpy.Decision.Allow else "DENY"
+        diagnostics_parts = []
+        if response.diagnostics.reasons:
+            diagnostics_parts.append(f"Reasons: {', '.join(response.diagnostics.reasons)}")
+        if response.diagnostics.errors:
+            diagnostics_parts.append(f"Errors: {', '.join(response.diagnostics.errors)}")
 
-        if "context" in request:
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".json", delete=False
-            ) as ctx_file:
-                json.dump(request["context"], ctx_file)
-                cmd.extend(["--context", ctx_file.name])
-
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-
-        decision = "ALLOW" if result.returncode == 0 else "DENY"
-        diagnostics = result.stdout + result.stderr
-
-        return AuthzResult(decision=decision, diagnostics=diagnostics.strip())
+        return AuthzResult(
+            decision=decision,
+            diagnostics="\n".join(diagnostics_parts) if diagnostics_parts else "",
+        )
 
     def validate(
         self,
         policies_dir: str | Path,
         schema_path: str | Path,
     ) -> ValidationResult:
-        """Run cedar validate against a schema.
+        """Validate policies against a Cedar schema.
 
         Args:
             policies_dir: Path to directory containing .cedar policy files
-            schema_path: Path to Cedar schema file
+            schema_path: Path to Cedar schema file (.cedarschema or .json)
         """
-        cmd = [
-            self.cedar_bin,
-            "validate",
-            "--policies", str(policies_dir),
-            "--schema", str(schema_path),
-        ]
+        policies_dir = Path(policies_dir)
+        schema_path = Path(schema_path)
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        policies = ""
+        for cedar_file in sorted(policies_dir.glob("**/*.cedar")):
+            policies += cedar_file.read_text() + "\n"
 
-        if result.returncode == 0:
+        schema = schema_path.read_text()
+
+        result = cedarpy.validate_policies(policies, schema)
+        if result.validation_passed:
             return ValidationResult(valid=True, errors=[])
-
-        errors = [
-            line.strip()
-            for line in (result.stdout + result.stderr).splitlines()
-            if line.strip()
-        ]
-        return ValidationResult(valid=False, errors=errors)
+        return ValidationResult(
+            valid=False,
+            errors=[str(e) for e in result.errors],
+        )

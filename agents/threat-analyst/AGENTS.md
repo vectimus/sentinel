@@ -125,7 +125,12 @@ For each content-worthy finding, execute this RPI cycle.
 
 ## Tools
 
-- File system read/write (blog posts, briefs)
-- GitHub API (create PR in `vectimus/vectimus-website`, read Security Engineer PRs in `vectimus/policies`)
-- D1 API (incident history, trend data, content status updates)
-- R2 API (read archived source material)
+- `Read` / `Write` — file system operations (blog posts, briefs)
+- `Bash` — shell commands where needed
+- `mcp__sentinel__github_create_branch` — create branches in `vectimus/vectimus-website`
+- `mcp__sentinel__github_push_file` — push files to a branch in the website repo
+- `mcp__sentinel__github_create_pr` — create PR in `vectimus/vectimus-website` with labels and reviewers
+- `mcp__sentinel__github_get_pr` — read Security Engineer PRs from `vectimus/policies` by branch name
+- `mcp__sentinel__d1_query` — read-only SQL queries against the D1 incidents database
+- `mcp__sentinel__d1_write` — insert or update records in D1
+- `mcp__sentinel__r2_get` — read archived source material from R2

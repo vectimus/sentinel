@@ -1,5 +1,7 @@
-anthropic>=0.40.0
 boto3>=1.35.0
+cedarpy>=0.5.0
+claude-agent-sdk>=0.1.0
+fastmcp>=0.1.0
 httpx>=0.27.0
 pydantic>=2.0.0
 PyGithub>=2.0.0

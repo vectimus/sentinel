@@ -169,8 +169,11 @@ If any test fails, revise the policy and re-run before opening the PR.
 
 ## Tools
 
-- File system read/write (Cedar policy files, test fixtures, CHANGELOG, VERSION, manifest)
-- Cedar CLI (`cedar authorize` for sandbox replay, `cedar validate` for schema checking)
-- GitHub API (create PR in `vectimus/policies`, add labels, request reviewers)
-- D1 API (read incident details, update policy status)
-- R2 API (read archived source material)
+- `Read` / `Write` / `Glob` — file system operations (Cedar policy files, test fixtures, CHANGELOG, VERSION, manifest)
+- `Bash` — git commands (checkout, branch, add, commit, push, status, log, diff only)
+- `mcp__sentinel__cedar_authorize` — run Cedar authorize for sandbox replay testing
+- `mcp__sentinel__cedar_validate` — validate policies against Cedar schema
+- `mcp__sentinel__github_create_pr` — create PR in `vectimus/policies` with labels and reviewers
+- `mcp__sentinel__d1_query` — read-only SQL queries against the D1 incidents database
+- `mcp__sentinel__d1_write` — insert or update records in D1
+- `mcp__sentinel__r2_get` — read archived source material from R2

@@ -147,10 +147,11 @@ Fields:
 
 ## Tools
 
-- Web search (incident discovery)
-- Web fetch (full article retrieval)
-- File system read/write (findings output)
-- D1 API (incident database read/write, VTMS sequence)
-- R2 API (source archival)
-- Pushover API (critical alerts)
-- Vectimus CLI (list current policies and coverage)
+- `WebSearch` — web search for incident discovery
+- `WebFetch` — fetch full article text from URLs
+- `Read` / `Write` — file system operations (findings output, reading reference files)
+- `Bash` — shell commands (e.g. listing files, running vectimus CLI)
+- `mcp__sentinel__d1_query` — read-only SQL queries against the D1 incidents database
+- `mcp__sentinel__d1_write` — insert or update records in D1
+- `mcp__sentinel__r2_put` — archive source material to R2 storage
+- `mcp__sentinel__pushover_alert` — send high-priority Pushover alerts for severity 4-5 incidents
