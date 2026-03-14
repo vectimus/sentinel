@@ -18,7 +18,7 @@ The pipeline runs through Vectimus itself.  Recursive governance: the governance
 
 ## VTMS Identifiers
 
-Every incident gets a canonical ID: `VTMS-YYYY-NNNN`.  The goal is to establish VTMS as the standard reference for agentic AI security incidents, analogous to CVE for software vulnerabilities.
+Every incident gets a canonical ID: VTMS-YYYY-NNNN.  Structured identifiers make incidents citable, searchable and trackable across policies, audit logs and advisory content.
 
 ## Quickstart
 
