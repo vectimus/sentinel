@@ -28,6 +28,16 @@ CREATE TABLE IF NOT EXISTS incidents (
   updated_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS rate_limits (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  key TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_rate_limits_key_created ON rate_limits (key, created_at);
+CREATE INDEX IF NOT EXISTS idx_rate_limits_expires ON rate_limits (expires_at);
+
 CREATE TABLE IF NOT EXISTS trends (
   date TEXT PRIMARY KEY,
   total_incidents INTEGER,
@@ -52,3 +62,13 @@ CREATE TABLE IF NOT EXISTS content (
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS rate_limits (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  key TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_rate_limits_key_created ON rate_limits (key, created_at);
+CREATE INDEX IF NOT EXISTS idx_rate_limits_expires ON rate_limits (expires_at);
