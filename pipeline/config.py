@@ -10,7 +10,7 @@ class Config:
 
     # Anthropic
     anthropic_api_key: str = ""
-    model: str = "claude-sonnet-4-20250514"
+    model: str = "claude-sonnet-4-6"
 
     # Cloudflare D1
     cloudflare_account_id: str = ""
@@ -44,7 +44,7 @@ class Config:
         """Load configuration from environment variables."""
         return cls(
             anthropic_api_key=os.environ["ANTHROPIC_API_KEY"],
-            model=os.environ.get("SENTINEL_MODEL", "claude-sonnet-4-20250514"),
+            model=os.environ.get("SENTINEL_MODEL", "claude-sonnet-4-6"),
             cloudflare_account_id=os.environ["CLOUDFLARE_ACCOUNT_ID"],
             cloudflare_api_token=os.environ["CLOUDFLARE_API_TOKEN"],
             d1_database_id=os.environ.get("D1_DATABASE_ID", ""),

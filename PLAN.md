@@ -52,14 +52,17 @@ All repos are public.  All tools listed below are free and open source.
 
 ## Tier 2 — Credible security product
 
-### 2.1 Input/output sanitisation
-- [ ] Integrate LLM Guard (`llm-guard`) as pre/post filter on agent I/O
-  - Input scanner: scan web-fetched content before it enters agent context
-  - Output scanner: scan agent responses before they reach D1/GitHub
-  - Runs as Python library, no external service needed
-- [ ] Evaluate LlamaFirewall AlignmentCheck for reasoning chain auditing
-  - Audits full execution trace for goal hijacking
-  - Costs one LLM call per agent run
+### 2.1 Guardrailing
+- [ ] Integrate **NeMo Guardrails** (`nemoguardrails`, Apache 2.0) as primary guardrailing layer
+  - Input rails: scan web-fetched content for prompt injection before agent context
+  - Execution rails: monitor tool call inputs/outputs (complements Cedar policies)
+  - Output rails: validate agent responses before they reach D1/GitHub
+  - Colang dialogue policies: enforce agent role boundaries and workflow constraints
+  - Config per agent: `guardrails/threat-hunter/`, `guardrails/security-engineer/`, `guardrails/threat-analyst/`
+- [ ] Integrate **Guardrails AI** (`guardrails-ai`, Apache 2.0) for structured output validation
+  - Validate findings JSON against schema with auto-retry on malformed output
+  - Validate Cedar policy syntax before PR creation
+  - Validate blog post/brief structure against templates
 
 ### 2.2 SAST in CI
 - [ ] Add Semgrep to GitHub Actions (`semgrep/semgrep-action`)

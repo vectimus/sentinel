@@ -110,6 +110,20 @@ async def main() -> None:
             pushover.close()
         sys.exit(1)
 
+    # Validate findings before passing to downstream agents
+    try:
+        from pipeline.validation import validate_findings
+
+        raw_findings = findings_path.read_text()
+        validated = validate_findings(raw_findings)
+        logger.info(
+            "Findings validation: %d finding(s) validated for downstream agents",
+            len(validated),
+        )
+    except Exception as e:
+        logger.warning("Findings validation failed in orchestrator: %s", e)
+        errors.append(f"Findings validation: {e}")
+
     # Stage 2: Security Engineer (sequential — Threat Analyst needs its output)
     logger.info("Stage 2: Running Security Engineer")
     engineer_result = None

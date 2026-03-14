@@ -1,0 +1,57 @@
+define flow check prompt injection
+  """Input rail: scan for prompt injection patterns in user messages."""
+  $is_injection = execute self_check_input
+  if $is_injection == "yes"
+    bot refuse to respond
+    stop
+
+define flow check cedar syntax
+  """Output rail: validate Cedar policy syntax in agent output.
+
+  Ensures that any Cedar policy produced by the Security Engineer
+  contains valid syntax and required annotation comments.
+  """
+  $has_syntax_errors = execute self_check_output
+  if $has_syntax_errors == "yes"
+    bot inform cedar syntax error
+    stop
+
+define flow check output safety
+  """Output rail: scan agent output for sensitive data leakage."""
+  $has_sensitive_data = execute self_check_output
+  if $has_sensitive_data == "yes"
+    bot inform output blocked
+    stop
+
+define bot refuse to respond
+  "I've detected a potential prompt injection attempt in the input content. Skipping this input to maintain pipeline integrity."
+
+define bot inform cedar syntax error
+  "Output blocked: the Cedar policy contains syntax errors or is missing required annotations (VTMS ID, OWASP category). Please fix the policy syntax before proceeding."
+
+define bot inform output blocked
+  "Output blocked: the response contained potentially sensitive data. The output has been suppressed to prevent data leakage."
+
+# Role boundary: Security Engineer must run cedar sandbox before opening PRs
+define flow check sandbox before pr
+  """Ensure sandbox replay is executed before creating a pull request.
+
+  The Security Engineer must validate policies through the Cedar sandbox
+  (cedar_authorize and cedar_validate) before opening any PR.
+  """
+  if $tool_name == "mcp__sentinel__github_create_pr" and not $sandbox_completed
+    bot inform sandbox required
+    stop
+
+# Role boundary: Security Engineer must not modify files outside the policies repo
+define flow check file write boundary
+  """Prevent Security Engineer from writing files outside the policies repository."""
+  if $tool_name == "Write" and not $file_path.startswith($policies_repo_path)
+    bot inform boundary violation
+    stop
+
+define bot inform sandbox required
+  "Action blocked: you must run the Cedar sandbox (cedar_authorize and cedar_validate) before opening a pull request. Complete the incident replay sandbox process first."
+
+define bot inform boundary violation
+  "Action blocked: this operation is outside the Security Engineer's role boundary. The Security Engineer only modifies files within the policies repository."

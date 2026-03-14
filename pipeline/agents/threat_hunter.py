@@ -67,6 +67,19 @@ async def run_threat_hunter(config: Config, date: str) -> Path:
             findings_path.parent.mkdir(parents=True, exist_ok=True)
             findings_path.write_text("[]")
 
+        # Post-processing: validate findings output via Guardrails AI
+        try:
+            from pipeline.validation import validate_findings
+
+            raw_json = findings_path.read_text()
+            validated = validate_findings(raw_json)
+            # Write back the validated (potentially cleaned) findings
+            findings_path.write_text(json.dumps(validated, indent=2))
+            logger.info("Findings validation passed: %d finding(s) validated", len(validated))
+        except Exception as e:
+            # Don't crash on validation failure -- findings may be partially valid
+            logger.warning("Findings validation failed (continuing with raw output): %s", e)
+
         return findings_path
 
     finally:

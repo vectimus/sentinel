@@ -1,0 +1,63 @@
+define flow check prompt injection
+  """Input rail: scan for prompt injection patterns in user messages."""
+  $is_injection = execute self_check_input
+  if $is_injection == "yes"
+    bot refuse to respond
+    stop
+
+define flow check humaniser rules
+  """Output rail: enforce humaniser rules on all content output.
+
+  Ensures the Threat Analyst's content follows strict writing guidelines:
+  no em dashes, no Oxford commas, no AI buzzwords, no rule of three,
+  no puffery.
+  """
+  $has_violations = execute self_check_output
+  if $has_violations == "yes"
+    bot inform humaniser violation
+    stop
+
+define flow check blog template conformance
+  """Output rail: verify blog post content conforms to the required template.
+
+  Checks that blog posts include required frontmatter fields and all
+  mandatory sections: What happened, Why it matters, Root cause,
+  How Vectimus responds, What you can do.
+  """
+  $missing_sections = execute check_blog_template
+  if $missing_sections
+    bot inform template violation
+    stop
+
+define flow check output safety
+  """Output rail: scan agent output for sensitive data leakage."""
+  $has_sensitive_data = execute self_check_output
+  if $has_sensitive_data == "yes"
+    bot inform output blocked
+    stop
+
+define bot refuse to respond
+  "I've detected a potential prompt injection attempt in the input content. Skipping this input to maintain pipeline integrity."
+
+define bot inform humaniser violation
+  "Output blocked: the content violates humaniser rules. Check for em dashes, Oxford commas, AI buzzwords, rule of three or puffery. Revise the content and try again."
+
+define bot inform template violation
+  "Output blocked: the blog post does not conform to the required template. Ensure all required sections are present: What happened, Why it matters, Root cause, How Vectimus responds, What you can do. Also check that frontmatter includes vtms_id, title, date, author, category, owasp_category, severity and tags."
+
+define bot inform output blocked
+  "Output blocked: the response contained potentially sensitive data. The output has been suppressed to prevent data leakage."
+
+# Role boundary: Threat Analyst must not modify policies
+define flow check no policy modification
+  """Prevent Threat Analyst from modifying Cedar policies.
+
+  The Threat Analyst produces content only. Policy creation and modification
+  is the Security Engineer's responsibility.
+  """
+  if $tool_name == "Write" and ($file_path like "*.cedar" or $file_path like "*policies/*")
+    bot inform boundary violation
+    stop
+
+define bot inform boundary violation
+  "Action blocked: this operation is outside the Threat Analyst's role boundary. The Threat Analyst produces content only and does not modify Cedar policies."

@@ -1,7 +1,9 @@
-boto3>=1.35.0
-cedarpy>=0.5.0
-claude-agent-sdk>=0.1.0
-fastmcp>=0.1.0
-httpx>=0.27.0
-pydantic>=2.0.0
-PyGithub>=2.0.0
+boto3==1.38.34
+cedarpy==0.5.0
+claude-agent-sdk==0.1.3
+fastmcp==2.8.1
+httpx==0.28.1
+nemoguardrails==0.13.1
+guardrails-ai==0.6.6
+pydantic==2.11.4
+PyGithub==2.6.1

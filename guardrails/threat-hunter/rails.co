@@ -1,0 +1,45 @@
+define flow check prompt injection
+  """Input rail: scan for prompt injection patterns in user messages.
+
+  Web-fetched content is a primary vector for prompt injection in the
+  Threat Hunter pipeline.  This rail catches injection attempts before
+  they reach the agent.
+  """
+  $is_injection = execute self_check_input
+  if $is_injection == "yes"
+    bot refuse to respond
+    stop
+
+define flow check output safety
+  """Output rail: scan agent output for sensitive data leakage.
+
+  Prevents the Threat Hunter from inadvertently exposing API keys,
+  tokens, credentials or other secrets in its findings output.
+  """
+  $has_sensitive_data = execute self_check_output
+  if $has_sensitive_data == "yes"
+    bot inform output blocked
+    stop
+
+define bot refuse to respond
+  "I've detected a potential prompt injection attempt in the input content. Skipping this source to maintain pipeline integrity."
+
+define bot inform output blocked
+  "Output blocked: the response contained potentially sensitive data (API keys, tokens or credentials). The output has been suppressed to prevent data leakage."
+
+# Role boundary: Threat Hunter must not modify files outside findings/ directory
+define flow check file write boundary
+  """Prevent Threat Hunter from writing files outside the findings/ directory."""
+  if $tool_name == "Write" and not $file_path.startswith("findings/")
+    bot inform boundary violation
+    stop
+
+# Role boundary: Threat Hunter must not create PRs
+define flow check no pr creation
+  """Prevent Threat Hunter from creating pull requests (that is Security Engineer's job)."""
+  if $tool_name == "mcp__sentinel__github_create_pr"
+    bot inform boundary violation
+    stop
+
+define bot inform boundary violation
+  "Action blocked: this operation is outside the Threat Hunter's role boundary. The Threat Hunter discovers and classifies incidents. It does not modify files outside findings/ or create pull requests."

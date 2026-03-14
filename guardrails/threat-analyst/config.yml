@@ -1,0 +1,14 @@
+models:
+  - type: main
+    engine: anthropic
+    model: claude-sonnet-4-6
+
+rails:
+  input:
+    flows:
+      - check prompt injection
+  output:
+    flows:
+      - check humaniser rules
+      - check blog template conformance
+      - check output safety
