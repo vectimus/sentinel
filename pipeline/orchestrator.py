@@ -87,6 +87,11 @@ def _write_github_summary(digest: str) -> None:
 
 async def main() -> None:
     start = time.monotonic()
+
+    # Support CLAUDE_CODE_OAUTH_TOKEN as an alternative to ANTHROPIC_API_KEY
+    if not os.environ.get("ANTHROPIC_API_KEY") and os.environ.get("CLAUDE_CODE_OAUTH_TOKEN"):
+        os.environ["ANTHROPIC_API_KEY"] = os.environ["CLAUDE_CODE_OAUTH_TOKEN"]
+
     config = Config.from_env()
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     errors: list[str] = []

@@ -43,7 +43,10 @@ class Config:
     def from_env(cls) -> "Config":
         """Load configuration from environment variables."""
         return cls(
-            anthropic_api_key=os.environ["ANTHROPIC_API_KEY"],
+            anthropic_api_key=os.environ.get(
+                "ANTHROPIC_API_KEY",
+                os.environ.get("CLAUDE_CODE_OAUTH_TOKEN", ""),
+            ),
             model=os.environ.get("SENTINEL_MODEL", "claude-sonnet-4-6"),
             cloudflare_account_id=os.environ["CLOUDFLARE_ACCOUNT_ID"],
             cloudflare_api_token=os.environ["CLOUDFLARE_API_TOKEN"],
