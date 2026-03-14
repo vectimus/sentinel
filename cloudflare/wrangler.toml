@@ -2,6 +2,10 @@ name = "vectimus-api"
 main = "src/index.ts"
 compatibility_date = "2026-03-14"
 
+[[routes]]
+pattern = "api.vectimus.com"
+custom_domain = true
+
 [[d1_databases]]
 binding = "DB"
 database_name = "vectimus-incidents"
