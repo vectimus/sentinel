@@ -46,14 +46,14 @@ jobs:
 
       - name: Upload pip results to GitHub Security
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-pip.sarif
           category: trivy-pip
 
       - name: Upload repo results to GitHub Security
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-repo.sarif
           category: trivy-repo
