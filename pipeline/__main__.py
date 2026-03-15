@@ -1,4 +1,12 @@
-"""Allow running with `python -m pipeline`."""
+"""Allow running with `python -m pipeline` or `python -m pipeline <stage>`.
+
+Stages:
+    (none)     — run full orchestrator (legacy, local dev)
+    discover   — Threat Hunter + validation + D1 scrub
+    engineer   — Security Engineer (needs findings artifact)
+    analyst    — Threat Analyst (needs findings artifact)
+    publish    — Trends + digest notification
+"""
 
 import os
 import sys
@@ -20,6 +28,26 @@ if not os.environ.get("ANTHROPIC_API_KEY"):
 
 os.environ.setdefault("SENTINEL_PYTHON", sys.executable)
 
-from pipeline.orchestrator import _entry  # noqa: E402
+STAGES = {
+    "discover": "pipeline.stages:discover",
+    "engineer": "pipeline.stages:engineer",
+    "analyst": "pipeline.stages:analyst",
+    "publish": "pipeline.stages:publish",
+}
 
-_entry()
+stage = sys.argv[1] if len(sys.argv) > 1 else None
+
+if stage is None:
+    # Full pipeline (legacy / local dev)
+    from pipeline.orchestrator import _entry  # noqa: E402
+    _entry()
+elif stage in STAGES:
+    module_path, func_name = STAGES[stage].rsplit(":", 1)
+    import importlib
+    mod = importlib.import_module(module_path)
+    getattr(mod, func_name)()
+else:
+    print(f"Unknown stage: {stage!r}")
+    print(f"Available stages: {', '.join(STAGES)}")
+    print("Run with no arguments for the full pipeline.")
+    sys.exit(1)
