@@ -12,4 +12,4 @@ httpx==0.28.1
 nemoguardrails==0.13.1
 guardrails-ai==0.9.1
 pydantic==2.11.4
-PyGithub==2.6.1
+PyGithub==2.8.1
