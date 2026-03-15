@@ -9,6 +9,18 @@ from botocore.config import Config as BotoConfig
 class R2Client:
     """Client for Cloudflare R2 object storage."""
 
+    # Allowed key prefixes — defence in depth (MCP layer also validates)
+    _ALLOWED_PREFIXES = ("sources/", "findings/", "drafts/")
+
+    def _validate_key(self, key: str) -> None:
+        """Validate object key against allowed prefixes and path traversal."""
+        if ".." in key:
+            raise ValueError(f"R2 key must not contain '..': {key!r}")
+        if not key.startswith(self._ALLOWED_PREFIXES):
+            raise ValueError(
+                f"R2 key must start with one of {self._ALLOWED_PREFIXES}. Got: {key!r}"
+            )
+
     def __init__(
         self,
         access_key_id: str,
@@ -30,6 +42,7 @@ class R2Client:
 
     def put(self, key: str, body: str | bytes, content_type: str = "text/plain") -> None:
         """Upload an object to R2."""
+        self._validate_key(key)
         if isinstance(body, str):
             body = body.encode("utf-8")
         self._s3.put_object(

@@ -17,6 +17,27 @@ class D1Client:
 
     BASE_URL = "https://api.cloudflare.com/client/v4"
 
+    # Allowed column names for each table — prevents SQL injection via dict keys
+    _INCIDENT_COLUMNS = frozenset({
+        "vtms_id", "title", "summary", "discovered_at", "incident_date",
+        "severity", "owasp_category", "nist_ai_rmf", "cis_controls", "cve_ids",
+        "coverage_status", "coverage_detail", "existing_policy_ids", "gap_description",
+        "tools_involved", "sources", "policy_pr_url", "content_pr_url",
+        "policy_status", "content_status", "recommended_action", "content_angle",
+        "replay_request", "enforcement_scope", "created_at", "updated_at",
+    })
+
+    _TREND_COLUMNS = frozenset({
+        "date", "total_incidents", "incidents_30d", "incidents_by_category",
+        "incidents_by_severity", "coverage_rate", "gap_rate",
+        "policies_total", "rules_total",
+    })
+
+    _CONTENT_COLUMNS = frozenset({
+        "id", "vtms_id", "content_type", "title", "slug", "status",
+        "pr_url", "published_url", "created_at", "updated_at",
+    })
+
     def __init__(self, account_id: str, api_token: str, database_id: str) -> None:
         self.account_id = account_id
         self.database_id = database_id
@@ -54,6 +75,10 @@ class D1Client:
 
     def insert_incident(self, incident: dict) -> None:
         """Insert or replace an incident record."""
+        # Validate column names to prevent SQL injection
+        invalid_cols = set(incident.keys()) - self._INCIDENT_COLUMNS
+        if invalid_cols:
+            raise ValueError(f"Invalid column names for incidents table: {invalid_cols}")
         cols = list(incident.keys())
         placeholders = ", ".join(["?"] * len(cols))
         col_names = ", ".join(cols)
@@ -95,6 +120,7 @@ class D1Client:
         allowed_fields = {
             "policy_pr_url", "content_pr_url", "policy_status", "content_status",
             "coverage_status", "coverage_detail", "updated_at",
+            "replay_request", "enforcement_scope",
         }
         if field not in allowed_fields:
             raise ValueError(f"Field {field!r} not in allowed update fields")
@@ -102,6 +128,10 @@ class D1Client:
 
     def upsert_trend(self, trend: dict) -> None:
         """Insert or replace a trend record."""
+        # Validate column names to prevent SQL injection
+        invalid_cols = set(trend.keys()) - self._TREND_COLUMNS
+        if invalid_cols:
+            raise ValueError(f"Invalid column names for trends table: {invalid_cols}")
         cols = list(trend.keys())
         placeholders = ", ".join(["?"] * len(cols))
         col_names = ", ".join(cols)
@@ -116,6 +146,10 @@ class D1Client:
 
     def insert_content(self, content: dict) -> None:
         """Insert or replace a content record."""
+        # Validate column names to prevent SQL injection
+        invalid_cols = set(content.keys()) - self._CONTENT_COLUMNS
+        if invalid_cols:
+            raise ValueError(f"Invalid column names for content table: {invalid_cols}")
         cols = list(content.keys())
         placeholders = ", ".join(["?"] * len(cols))
         col_names = ", ".join(cols)

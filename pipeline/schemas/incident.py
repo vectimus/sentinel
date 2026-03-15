@@ -7,6 +7,11 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+VALID_ASI_CATEGORIES = [
+    "ASI01", "ASI02", "ASI03", "ASI04", "ASI05",
+    "ASI06", "ASI07", "ASI08", "ASI09", "ASI10",
+]
+
 
 class Incident(BaseModel):
     vtms_id: str
@@ -31,6 +36,8 @@ class Incident(BaseModel):
     content_status: Literal["na", "draft", "published", "archived"] = "na"
     recommended_action: str | None = None
     content_angle: str | None = None
+    replay_request: str | None = None
+    enforcement_scope: str | None = Field(default="full")
     created_at: str = ""
     updated_at: str = ""
 
@@ -39,6 +46,22 @@ class Incident(BaseModel):
     def validate_vtms_id(cls, v: str) -> str:
         if not re.match(r"^VTMS-\d{4}-\d{4}$", v):
             raise ValueError("vtms_id must match VTMS-YYYY-NNNN format")
+        return v
+
+    @field_validator("owasp_category")
+    @classmethod
+    def validate_owasp_category(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        prefix = v.split(":")[0].strip()
+        if prefix.startswith("LLM"):
+            raise ValueError(
+                f"LLM prefix is deprecated; use ASI01-ASI10. Got: {v}"
+            )
+        if prefix not in VALID_ASI_CATEGORIES and prefix != "uncategorised":
+            raise ValueError(
+                f"owasp_category prefix must be one of {VALID_ASI_CATEGORIES} or 'uncategorised'. Got: {prefix}"
+            )
         return v
 
     @model_validator(mode="after")

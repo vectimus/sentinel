@@ -102,12 +102,13 @@ export async function getCoverageByCategory(db: D1Database): Promise<any[]> {
     .prepare(
       `SELECT
         owasp_category,
+        enforcement_scope,
         COUNT(*) as total,
         SUM(CASE WHEN coverage_status = 'covered' THEN 1 ELSE 0 END) as covered,
         SUM(CASE WHEN coverage_status = 'partial' THEN 1 ELSE 0 END) as partial,
         SUM(CASE WHEN coverage_status = 'gap' THEN 1 ELSE 0 END) as gaps
       FROM incidents
-      GROUP BY owasp_category
+      GROUP BY owasp_category, enforcement_scope
       ORDER BY total DESC`
     )
     .all();

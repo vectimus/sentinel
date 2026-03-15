@@ -94,7 +94,7 @@ class ValidCedarPolicy(Validator):
 
     # Required annotation patterns in Cedar policy comments
     VTMS_ID_PATTERN = re.compile(r"VTMS-\d{4}-\d{4}")
-    OWASP_PATTERN = re.compile(r"OWASP:\s*LLM\d{2}")
+    OWASP_PATTERN = re.compile(r"OWASP:\s*ASI\d{2}")
     POLICY_STATEMENT_PATTERN = re.compile(r"\b(forbid|permit)\s*\(")
     SEMICOLON_CLOSE_PATTERN = re.compile(r";\s*$", re.MULTILINE)
 
@@ -110,7 +110,7 @@ class ValidCedarPolicy(Validator):
 
         # Check for required OWASP category annotation
         if not self.OWASP_PATTERN.search(value):
-            errors.append("Missing OWASP category annotation (e.g. OWASP: LLM01)")
+            errors.append("Missing OWASP category annotation (e.g. OWASP: ASI01)")
 
         # Check for at least one policy statement (forbid or permit)
         if not self.POLICY_STATEMENT_PATTERN.search(value):

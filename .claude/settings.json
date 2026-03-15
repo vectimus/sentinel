@@ -1,8 +1,2 @@
 {
-  "mcpServers": {
-    "sentinel": {
-      "command": "python",
-      "args": ["-m", "pipeline.mcp_server"]
-    }
-  }
 }

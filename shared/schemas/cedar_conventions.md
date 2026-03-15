@@ -2,18 +2,21 @@
 
 ## Policy ID Format
 
-`<CATEGORY>-<NNN>` where category is one of:
+`vectimus-<pack>-<NNN>` where pack is one of:
 
-| Category | Scope |
-|----------|-------|
-| `DESTR` | Destructive commands (rm, drop, destroy, reset) |
-| `CRED` | Credential and secret access (.env, keys, tokens) |
-| `SC` | Supply chain (publish, release, registry) |
-| `MCP` | MCP server governance (connections, tool calls) |
-| `GIT` | Git operations (force push, rebase, reset) |
-| `FILE` | File access controls (sensitive paths, system files) |
-| `WEB` | Web access controls (fetch, download, upload) |
-| `COMP` | Compliance (audit trail, logging, approval) |
+| Pack | Scope |
+|------|-------|
+| `destops` | Destructive operations (rm, drop, destroy, reset) |
+| `secrets` | Credential and secret access (.env, keys, tokens) |
+| `supchain` | Supply chain (publish, release, registry) |
+| `infra` | Infrastructure (cloud provisioning, config changes) |
+| `codexec` | Code execution (eval, exec, subprocess) |
+| `exfil` | Data exfiltration (upload, send, transmit) |
+| `fileint` | File integrity (sensitive paths, system files) |
+| `db` | Database operations (migrations, schema changes) |
+| `git` | Git operations (force push, rebase, reset) |
+| `mcp` | MCP server governance (connections, tool calls) |
+| `agentgov` | Agent governance (audit trail, logging, approval) |
 
 ## Required Annotations
 

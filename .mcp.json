@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "sentinel": {
+      "type": "stdio",
+      "command": "/bin/sh",
+      "args": ["-c", "exec \"${SENTINEL_PYTHON:-python3}\" -m pipeline.mcp_server"],
+      "env": {}
+    }
+  }
+}

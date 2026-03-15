@@ -29,7 +29,7 @@ def _make_finding(**overrides) -> dict:
         "title": "Test incident",
         "discovered_at": "2026-03-14T08:00:00Z",
         "severity": 4,
-        "owasp_category": "LLM09: Insecure Tool Use",
+        "owasp_category": "ASI02: Tool Misuse",
         "coverage_status": "covered",
         "coverage_detail": "Covered by MCP-001",
         "existing_policy_ids": ["MCP-001"],
@@ -48,7 +48,7 @@ def _make_blog_post(**overrides) -> str:
         "date": "2026-03-14",
         "author": "Vectimus Research",
         "category": "incident-analysis",
-        "owasp_category": '"LLM09: Insecure Tool Use"',
+        "owasp_category": '"ASI02: Tool Misuse"',
         "severity": "4",
         "tags": "[mcp, test]",
     }
@@ -71,7 +71,7 @@ def _make_blog_post(**overrides) -> str:
 
 
 VALID_CEDAR_POLICY = """\
-// VTMS-2026-0042 | OWASP: LLM09 | SOC 2: CC6.1 | NIST: GV-1
+// VTMS-2026-0042 | OWASP: ASI02 | SOC 2: CC6.1 | NIST: GV-1
 // Blocks agent-initiated npm publish commands
 forbid (
   principal,
@@ -138,13 +138,13 @@ class TestValidCedarPolicy:
         assert "VTMS incident ID" in result.error_message
 
     def test_missing_owasp_fails(self):
-        policy = VALID_CEDAR_POLICY.replace("OWASP: LLM09", "Category: 9")
+        policy = VALID_CEDAR_POLICY.replace("OWASP: ASI02", "Category: 9")
         result = ValidCedarPolicy().validate(policy)
         assert result.error_message is not None
         assert "OWASP" in result.error_message
 
     def test_missing_policy_statement_fails(self):
-        policy = "// VTMS-2026-0042 | OWASP: LLM09\n// Just a comment, no policy\n"
+        policy = "// VTMS-2026-0042 | OWASP: ASI02\n// Just a comment, no policy\n"
         result = ValidCedarPolicy().validate(policy)
         assert result.error_message is not None
         assert "forbid or permit" in result.error_message

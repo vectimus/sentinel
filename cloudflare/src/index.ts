@@ -9,6 +9,7 @@ import { handleIncidents } from "./routes/incidents";
 import { handleTrends } from "./routes/trends";
 import { handleCoverage } from "./routes/coverage";
 import { handleFeed } from "./routes/feed";
+import { handlePolicies } from "./routes/policies";
 
 export interface Env {
   DB: D1Database;
@@ -25,15 +26,20 @@ function getCorsOrigin(request: Request): string {
   if (CORS_ORIGINS.includes(origin)) {
     return origin;
   }
-  return CORS_ORIGINS[0];
+  // Don't reflect an allowed origin for non-matching requests
+  return "";
 }
 
 function corsHeaders(request: Request): Record<string, string> {
-  return {
-    "Access-Control-Allow-Origin": getCorsOrigin(request),
+  const origin = getCorsOrigin(request);
+  const headers: Record<string, string> = {
     "Access-Control-Allow-Methods": "GET, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
   };
+  if (origin) {
+    headers["Access-Control-Allow-Origin"] = origin;
+  }
+  return headers;
 }
 
 function corsResponse(response: Response, request: Request): Response {
@@ -149,7 +155,9 @@ export default {
       try {
         let response: Response;
 
-        if (url.pathname.startsWith("/api/incidents")) {
+        if (url.pathname.startsWith("/api/policies")) {
+          response = await handlePolicies(request, env.DB);
+        } else if (url.pathname.startsWith("/api/incidents")) {
           response = await handleIncidents(request, env.DB);
         } else if (url.pathname === "/api/trends") {
           response = await handleTrends(request, env.DB);

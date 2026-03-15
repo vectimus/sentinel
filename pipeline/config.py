@@ -1,6 +1,7 @@
 """Pipeline configuration loaded from environment variables."""
 
 import os
+import sys
 from dataclasses import dataclass, field
 
 
@@ -38,6 +39,17 @@ class Config:
     threat_hunter_spec: str = "agents/threat-hunter/AGENTS.md"
     security_engineer_spec: str = "agents/security-engineer/AGENTS.md"
     threat_analyst_spec: str = "agents/threat-analyst/AGENTS.md"
+
+    @property
+    def mcp_server_config(self) -> dict:
+        """Return MCP server config for the Claude Agent SDK."""
+        return {
+            "sentinel": {
+                "type": "stdio",
+                "command": sys.executable,
+                "args": ["-m", "pipeline.mcp_server"],
+            }
+        }
 
     @classmethod
     def from_env(cls) -> "Config":

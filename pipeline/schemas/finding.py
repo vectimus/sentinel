@@ -8,11 +8,23 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
+VALID_ASI_CATEGORIES = [
+    "ASI01", "ASI02", "ASI03", "ASI04", "ASI05",
+    "ASI06", "ASI07", "ASI08", "ASI09", "ASI10",
+]
+
 
 class Source(BaseModel):
     url: str
     title: str
     r2_key: str | None = None
+
+    @field_validator("url")
+    @classmethod
+    def validate_url(cls, v: str) -> str:
+        if not v.startswith(("https://", "http://")):
+            raise ValueError(f"Source URL must use http(s) scheme. Got: {v!r}")
+        return v
 
 
 class Finding(BaseModel):
@@ -41,6 +53,10 @@ class Finding(BaseModel):
         default=None,
         description="covered_by_vectimus | new_policy_needed | trend_piece",
     )
+    enforcement_scope: Literal["full", "tool_calling_only", "out_of_scope"] = Field(
+        default="full",
+        description="full | tool_calling_only | out_of_scope",
+    )
 
     @field_validator("vtms_id")
     @classmethod
@@ -56,6 +72,29 @@ class Finding(BaseModel):
             datetime.fromisoformat(v)
         except ValueError:
             raise ValueError("discovered_at must be in ISO 8601 format")
+        return v
+
+    @field_validator("cve_ids")
+    @classmethod
+    def validate_cve_ids(cls, v: list[str]) -> list[str]:
+        cve_pattern = re.compile(r"^CVE-\d{4}-\d{4,}$")
+        for cve in v:
+            if not cve_pattern.match(cve):
+                raise ValueError(f"Invalid CVE ID format: {cve!r}. Expected CVE-YYYY-NNNN+")
+        return v
+
+    @field_validator("owasp_category")
+    @classmethod
+    def validate_owasp_category(cls, v: str) -> str:
+        prefix = v.split(":")[0].strip()
+        if prefix.startswith("LLM"):
+            raise ValueError(
+                f"LLM prefix is deprecated; use ASI01-ASI10. Got: {v}"
+            )
+        if prefix not in VALID_ASI_CATEGORIES and prefix != "uncategorised":
+            raise ValueError(
+                f"owasp_category prefix must be one of {VALID_ASI_CATEGORIES} or 'uncategorised'. Got: {prefix}"
+            )
         return v
 
     @model_validator(mode="after")

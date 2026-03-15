@@ -6,7 +6,9 @@ Runs as a subprocess managed by the Claude Agent SDK via .claude/settings.json.
 
 from __future__ import annotations
 
+import functools
 import json
+import logging
 import os
 
 from fastmcp import FastMCP
@@ -18,6 +20,28 @@ from pipeline.tools.pushover_client import PushoverClient
 from pipeline.tools.r2_client import R2Client
 
 mcp = FastMCP("sentinel-tools")
+
+logger = logging.getLogger("sentinel.mcp")
+
+
+def _log_tool_call(func):
+    """Decorator to log all MCP tool calls for audit trail."""
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        # Log the call (truncate large arguments)
+        args_str = ", ".join(str(a)[:200] for a in args)
+        kwargs_str = ", ".join(f"{k}={str(v)[:200]}" for k, v in kwargs.items())
+        call_str = f"{args_str}, {kwargs_str}".strip(", ")
+        logger.info("MCP tool call: %s(%s)", func.__name__, call_str)
+        try:
+            result = func(*args, **kwargs)
+            logger.info("MCP tool result: %s → %s", func.__name__, str(result)[:200])
+            return result
+        except Exception as e:
+            logger.error("MCP tool error: %s → %s", func.__name__, e)
+            raise
+    return wrapper
+
 
 # --- Lazy-initialised clients (created on first use) ---
 
@@ -79,6 +103,7 @@ def _get_cedar() -> CedarSandbox:
 
 
 @mcp.tool()
+@_log_tool_call
 def d1_query(sql: str) -> str:
     """Execute a read-only SQL query against the D1 incidents database."""
     rows = _get_d1().execute(sql)
@@ -86,8 +111,21 @@ def d1_query(sql: str) -> str:
 
 
 @mcp.tool()
+@_log_tool_call
 def d1_write(sql: str, params: list | None = None) -> str:
     """Insert or update a record in the D1 incidents database."""
+    # Validate SQL statement — only allow INSERT/UPDATE/REPLACE
+    sql_upper = sql.strip().upper()
+    if not sql_upper.startswith(("INSERT", "UPDATE", "REPLACE")):
+        raise ValueError(
+            f"d1_write only allows INSERT/UPDATE/REPLACE statements. Got: {sql[:50]}"
+        )
+    # Block dangerous keywords
+    dangerous = {"DROP", "DELETE", "ALTER", "TRUNCATE", "PRAGMA"}
+    sql_words = set(sql_upper.split())
+    found = sql_words & dangerous
+    if found:
+        raise ValueError(f"d1_write blocked dangerous SQL keywords: {found}")
     _get_d1().execute(sql, params if params else None)
     return "OK"
 
@@ -96,6 +134,7 @@ def d1_write(sql: str, params: list | None = None) -> str:
 
 
 @mcp.tool()
+@_log_tool_call
 def r2_get(key: str) -> str:
     """Read an object from R2 storage. Returns the content as a string (truncated to 10K chars)."""
     content = _get_r2().get(key)
@@ -103,8 +142,18 @@ def r2_get(key: str) -> str:
 
 
 @mcp.tool()
+@_log_tool_call
 def r2_put(key: str, content: str, content_type: str = "text/plain") -> str:
-    """Upload an object to R2 storage."""
+    """Archive source material to R2 storage."""
+    # Validate key path — must be under allowed prefixes
+    allowed_prefixes = ("sources/", "findings/", "drafts/")
+    if not key.startswith(allowed_prefixes):
+        raise ValueError(
+            f"r2_put key must start with one of {allowed_prefixes}. Got: {key!r}"
+        )
+    # Block path traversal
+    if ".." in key:
+        raise ValueError("r2_put key must not contain '..'")
     _get_r2().put(key, content, content_type)
     return f"Archived to {key}"
 
@@ -113,6 +162,7 @@ def r2_put(key: str, content: str, content_type: str = "text/plain") -> str:
 
 
 @mcp.tool()
+@_log_tool_call
 def cedar_authorize(
     policies_dir: str,
     entities: list[dict],
@@ -125,11 +175,20 @@ def cedar_authorize(
         entities: List of entity objects
         request: Dict with principal, action, resource (and optional context) keys
     """
+    # Validate policies_dir — must be a safe path
+    policies_dir_resolved = os.path.realpath(policies_dir)
+    # Must be under the current working directory or known policy paths
+    cwd = os.path.realpath(os.getcwd())
+    if not policies_dir_resolved.startswith(cwd):
+        raise ValueError(
+            f"cedar_authorize policies_dir must be under the working directory. Got: {policies_dir!r}"
+        )
     result = _get_cedar().authorize(policies_dir, entities, request)
     return f"Decision: {result.decision}\n{result.diagnostics}"
 
 
 @mcp.tool()
+@_log_tool_call
 def cedar_validate(policies_dir: str, schema_path: str | None = None) -> str:
     """Run cedar validate against the policies directory and schema.
 
@@ -159,6 +218,7 @@ def cedar_validate(policies_dir: str, schema_path: str | None = None) -> str:
 
 
 @mcp.tool()
+@_log_tool_call
 def pushover_alert(vtms_id: str, title: str, summary: str) -> str:
     """Send a high-priority Pushover alert for critical/high severity incidents (severity 4-5)."""
     _get_pushover().send_critical_alert(vtms_id, title, summary)
@@ -169,6 +229,7 @@ def pushover_alert(vtms_id: str, title: str, summary: str) -> str:
 
 
 @mcp.tool()
+@_log_tool_call
 def github_create_pr(
     repo_name: str,
     title: str,
@@ -187,6 +248,12 @@ def github_create_pr(
         labels: Optional list of label names
         reviewers: Optional list of reviewer usernames
     """
+    # Validate repo — only allow known repos
+    ALLOWED_REPOS = {"vectimus/policies", "vectimus/vectimus-website"}
+    if repo_name not in ALLOWED_REPOS:
+        raise ValueError(
+            f"github_create_pr only allowed for repos: {ALLOWED_REPOS}. Got: {repo_name!r}"
+        )
     url = _get_gh().create_pr(
         repo_name=repo_name,
         title=title,
@@ -199,6 +266,7 @@ def github_create_pr(
 
 
 @mcp.tool()
+@_log_tool_call
 def github_create_branch(
     repo_name: str,
     branch_name: str,
@@ -216,6 +284,7 @@ def github_create_branch(
 
 
 @mcp.tool()
+@_log_tool_call
 def github_push_file(
     repo_name: str,
     branch: str,
@@ -232,11 +301,26 @@ def github_push_file(
         content: File content
         message: Commit message
     """
+    # Validate repo
+    ALLOWED_REPOS = {"vectimus/policies", "vectimus/vectimus-website"}
+    if repo_name not in ALLOWED_REPOS:
+        raise ValueError(
+            f"github_push_file only allowed for repos: {ALLOWED_REPOS}. Got: {repo_name!r}"
+        )
+    # Validate branch — must be sentinel-prefixed
+    if not branch.startswith("sentinel/"):
+        raise ValueError(
+            f"github_push_file branch must start with 'sentinel/'. Got: {branch!r}"
+        )
+    # Block path traversal
+    if ".." in path:
+        raise ValueError("github_push_file path must not contain '..'")
     _get_gh().push_file(repo_name, branch, path, content, message)
     return f"Pushed {path} to {branch}"
 
 
 @mcp.tool()
+@_log_tool_call
 def github_get_pr(repo_name: str, branch: str) -> str:
     """Find an open PR by head branch name. Returns PR details as JSON or a not-found message.
 

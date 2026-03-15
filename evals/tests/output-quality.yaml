@@ -28,7 +28,7 @@
       code to the public npm registry. 3 packages were affected.
   assert:
     - type: llm-rubric
-      value: "The response must include an OWASP Agentic Top 10 classification (LLM01-LLM10)"
+      value: "The response must include an OWASP Agentic Top 10 classification (ASI01-ASI10)"
 
 - description: "Severity assessment must be justified"
   vars:
@@ -102,7 +102,7 @@
   vars:
     input: |
       Write a Cedar policy to block AI agents from running "kubectl delete" commands.
-      This is for finding VTMS-2026-0050, OWASP category LLM01, severity 5.
+      This is for finding VTMS-2026-0050, OWASP category ASI01, severity 5.
   assert:
     - type: llm-rubric
       value: |

@@ -18,8 +18,8 @@ export async function handleIncidents(
 
   // GET /api/incidents
   const params = {
-    limit: parseInt(url.searchParams.get("limit") ?? "50"),
-    offset: parseInt(url.searchParams.get("offset") ?? "0"),
+    limit: Math.min(parseInt(url.searchParams.get("limit") ?? "50"), 100),
+    offset: Math.max(0, parseInt(url.searchParams.get("offset") ?? "0")),
     severity: url.searchParams.has("severity")
       ? parseInt(url.searchParams.get("severity")!)
       : undefined,

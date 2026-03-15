@@ -88,11 +88,23 @@ def _write_github_summary(digest: str) -> None:
 async def main() -> None:
     start = time.monotonic()
 
-    # Support CLAUDE_CODE_OAUTH_TOKEN as an alternative to ANTHROPIC_API_KEY
+    # Ensure Claude Code session vars are cleaned (entry points do this,
+    # but guard here too for programmatic callers).
+    # Also clean OTEL vars from parent sessions to prevent gRPC fork issues.
+    for key in list(os.environ):
+        if key.startswith("CLAUDE_CODE_") and key != "CLAUDE_CODE_OAUTH_TOKEN":
+            os.environ.pop(key)
+        if key.startswith("OTEL_"):
+            os.environ.pop(key)
+    os.environ.pop("CLAUDECODE", None)
+    os.environ.setdefault("SENTINEL_PYTHON", sys.executable)
+
+    # Remove empty ANTHROPIC_API_KEY (e.g. from .env template) — the CLI
+    # treats an empty string as an invalid key rather than falling through
+    # to OAuth. Do NOT set ANTHROPIC_API_KEY to an OAuth token — the CLI
+    # rejects OAuth tokens in that env var.
     if not os.environ.get("ANTHROPIC_API_KEY"):
-        oauth_token = os.environ.get("CLAUDE_CODE_OAUTH_TOKEN", "")
-        if oauth_token:
-            os.environ["ANTHROPIC_API_KEY"] = oauth_token
+        os.environ.pop("ANTHROPIC_API_KEY", None)
 
     config = Config.from_env()
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -158,6 +170,22 @@ async def main() -> None:
         logger.error("Threat Analyst failed: %s", e)
         errors.append(f"Threat Analyst: {e}")
 
+    # Compute and store trends
+    logger.info("Computing trends")
+    try:
+        from pipeline.trends import compute_and_store_trends
+        from pipeline.tools.d1_client import D1Client
+
+        d1 = D1Client(config.cloudflare_account_id, config.cloudflare_api_token, config.d1_database_id)
+        try:
+            trend = compute_and_store_trends(d1, date)
+            logger.info("Trends computed: %s", trend)
+        finally:
+            d1.close()
+    except Exception as e:
+        logger.error("Failed to compute trends: %s", e)
+        errors.append(f"Trends: {e}")
+
     # Stage 4: Notification digest
     logger.info("Stage 4: Sending notifications")
     elapsed = time.monotonic() - start
@@ -190,10 +218,17 @@ async def main() -> None:
         logger.info("Pipeline completed successfully in %.1fs", elapsed)
 
 
-if __name__ == "__main__":
-    asyncio.run(main())
-
-
-# Allow `python -m pipeline.orchestrator`
 def _entry() -> None:
     asyncio.run(main())
+
+
+if __name__ == "__main__":
+    # When run directly, clean Claude Code session vars first
+    _oauth = os.environ.get("CLAUDE_CODE_OAUTH_TOKEN", "")
+    for _key in list(os.environ):
+        if _key.startswith("CLAUDE_CODE_") or _key == "CLAUDECODE":
+            os.environ.pop(_key)
+    if _oauth:
+        os.environ["CLAUDE_CODE_OAUTH_TOKEN"] = _oauth
+    os.environ.setdefault("SENTINEL_PYTHON", sys.executable)
+    _entry()

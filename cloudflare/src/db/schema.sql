@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS incidents (
   content_status TEXT DEFAULT 'na',
   recommended_action TEXT,
   content_angle TEXT,
+  replay_request TEXT,
+  enforcement_scope TEXT DEFAULT 'full',
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
@@ -63,12 +65,23 @@ CREATE TABLE IF NOT EXISTS content (
   updated_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS rate_limits (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  key TEXT NOT NULL,
-  created_at INTEGER NOT NULL,
-  expires_at INTEGER NOT NULL
+CREATE TABLE IF NOT EXISTS policies (
+  id TEXT PRIMARY KEY,
+  pack TEXT NOT NULL,
+  file TEXT NOT NULL,
+  description TEXT,
+  incident TEXT,
+  category TEXT,
+  controls TEXT,
+  suggested_alternative TEXT,
+  action_type TEXT,
+  rule_count INTEGER DEFAULT 0,
+  source TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_rate_limits_key_created ON rate_limits (key, created_at);
-CREATE INDEX IF NOT EXISTS idx_rate_limits_expires ON rate_limits (expires_at);
+CREATE TABLE IF NOT EXISTS policy_meta (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);

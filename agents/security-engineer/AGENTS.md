@@ -20,7 +20,35 @@ You receive `findings/<date>.json` from the Threat Hunter.  You only act on find
 
 2. **Cedar policy conventions:**
 
-   **Policy ID:** `<CATEGORY>-<NNN>` where category is: `DESTR` (destructive commands), `CRED` (credential access), `SC` (supply chain), `MCP` (MCP governance), `GIT` (git operations), `FILE` (file access), `WEB` (web access), `COMP` (compliance).
+   **Policy ID:** `vectimus-<pack>-<NNN>` where `<pack>` is from the pack directory table below. Do NOT use ad-hoc prefixes like EXAG, MKTPL, SUPPLY, OFFENSE, OUTPUT, REPO. Always use `vectimus-<pack>-NNN` where `<pack>` is one of the 11 pack codes listed in the table.
+
+   **Pack directory mapping:** Each pack has exactly one `.cedar` file. Append new rules to the existing `.cedar` file in the target pack directory. Do NOT create new standalone files.
+
+   | Directory | Pack code | `.cedar` file | Scope |
+   |-----------|-----------|---------------|-------|
+   | `policies/destructive-ops/` | `destops` | `destructive_ops.cedar` | rm -rf, disk destruction, fork bombs, governance bypass |
+   | `policies/secrets/` | `secrets` | `secrets.cedar` | .env reads, key files, credentials, token access |
+   | `policies/supply-chain/` | `supchain` | `supply_chain.cedar` | npm publish, pip upload, registry configs, lockfiles |
+   | `policies/infrastructure/` | `infra` | `infrastructure.cedar` | terraform, kubectl, cloud CLI, docker, privilege escalation |
+   | `policies/code-execution/` | `codexec` | `code_execution.cedar` | curl\|sh, reverse shells, python -c network, eval/exec |
+   | `policies/data-exfiltration/` | `exfil` | `data_exfiltration.cedar` | base64 exfil, DNS tunneling, credential piping |
+   | `policies/file-integrity/` | `fileint` | `file_integrity.cedar` | CI/CD pipelines, certs, governance configs, agent instructions |
+   | `policies/database/` | `db` | `database.cedar` | ORM destructive flags, DROP commands |
+   | `policies/git-safety/` | `git` | `git_safety.cedar` | force push, reset --hard, clean -f |
+   | `policies/mcp-safety/` | `mcp` | `mcp_safety.cedar` | server allowlisting, tool input inspection |
+   | `policies/agent-governance/` | `agentgov` | `agent_governance.cedar` | permission bypass, inter-agent comms, cascading failures, audit |
+
+   **@controls annotation — valid framework prefixes:**
+
+   Every policy must include `@controls` annotations mapping to compliance frameworks. Use only these prefixes:
+
+   - **OWASP Agentic:** `OWASP-ASI01` through `OWASP-ASI10` (NEVER use `OWASP-LLM` codes)
+   - **SOC 2:** `SOC2-CC6.1`, `SOC2-CC6.6`, `SOC2-CC6.8`, `SOC2-CC7.2`, `SOC2-CC7.3`, `SOC2-CC8.1`
+   - **NIST CSF:** `NIST-CSF-PR.AA-05`, `NIST-CSF-PR.DS-01`, `NIST-CSF-DE.CM-01`, etc.
+   - **NIST AI RMF:** `NIST-AI-MG-3.2`, `NIST-AI-GV-1.1`, etc.
+   - **EU AI Act:** `EU-AI-9`, `EU-AI-12`, `EU-AI-13`, `EU-AI-14`, `EU-AI-15`
+   - **SLSA:** `SLSA-L2`
+   - **ISO 27001:** `ISO27001-A.5.15`, `ISO27001-A.8.2`, `ISO27001-A.8.3`, etc.
 
    **Annotation comments:** every policy includes:
    - VTMS incident ID(s) that motivated it
@@ -40,10 +68,15 @@ You receive `findings/<date>.json` from the Threat Hunter.  You only act on find
 
 5. **Example policy with fixtures:**
 
+   Policy ID follows the convention: `vectimus-infra-001`. File location: `policies/infrastructure/infrastructure.cedar`.
+
    ```cedar
-   // VTMS-2026-0003 | OWASP: LLM01 | SOC 2: CC6.1 | NIST: GV-1
+   // vectimus-infra-001
+   // VTMS-2026-0003 | OWASP: ASI01 | SOC2-CC6.1 | NIST-AI-GV-1.1 | EU-AI-9
+   // @controls OWASP-ASI01, SOC2-CC6.1, NIST-AI-GV-1.1, EU-AI-9
    // Terraform production destroy: agent wiped production, six-hour outage
    // Blocks terraform destroy and apply with auto-approve flag
+   @id("vectimus-infra-001")
    forbid (
      principal,
      action == Action::"shell_command",
@@ -87,11 +120,11 @@ For each finding requiring a policy change, execute this RPI cycle.
 1. Read the full finding and all archived source material from R2.
 2. Load the current policy set from `vectimus/policies`.  Understand existing coverage.
 3. For `update_existing`: identify the specific policy and rule.  Understand why it doesn't fully cover the incident.
-4. For `new_policy`: determine where in the taxonomy the policy belongs.
+4. For `new_policy`: determine which pack directory the policy belongs in using the pack directory mapping table above.
 
 ### Plan
 
-5. Draft the Cedar policy or modification.  Follow all conventions (ID, annotations, scope, allowlist guidance).
+5. Draft the Cedar policy or modification.  Follow all conventions (ID, annotations, @controls, scope, allowlist guidance).
 6. Design incident replay test fixtures:
    - **Should block:** mock tool call replicating the incident.  Must evaluate to DENY.
    - **Should allow:** similar but legitimate tool call.  Must evaluate to ALLOW.
@@ -99,7 +132,7 @@ For each finding requiring a policy change, execute this RPI cycle.
 
 ### Implement
 
-7. Write the Cedar policy file.
+7. Append the Cedar policy to the existing `.cedar` file in the correct pack directory. Do NOT create new standalone `.cedar` files.
 8. Write test fixture files (entities JSON + request JSON + expected decision).
 9. Run the **incident replay sandbox** (see below).
 10. Run `cedar validate` against the full policy set.  Confirm no errors.
@@ -107,12 +140,12 @@ For each finding requiring a policy change, execute this RPI cycle.
     ```
     ## [1.15.0] - 2026-03-14
     ### Added
-    - SC-004: Block agent-initiated npm publish with scope flags (VTMS-2026-0042)
+    - vectimus-supchain-004: Block agent-initiated npm publish with scope flags (VTMS-2026-0042)
     ```
 12. Update `VERSION` file with the new version number.
-    - New policy = minor bump (1.14.0 → 1.15.0)
-    - Rule tweak / false positive fix = patch bump (1.14.0 → 1.14.1)
-    - Schema change or policy removal = major bump (1.14.0 → 2.0.0)
+    - New policy = minor bump (1.14.0 -> 1.15.0)
+    - Rule tweak / false positive fix = patch bump (1.14.0 -> 1.14.1)
+    - Schema change or policy removal = major bump (1.14.0 -> 2.0.0)
 13. Update `manifest.json` with new policy count and rule count.
 14. Open a PR in **`vectimus/policies`** with:
     - Title: `[VTMS-2026-NNNN] [SEVERITY] <action>: <description>`
@@ -151,16 +184,16 @@ The sandbox proves a drafted policy works before human review.  This is the core
 ## Sandbox Replay Results
 
 ### Gap confirmation (existing policies)
-Request: Agent::"coding_agent" → Action::"shell_command" → Resource::"npm_publish_scoped"
-Decision: ALLOW ← gap confirmed
+Request: Agent::"coding_agent" -> Action::"shell_command" -> Resource::"npm_publish_scoped"
+Decision: ALLOW <- gap confirmed
 
-### Fix confirmation (with new policy SC-004)
-Request: Agent::"coding_agent" → Action::"shell_command" → Resource::"npm_publish_scoped"
-Decision: DENY ← policy blocks the incident
+### Fix confirmation (with new policy vectimus-supchain-004)
+Request: Agent::"coding_agent" -> Action::"shell_command" -> Resource::"npm_publish_scoped"
+Decision: DENY <- policy blocks the incident
 
 ### False positive check (legitimate variant)
-Request: Agent::"coding_agent" → Action::"shell_command" → Resource::"npm_install"
-Decision: ALLOW ← no over-blocking
+Request: Agent::"coding_agent" -> Action::"shell_command" -> Resource::"npm_install"
+Decision: ALLOW <- no over-blocking
 ```
 
 If any test fails, revise the policy and re-run before opening the PR.

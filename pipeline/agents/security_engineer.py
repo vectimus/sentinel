@@ -7,7 +7,7 @@ import logging
 import re
 from pathlib import Path
 
-from claude_agent_sdk import Agent
+from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
 
 from pipeline.config import Config
 
@@ -51,9 +51,9 @@ async def run_security_engineer(config: Config, findings_path: Path) -> dict:
         f"Use mcp__sentinel__r2_get to read archived source material."
     )
 
-    agent = Agent(
+    options = ClaudeAgentOptions(
         model=config.model,
-        prompt=f"{system_prompt}\n\n{user_message}",
+        system_prompt=system_prompt,
         allowed_tools=[
             "Read",
             "Write",
@@ -66,9 +66,18 @@ async def run_security_engineer(config: Config, findings_path: Path) -> dict:
             "mcp__sentinel__cedar_validate",
             "mcp__sentinel__github_create_pr",
         ],
+        permission_mode="bypassPermissions",
+        max_turns=50,
+        mcp_servers=config.mcp_server_config,
+        stderr=lambda line: logger.debug("CLI: %s", line),
     )
-    result = agent.run()
-    logger.info("Security Engineer agent completed: %s", result[:200] if result else "no output")
 
-    pr_urls = _extract_pr_urls(result)
+    result_text = ""
+    async for message in query(prompt=user_message, options=options):
+        if isinstance(message, ResultMessage):
+            result_text = message.result if hasattr(message, "result") else str(message)
+
+    logger.info("Security Engineer agent completed: %s", result_text[:200] if result_text else "no output")
+
+    pr_urls = _extract_pr_urls(result_text)
     return {"prs_created": len(pr_urls), "pr_urls": pr_urls}

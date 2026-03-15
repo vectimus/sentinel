@@ -105,7 +105,7 @@ class TestSecurityEngineerFaithfulness:
     def test_cedar_policy_annotations_faithful(self, faithfulness_metric):
         """Cedar policy annotations must reference real VTMS IDs and OWASP categories."""
         cedar_output = (
-            "// VTMS-2026-0042 | OWASP: LLM09 | SOC 2: CC6.1 | NIST: GV-1\n"
+            "// VTMS-2026-0042 | OWASP: ASI02 | SOC 2: CC6.1 | NIST: GV-1\n"
             "// Blocks agent-initiated npm publish commands\n"
             "forbid (\n"
             '  principal,\n'
@@ -119,7 +119,7 @@ class TestSecurityEngineerFaithfulness:
 
         context = [
             "Finding VTMS-2026-0042: Supply chain attack via malicious MCP server",
-            "OWASP category: LLM09: Insecure Tool Use",
+            "OWASP category: ASI02: Insecure Tool Use",
             "Recommended action: new_policy",
             "The incident involved agent-initiated npm publish commands",
         ]
@@ -157,7 +157,7 @@ class TestThreatAnalystFaithfulness:
             "Severity: 4 (widespread exploitation)",
             "Approximately 4,000 developers were affected",
             "First reported February 2026",
-            "OWASP: LLM09 Insecure Tool Use",
+            "OWASP: ASI02 Insecure Tool Use",
             "Coverage: covered by MCP-001 and SC-003",
         ]
 

@@ -11,5 +11,3 @@ binding = "DB"
 database_name = "vectimus-incidents"
 database_id = "a908783d-5ff8-48fb-970b-a0b8c4168a7c"
 
-[site]
-bucket = "./dashboard"

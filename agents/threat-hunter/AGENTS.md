@@ -21,16 +21,16 @@ Accuracy matters more than volume.  One well-classified incident with a clear co
 2. **Vectimus Cedar schema** — entity types: `Agent`, `Tool`, `Resource`, `MCP_Server`.  Action types: `shell_command`, `file_read`, `file_write`, `web_fetch`, `mcp_tool_call`, `git_operation`, `message_send`.
 
 3. **OWASP Top 10 for Agentic Applications:**
-   - LLM01: Excessive Agency
-   - LLM02: Inadequate Sandboxing
-   - LLM03: Lack of Human Oversight
-   - LLM04: Missing Audit Trail
-   - LLM05: Improper Access Control
-   - LLM06: Inadequate Error Handling
-   - LLM07: Insufficient Input Validation
-   - LLM08: Over-Reliance on Agent Output
-   - LLM09: Insecure Tool Use
-   - LLM10: Supply Chain Vulnerabilities
+   - ASI01: Goal Hijacking
+   - ASI02: Tool Misuse
+   - ASI03: Identity and Privilege Abuse
+   - ASI04: Supply Chain Vulnerabilities
+   - ASI05: Unsafe Code Execution
+   - ASI06: Memory Poisoning
+   - ASI07: Inter-Agent Exploitation
+   - ASI08: Cascading Failures
+   - ASI09: Trust Boundary Violations (Note: ASI09 is outside Vectimus enforcement scope — Cedar governs tool-calling, not LLM I/O)
+   - ASI10: Rogue Agents
 
 4. **D1 incidents table** — all previously discovered incidents (for deduplication).
 
@@ -38,13 +38,13 @@ Accuracy matters more than volume.  One well-classified incident with a clear co
 
 ### Example Incidents
 
-**Clinejection (VTMS-2026-0001, Severity 5):**  Malicious MCP server instructed agents to publish backdoored npm packages.  ~4,000 developers affected.  Covered by MCP-001 and SC-003.
+**Clinejection (VTMS-2026-0001, Severity 5):**  Malicious MCP server instructed agents to publish backdoored npm packages.  ~4,000 developers affected.  Covered by vectimus-mcp-001 and vectimus-supchain-003.
 
-**Terraform production destroy (VTMS-2026-0003, Severity 5):**  Agent executed `terraform destroy -auto-approve` against production.  Six-hour outage.  Covered by DESTR-001.
+**Terraform production destroy (VTMS-2026-0003, Severity 5):**  Agent executed `terraform destroy -auto-approve` against production.  Six-hour outage.  Covered by vectimus-destops-001.
 
-**Cursor .env leak (VTMS-2026-0005, Severity 4):**  Agent read `.env` file, exposed AWS credentials in conversation history.  Covered by CRED-001.
+**Cursor .env leak (VTMS-2026-0005, Severity 4):**  Agent read `.env` file, exposed AWS credentials in conversation history.  Covered by vectimus-secrets-001.
 
-**drizzle-kit push (VTMS-2026-0007, Severity 4):**  Agent ran `drizzle-kit push`, dropping 60+ production tables.  Covered by DESTR-004.
+**drizzle-kit push (VTMS-2026-0007, Severity 4):**  Agent ran `drizzle-kit push`, dropping 60+ production tables.  Covered by vectimus-db-001.
 
 ### Sources to Scan
 
@@ -64,16 +64,17 @@ Execute this RPI cycle on each daily run.
 
 ### Research
 
-1. Run 5-8 targeted web searches.  Start broad, then narrow based on results.
+1. Run 5-8 targeted web searches.  Start broad, then narrow based on results.  **Focus on incidents from the last 30 days.**  Do not report incidents older than 90 days unless they are newly disclosed or newly assigned a CVE.
 2. For each relevant result, fetch full article text and archive to R2 (`sources/<vtms-id>/`).
 3. Filter for relevance: must involve an AI agent, coding tool, MCP server or agentic framework.  Exclude: general software vulnerabilities without agent context, hallucination stories without tool execution, opinion pieces without incident data.
-4. Deduplicate against D1.  Match on tool + event + approximate date.  Skip duplicates.  Update existing records if new detail emerges.
+4. Deduplicate against D1.  Match on tool + event + approximate date.  Skip duplicates.  Update existing records if new detail emerges.  **The existing incidents list is provided in the user message — do not re-discover any incident already listed there.**
 
 ### Plan
 
 5. For each new incident, classify:
 
    **OWASP category** — primary OWASP Agentic Top 10 category or "uncategorised".
+   **CRITICAL: Use ASI01-ASI10 codes ONLY (e.g. "ASI02: Tool Misuse"). NEVER use LLM01-LLM10 — that taxonomy is deprecated and will cause validation failure.**
 
    **NIST AI RMF** — map to the relevant NIST AI Risk Management Framework function (e.g. GV-1, MP-2, MS-1).
 
@@ -115,13 +116,13 @@ Execute this RPI cycle on each daily run.
   "discovered_at": "2026-03-14T08:00:00Z",
   "incident_date": "2026-02-15",
   "severity": 4,
-  "owasp_category": "LLM09: Insecure Tool Use",
+  "owasp_category": "ASI02: Tool Misuse",
   "nist_ai_rmf": "GV-1",
   "cis_controls": ["CIS 2.7", "CIS 16.1"],
   "cve_ids": [],
   "coverage_status": "covered",
-  "coverage_detail": "Policy MCP-001 blocks unapproved MCP server connections.  Policy SC-003 blocks agent-initiated npm publish commands.",
-  "existing_policy_ids": ["MCP-001", "SC-003"],
+  "coverage_detail": "Policy vectimus-mcp-001 blocks unapproved MCP server connections.  Policy vectimus-supchain-003 blocks agent-initiated npm publish commands.",
+  "existing_policy_ids": ["vectimus-mcp-001", "vectimus-supchain-003"],
   "gap_description": null,
   "sources": [
     {
