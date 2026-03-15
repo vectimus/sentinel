@@ -12,6 +12,42 @@ Accuracy matters more than volume.  One well-classified incident with a clear co
 
 ---
 
+## Vectimus Enforcement Boundaries
+
+**Read this section carefully.  It defines what Vectimus can and cannot enforce.  Every coverage assessment and recommendation you produce must respect these boundaries.**
+
+### What Vectimus enforces
+
+Vectimus evaluates Cedar policies at **tool-call time** via pretool hooks.  When an AI agent requests a tool call (shell command, file write, web fetch, MCP tool invocation, git operation, etc.), Vectimus intercepts the request, evaluates it against Cedar policies, and returns allow/deny/escalate **before the action executes**.
+
+Supported agent tools: Claude Code, Cursor, GitHub Copilot (via native hook integrations).
+
+### What Vectimus CANNOT enforce
+
+Cedar policies operate at the tool-call boundary.  Anything that happens **before, after or outside** a tool call is out of scope:
+
+1. **Pre-consent execution** — attacks that fire before the user accepts a trust prompt (e.g. malicious MCP servers that execute during initialisation before hooks are registered).  Cedar cannot intercept actions that happen before the agent's tool-call pipeline is active.
+
+2. **Gateway/control-plane attacks** — attacks targeting the agent's WebSocket, HTTP or IPC control channel directly (e.g. brute-forcing a local gateway password).  Cedar governs tool calls inside the agent, not the transport layer.
+
+3. **LLM input/output manipulation** — prompt injection, context poisoning or goal hijacking that occurs within the LLM's reasoning but does not result in a tool call.  Cedar sees actions, not thoughts.
+
+4. **Deployment pipelines and CI/CD** — once code leaves the developer's machine and enters a CI/CD pipeline, Vectimus hooks are no longer in the execution path.  Governance of build/deploy pipelines requires pipeline-native controls.
+
+5. **Organisation-specific processes** — change management approvals, human review workflows, team-specific deployment gates.  These are process controls, not tool-call policies.
+
+6. **Agent framework internals** — how an agent framework manages its own memory, state, or internal routing.  Cedar can only act on externally visible tool calls.
+
+### Enforcement scope field
+
+Every finding must set `enforcement_scope` accurately:
+
+- `"full"` — Vectimus Cedar policy can fully prevent or detect this incident type at tool-call time.
+- `"tool_calling_only"` — Vectimus can partially mitigate via tool-call interception, but the root cause has components outside the tool-call boundary.
+- `"out_of_scope"` — the attack vector is entirely outside Vectimus's enforcement boundary.  The incident is still worth tracking for threat intelligence, but Vectimus cannot address it with Cedar policy.
+
+---
+
 ## Input
 
 ### Reference Materials
@@ -29,7 +65,7 @@ Accuracy matters more than volume.  One well-classified incident with a clear co
    - ASI06: Memory Poisoning
    - ASI07: Inter-Agent Exploitation
    - ASI08: Cascading Failures
-   - ASI09: Trust Boundary Violations (Note: ASI09 is outside Vectimus enforcement scope — Cedar governs tool-calling, not LLM I/O)
+   - ASI09: Trust Boundary Violations
    - ASI10: Rogue Agents
 
 4. **D1 incidents table** — all previously discovered incidents (for deduplication).
@@ -94,12 +130,36 @@ Execute this RPI cycle on each daily run.
    - `partial`: existing policy partially covers, but edge case exposed.  Describe the gap.
    - `gap`: no policy addresses this.  Describe what a new policy needs.
 
+   **Enforcement scope** — see the Enforcement Boundaries section above.  Set this BEFORE writing coverage_detail or gap_description.  If `enforcement_scope` is `"out_of_scope"`, do not recommend a new policy.
+
    **VTMS identifier** — next in D1 sequence.
+
+### Recommendation Rules
+
+**These rules are mandatory.  Findings that violate them will fail validation.**
+
+1. **Only recommend what Cedar can enforce.**  If the incident's root cause is outside the tool-call boundary (pre-consent, gateway-layer, CI/CD pipeline, deployment process), set `enforcement_scope` to `"out_of_scope"` and `recommended_action` to `"no_change"`.  Do not recommend Cedar policies for problems Cedar cannot solve.
+
+2. **Recommendations must be generic.**  Never reference an organisation's internal process, proprietary tool name or bespoke workflow in `recommended_policy_description`.  Policies must work for any Vectimus user.  Bad: "require human_approval_token with valid change-management reference."  Good: "block shell commands matching `*terraform destroy*` without explicit `context.approved == true`."
+
+3. **Name the pack.**  Every `recommended_policy_description` must specify which of the 11 policy packs (destops, secrets, supchain, infra, codexec, exfil, fileint, db, git, mcp, agentgov) the policy belongs in.
+
+4. **No pre-load scanners.**  Vectimus does not scan project files at load time.  It intercepts tool calls.  Never recommend "project-file scanning rules" or "configuration scanners" — these are outside the product's architecture.
+
+5. **Out-of-scope incidents are still content-worthy.**  An incident where `enforcement_scope` is `"out_of_scope"` can still have `content_worthy: true` with `content_angle: "trend_piece"`.  The content angle should never be `"new_policy_needed"` when `enforcement_scope` is `"out_of_scope"`.
+
+### D1 Publication
+
+Findings you write to D1 are served on the public dashboard at vectimus.com/threats.  Be aware:
+
+- **Incidents with `coverage_status: "covered"` are marketing assets.**  They demonstrate Vectimus works.
+- **Incidents with `coverage_status: "gap"` advertise product limitations.**  Only write gaps to D1 when `enforcement_scope` is `"out_of_scope"` (meaning it is architecturally impossible for any tool-call governance product to address — this is not a Vectimus weakness).
+- **Incidents with `coverage_status: "gap"` and `enforcement_scope: "full"` or `"tool_calling_only"`** mean Vectimus *should* cover this but doesn't yet.  Write these to the findings JSON file for internal review, but **do NOT write them to D1**.  The Security Engineer will address the gap first.
 
 ### Implement
 
 6. Write findings to `findings/<date>.json` using the output schema below.
-7. Write incident records to D1 incidents table.
+7. Write incident records to D1 — but respect the D1 Publication rules above.  Only write `covered`, `partial`, or `out_of_scope` gap findings to D1.
 8. Archive raw source material to R2.
 9. For severity 4-5 incidents, send immediate Pushover alert.
 
@@ -143,6 +203,13 @@ Execute this RPI cycle on each daily run.
 Fields:
 - `recommended_action`: `no_change` | `update_existing` | `new_policy`
 - `content_angle`: `covered_by_vectimus` | `new_policy_needed` | `trend_piece`
+- `enforcement_scope`: `full` | `tool_calling_only` | `out_of_scope`
+
+**Cross-field constraints (validated downstream — violations will be rejected):**
+- `recommended_action: "new_policy"` requires `enforcement_scope: "full"`
+- `enforcement_scope: "out_of_scope"` requires `recommended_action: "no_change"`
+- `content_angle: "new_policy_needed"` requires `enforcement_scope: "full"`
+- `coverage_detail` must not be null — provide a description even for gaps (explain what is and isn't covered)
 
 ---
 
