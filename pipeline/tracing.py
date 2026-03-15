@@ -42,8 +42,19 @@ def init_tracing(project_name: str = "sentinel") -> None:
         _phoenix_session = px.launch_app()
         logger.info("Phoenix started at %s", _phoenix_session.url)
 
-        register(project_name=project_name, auto_instrument=True)
-        logger.info("OpenTelemetry auto-instrumentation registered")
+        # Use HTTP exporter (not gRPC) to avoid fork issues when the Claude
+        # Agent SDK spawns CLI subprocesses.  Explicit instrumentation rather
+        # than auto_instrument=True ensures the SDK instrumentor is registered.
+        tracer_provider = register(
+            project_name=project_name,
+            protocol="http/protobuf",
+            auto_instrument=False,
+        )
+        logger.info("OpenTelemetry tracer provider registered (HTTP/protobuf)")
+
+        from openinference.instrumentation.claude_agent_sdk import ClaudeAgentSDKInstrumentor
+        ClaudeAgentSDKInstrumentor().instrument(tracer_provider=tracer_provider)
+        logger.info("Claude Agent SDK instrumentor registered")
 
     except ImportError as e:
         logger.warning("Tracing not available (missing dependency: %s)", e)

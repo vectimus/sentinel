@@ -27,6 +27,7 @@ export async function handleIncidents(
     status: url.searchParams.get("status") ?? undefined,
     since: url.searchParams.get("since") ?? undefined,
     until: url.searchParams.get("until") ?? undefined,
+    include_internal_gaps: false,
   };
 
   const result = await getIncidents(db, params);

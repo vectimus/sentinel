@@ -116,3 +116,42 @@ class Finding(BaseModel):
                 "recommended_policy_description is required when recommended_action is 'new_policy'"
             )
         return self
+
+    @model_validator(mode="after")
+    def validate_new_policy_requires_full_scope(self) -> Finding:
+        if self.recommended_action == "new_policy" and self.enforcement_scope != "full":
+            raise ValueError(
+                f"recommended_action 'new_policy' requires enforcement_scope 'full', "
+                f"got '{self.enforcement_scope}'. Cedar policies can only address incidents "
+                f"within the tool-call enforcement boundary."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_out_of_scope_no_policy(self) -> Finding:
+        if self.enforcement_scope == "out_of_scope" and self.recommended_action != "no_change":
+            raise ValueError(
+                f"enforcement_scope 'out_of_scope' requires recommended_action 'no_change', "
+                f"got '{self.recommended_action}'. Out-of-scope incidents cannot be addressed "
+                f"with Cedar policy."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_content_angle_scope(self) -> Finding:
+        if self.content_angle == "new_policy_needed" and self.enforcement_scope != "full":
+            raise ValueError(
+                f"content_angle 'new_policy_needed' requires enforcement_scope 'full', "
+                f"got '{self.enforcement_scope}'. Cannot publish content claiming a new policy "
+                f"is needed for an out-of-scope incident."
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_coverage_detail_required(self) -> Finding:
+        if not self.coverage_detail:
+            raise ValueError(
+                "coverage_detail is required for all findings. Describe what is and isn't "
+                "covered, even for gaps."
+            )
+        return self

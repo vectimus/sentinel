@@ -16,10 +16,22 @@ export async function getIncidents(
     status?: string;
     since?: string;
     until?: string;
+    include_internal_gaps?: boolean;
   }
 ): Promise<{ incidents: any[]; total: number }> {
   const conditions: string[] = [];
   const values: any[] = [];
+
+  // By default, exclude gap findings that are within Vectimus's enforcement
+  // scope (these are internal product gaps awaiting policy work). Gaps with
+  // enforcement_scope 'out_of_scope' are safe to show publicly — they indicate
+  // limitations inherent to any tool-call governance product, not Vectimus
+  // shortcomings. Pass include_internal_gaps=true for internal dashboards.
+  if (!params.include_internal_gaps) {
+    conditions.push(
+      "(coverage_status != 'gap' OR enforcement_scope = 'out_of_scope')"
+    );
+  }
 
   if (params.severity) {
     conditions.push("severity = ?");
@@ -106,8 +118,9 @@ export async function getCoverageByCategory(db: D1Database): Promise<any[]> {
         COUNT(*) as total,
         SUM(CASE WHEN coverage_status = 'covered' THEN 1 ELSE 0 END) as covered,
         SUM(CASE WHEN coverage_status = 'partial' THEN 1 ELSE 0 END) as partial,
-        SUM(CASE WHEN coverage_status = 'gap' THEN 1 ELSE 0 END) as gaps
+        SUM(CASE WHEN coverage_status = 'gap' AND enforcement_scope = 'out_of_scope' THEN 1 ELSE 0 END) as gaps_out_of_scope
       FROM incidents
+      WHERE coverage_status != 'gap' OR enforcement_scope = 'out_of_scope'
       GROUP BY owasp_category, enforcement_scope
       ORDER BY total DESC`
     )
@@ -122,7 +135,7 @@ export async function getFeed(
 ): Promise<any[]> {
   const result = await db
     .prepare(
-      "SELECT vtms_id, title, summary, discovered_at, severity, owasp_category, coverage_status FROM incidents ORDER BY discovered_at DESC LIMIT ?"
+      "SELECT vtms_id, title, summary, discovered_at, severity, owasp_category, coverage_status, enforcement_scope FROM incidents WHERE coverage_status != 'gap' OR enforcement_scope = 'out_of_scope' ORDER BY discovered_at DESC LIMIT ?"
     )
     .bind(limit)
     .all();
