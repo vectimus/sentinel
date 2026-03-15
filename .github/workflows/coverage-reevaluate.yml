@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout sentinel
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Validate tag format
         run: |
@@ -20,7 +20,7 @@ jobs:
           fi
 
       - name: Checkout policies
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: vectimus/policies
           ref: ${{ github.event.client_payload.tag }}
