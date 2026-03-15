@@ -19,11 +19,19 @@ export interface Env {
 const CORS_ORIGINS = [
   "https://vectimus.com",
   "https://www.vectimus.com",
+  "http://localhost:4321",
+  "http://localhost:3000",
 ];
+
+/** Match Cloudflare Pages preview URLs for the vectimus-website project. */
+const PAGES_PREVIEW_RE = /^https:\/\/[a-z0-9-]+\.vectimus-website\.pages\.dev$/;
 
 function getCorsOrigin(request: Request): string {
   const origin = request.headers.get("Origin") ?? "";
   if (CORS_ORIGINS.includes(origin)) {
+    return origin;
+  }
+  if (PAGES_PREVIEW_RE.test(origin)) {
     return origin;
   }
   // Don't reflect an allowed origin for non-matching requests
