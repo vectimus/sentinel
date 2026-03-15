@@ -9,6 +9,9 @@ permissions:
   contents: write
 
 jobs:
+  # -----------------------------------------------------------------------
+  # Pre-flight: secrets scan + unit tests
+  # -----------------------------------------------------------------------
   checks:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -37,8 +40,72 @@ jobs:
       - name: Run tests
         run: pytest tests/ -v --tb=short
 
-  sentinel:
+  # -----------------------------------------------------------------------
+  # Stage 1: Threat Hunter discovers and classifies incidents
+  # Outputs findings JSON as an artifact + human-readable job summary
+  # -----------------------------------------------------------------------
+  discover:
     needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout sentinel
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r pipeline/requirements.txt
+
+      - name: Run Threat Hunter
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+          BOT_GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+        run: python -m pipeline discover
+
+      - name: Upload findings
+        uses: actions/upload-artifact@v4
+        with:
+          name: findings
+          path: findings/
+          retention-days: 90
+
+      - name: Upload traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: traces-discover-${{ github.run_id }}
+          path: traces/
+          retention-days: 90
+          if-no-files-found: ignore
+
+  # -----------------------------------------------------------------------
+  # HITL gate: human reviews the discover job summary before proceeding.
+  # Requires the "sentinel-review" environment with a required reviewer.
+  # -----------------------------------------------------------------------
+  review-gate:
+    needs: discover
+    runs-on: ubuntu-latest
+    environment: sentinel-review
+    steps:
+      - name: Approved
+        run: echo "Findings approved for downstream processing"
+
+  # -----------------------------------------------------------------------
+  # Stage 2: Security Engineer drafts Cedar policies and opens PRs
+  # -----------------------------------------------------------------------
+  engineer:
+    needs: review-gate
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -64,7 +131,13 @@ jobs:
       - name: Install pipeline dependencies
         run: pip install -r pipeline/requirements.txt
 
-      - name: Run Sentinel pipeline
+      - name: Download findings
+        uses: actions/download-artifact@v4
+        with:
+          name: findings
+          path: findings/
+
+      - name: Run Security Engineer
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -73,20 +146,129 @@ jobs:
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
-          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
-          PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
           BOT_GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
           POLICIES_REPO_PATH: ${{ github.workspace }}/_policies
-        run: python -m pipeline
+        run: python -m pipeline engineer
+
+      - name: Upload stage output
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage-output-engineer
+          path: stage-outputs/
+          if-no-files-found: ignore
 
       - name: Upload traces
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: sentinel-traces-${{ github.run_id }}
+          name: traces-engineer-${{ github.run_id }}
           path: traces/
           retention-days: 90
           if-no-files-found: ignore
+
+  # -----------------------------------------------------------------------
+  # Stage 3: Threat Analyst writes advisory content and opens PRs
+  # -----------------------------------------------------------------------
+  analyst:
+    needs: review-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout sentinel
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pipeline dependencies
+        run: pip install -r pipeline/requirements.txt
+
+      - name: Download findings
+        uses: actions/download-artifact@v4
+        with:
+          name: findings
+          path: findings/
+
+      - name: Run Threat Analyst
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
+          BOT_GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+        run: python -m pipeline analyst
+
+      - name: Upload stage output
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage-output-analyst
+          path: stage-outputs/
+          if-no-files-found: ignore
+
+      - name: Upload traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: traces-analyst-${{ github.run_id }}
+          path: traces/
+          retention-days: 90
+          if-no-files-found: ignore
+
+  # -----------------------------------------------------------------------
+  # Stage 4: Compute trends, send digest, commit findings
+  # -----------------------------------------------------------------------
+  publish:
+    needs: [engineer, analyst]
+    if: always() && needs.engineer.result != 'cancelled' && needs.analyst.result != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout sentinel
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pipeline dependencies
+        run: pip install -r pipeline/requirements.txt
+
+      - name: Download findings
+        uses: actions/download-artifact@v4
+        with:
+          name: findings
+          path: findings/
+
+      - name: Download engineer output
+        uses: actions/download-artifact@v4
+        with:
+          name: stage-output-engineer
+          path: stage-outputs/
+        continue-on-error: true
+
+      - name: Download analyst output
+        uses: actions/download-artifact@v4
+        with:
+          name: stage-output-analyst
+          path: stage-outputs/
+        continue-on-error: true
+
+      - name: Run publish
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          D1_DATABASE_ID: ${{ secrets.D1_DATABASE_ID }}
+          PUSHOVER_USER_KEY: ${{ secrets.PUSHOVER_USER_KEY }}
+          PUSHOVER_APP_TOKEN: ${{ secrets.PUSHOVER_APP_TOKEN }}
+        run: python -m pipeline publish
 
       - name: Commit findings
         run: |
