@@ -9,7 +9,7 @@ If you discover a security vulnerability in the Sentinel pipeline, please report
 ### How to report
 
 1. **GitHub Security Advisories**: Use the "Report a vulnerability" button on the [Security tab](https://github.com/vectimus/sentinel/security/advisories) of this repository.
-2. **Email**: Send details to security@vectimus.dev.
+2. **Email**: Send details to security@vectimus.com.
 
 ### What to include
 
