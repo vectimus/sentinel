@@ -33,24 +33,24 @@ def r2_client(mock_s3):
 class TestPut:
 
     def test_calls_put_object_with_correct_params(self, r2_client, mock_s3):
-        r2_client.put("reports/test.txt", "hello world", content_type="text/plain")
+        r2_client.put("sources/test.txt", "hello world", content_type="text/plain")
 
         mock_s3.put_object.assert_called_once_with(
             Bucket="test-bucket",
-            Key="reports/test.txt",
+            Key="sources/test.txt",
             Body=b"hello world",
             ContentType="text/plain",
         )
 
     def test_encodes_string_body_to_bytes(self, r2_client, mock_s3):
-        r2_client.put("test.txt", "unicode: \u00e9\u00e8\u00ea")
+        r2_client.put("findings/test.txt", "unicode: \u00e9\u00e8\u00ea")
 
         call_kwargs = mock_s3.put_object.call_args[1]
         assert isinstance(call_kwargs["Body"], bytes)
 
     def test_accepts_bytes_body_directly(self, r2_client, mock_s3):
         body = b"raw bytes"
-        r2_client.put("test.bin", body, content_type="application/octet-stream")
+        r2_client.put("drafts/test.bin", body, content_type="application/octet-stream")
 
         call_kwargs = mock_s3.put_object.call_args[1]
         assert call_kwargs["Body"] == b"raw bytes"

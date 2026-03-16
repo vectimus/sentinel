@@ -86,9 +86,9 @@ class TestD1Write:
     def test_passes_none_when_no_params(self, mock_d1):
         mock_d1.execute.return_value = []
 
-        mcp_server.d1_write("DELETE FROM incidents")
+        mcp_server.d1_write("INSERT INTO incidents (vtms_id) VALUES ('test')")
 
-        mock_d1.execute.assert_called_once_with("DELETE FROM incidents", None)
+        mock_d1.execute.assert_called_once_with("INSERT INTO incidents (vtms_id) VALUES ('test')", None)
 
 
 class TestR2Get:
@@ -113,10 +113,10 @@ class TestR2Get:
 class TestR2Put:
 
     def test_calls_client_put(self, mock_r2):
-        result = mcp_server.r2_put("reports/test.txt", "content here", "text/plain")
+        result = mcp_server.r2_put("sources/test.txt", "content here", "text/plain")
 
-        mock_r2.put.assert_called_once_with("reports/test.txt", "content here", "text/plain")
-        assert "reports/test.txt" in result
+        mock_r2.put.assert_called_once_with("sources/test.txt", "content here", "text/plain")
+        assert "sources/test.txt" in result
 
 
 class TestPushoverAlert:
@@ -171,7 +171,7 @@ class TestGitHubPushFile:
     def test_returns_success_message(self, mock_gh):
         result = mcp_server.github_push_file(
             repo_name="vectimus/policies",
-            branch="vtms-2026-0001/policy",
+            branch="sentinel/vtms-2026-0001-policy",
             path="policies/test.cedar",
             content="permit(...);",
             message="Add test policy",
@@ -179,7 +179,7 @@ class TestGitHubPushFile:
 
         mock_gh.push_file.assert_called_once_with(
             "vectimus/policies",
-            "vtms-2026-0001/policy",
+            "sentinel/vtms-2026-0001-policy",
             "policies/test.cedar",
             "permit(...);",
             "Add test policy",
