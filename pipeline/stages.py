@@ -114,8 +114,15 @@ async def _discover_async() -> None:
         )
 
     actionable = [f for f in findings if f.get("recommended_action") != "no_change"]
-    content_worthy = [f for f in findings if f.get("content_worthy")]
-    gaps = [f for f in findings if f.get("coverage_status") == "gap"]
+    content_worthy = [
+        f for f in findings
+        if f.get("content_worthy") and f.get("enforcement_scope") != "out_of_scope"
+    ]
+    gaps = [
+        f for f in findings
+        if f.get("coverage_status") == "gap"
+        and f.get("enforcement_scope") != "out_of_scope"
+    ]
 
     summary_lines.extend([
         "",

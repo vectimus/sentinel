@@ -29,7 +29,10 @@ async def run_threat_analyst(config: Config, findings_path: Path) -> dict:
     Returns a summary dict with PR URLs and stats.
     """
     findings = json.loads(findings_path.read_text())
-    content_worthy = [f for f in findings if f.get("content_worthy")]
+    content_worthy = [
+        f for f in findings
+        if f.get("content_worthy") and f.get("enforcement_scope") != "out_of_scope"
+    ]
 
     if not content_worthy:
         logger.info("No content-worthy findings for Threat Analyst")
