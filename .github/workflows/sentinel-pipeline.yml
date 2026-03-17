@@ -67,11 +67,12 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          CLI=$(python -c "import claude_agent_sdk._bundled as b; import pathlib; print(next(pathlib.Path(b.__file__).parent.glob('claude')))")
+          CLI=$(find "$(python -c 'import claude_agent_sdk; import os; print(os.path.dirname(claude_agent_sdk.__file__))')" -name claude -type f | head -1)
           echo "CLI path: $CLI"
-          echo "File type:" && file "$CLI"
-          echo "---"
-          echo '{"type":"user","content":"say hello"}' | timeout 10 "$CLI" --output-format stream-json --permission-mode bypassPermissions --model claude-sonnet-4-6 --max-turns 1 --input-format stream-json 2>&1 || echo "Exit code: $?"
+          file "$CLI" || true
+          ls -la "$(dirname "$CLI")" || true
+          echo "--- Testing CLI directly ---"
+          echo '{"type":"user","content":"say hello"}' | timeout 15 "$CLI" --output-format stream-json --permission-mode bypassPermissions --model claude-sonnet-4-6 --max-turns 1 --input-format stream-json 2>&1 || echo "EXIT CODE: $?"
 
       - name: Run Threat Hunter
         env:
