@@ -63,14 +63,19 @@ jobs:
       - name: Install dependencies
         run: pip install -r pipeline/requirements.txt
 
-      - name: Debug — test SDK query
+      - name: Debug — test SDK auth
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
+          echo "Key prefix: ${ANTHROPIC_API_KEY:0:10}..."
+          echo "Key length: ${#ANTHROPIC_API_KEY}"
+          CLI=$(find "$(python -c 'import claude_agent_sdk; import os; print(os.path.dirname(claude_agent_sdk.__file__))')" -name claude -type f | head -1)
+          "$CLI" auth status 2>&1 || true
+          echo "---"
           timeout 30 python -c "
-          import asyncio
+          import asyncio, os
+          print(f'Env key prefix: {os.environ.get(\"ANTHROPIC_API_KEY\", \"\")[:10]}...')
           from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
-
           async def test():
               options = ClaudeAgentOptions(
                   model='claude-sonnet-4-6',
@@ -84,7 +89,6 @@ jobs:
                       print(f'MSG: {type(msg).__name__}: {str(msg)[:200]}')
               except Exception as e:
                   print(f'ERROR: {e}')
-
           asyncio.run(test())
           " 2>&1 || echo "EXIT CODE: $?"
 
