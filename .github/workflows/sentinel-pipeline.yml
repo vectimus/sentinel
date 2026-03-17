@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   # -----------------------------------------------------------------------
@@ -50,6 +51,8 @@ jobs:
     needs: checks
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    outputs:
+      review_issue: ${{ steps.create-review-issue.outputs.issue_number }}
 
     steps:
       - name: Checkout sentinel
@@ -63,36 +66,6 @@ jobs:
       - name: Install dependencies
         run: pip install -r pipeline/requirements.txt
 
-      - name: Debug — test SDK auth
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-        run: |
-          echo "Key prefix: ${ANTHROPIC_API_KEY:0:10}..."
-          echo "Key length: ${#ANTHROPIC_API_KEY}"
-          CLI=$(find "$(python -c 'import claude_agent_sdk; import os; print(os.path.dirname(claude_agent_sdk.__file__))')" -name claude -type f | head -1)
-          "$CLI" auth status 2>&1 || true
-          echo "---"
-          timeout 30 python -c "
-          import asyncio, os
-          print(f'Env key prefix: {os.environ.get(\"ANTHROPIC_API_KEY\", \"\")[:10]}...')
-          from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
-          async def test():
-              options = ClaudeAgentOptions(
-                  model='claude-sonnet-4-6',
-                  system_prompt='You are a test assistant.',
-                  permission_mode='bypassPermissions',
-                  max_turns=1,
-                  stderr=lambda line: print(f'STDERR: {line}'),
-              )
-              try:
-                  async for msg in query(prompt='Say hello in one word.', options=options):
-                      print(f'MSG: {type(msg).__name__}: {str(msg)[:200]}')
-              except Exception as e:
-                  print(f'ERROR: {e}')
-          asyncio.run(test())
-          " 2>&1 || echo "EXIT CODE: $?"
-
       - name: Run Threat Hunter
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -105,6 +78,12 @@ jobs:
           R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
           BOT_GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
         run: python -m pipeline discover
+
+      - name: Create review issue
+        id: create-review-issue
+        env:
+          GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+        run: python pipeline/hitl_issue.py create
 
       - name: Upload findings
         uses: actions/upload-artifact@v7
@@ -131,8 +110,31 @@ jobs:
     runs-on: ubuntu-latest
     environment: sentinel-review
     steps:
-      - name: Approved
-        run: echo "Findings approved for downstream processing"
+      - name: Checkout sentinel
+        uses: actions/checkout@v6
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Download findings
+        uses: actions/download-artifact@v4
+        with:
+          name: findings
+          path: findings/
+
+      - name: Filter approved findings
+        env:
+          GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+          REVIEW_ISSUE: ${{ needs.discover.outputs.review_issue }}
+        run: python pipeline/hitl_issue.py filter
+
+      - name: Upload approved findings
+        uses: actions/upload-artifact@v7
+        with:
+          name: approved-findings
+          path: approved-findings/
 
   # -----------------------------------------------------------------------
   # Stage 2: Security Engineer drafts Cedar policies and opens PRs
@@ -164,10 +166,10 @@ jobs:
       - name: Install pipeline dependencies
         run: pip install -r pipeline/requirements.txt
 
-      - name: Download findings
+      - name: Download approved findings
         uses: actions/download-artifact@v4
         with:
-          name: findings
+          name: approved-findings
           path: findings/
 
       - name: Run Security Engineer
@@ -220,10 +222,10 @@ jobs:
       - name: Install pipeline dependencies
         run: pip install -r pipeline/requirements.txt
 
-      - name: Download findings
+      - name: Download approved findings
         uses: actions/download-artifact@v4
         with:
-          name: findings
+          name: approved-findings
           path: findings/
 
       - name: Run Threat Analyst

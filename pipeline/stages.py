@@ -132,10 +132,9 @@ async def _discover_async() -> None:
         "",
         "### What happens next",
         "",
-        "Approving this gate will:",
-        f"- Run the **Security Engineer** on {len(actionable)} actionable finding(s) → policy PRs",
-        f"- Run the **Threat Analyst** on {len(content_worthy)} content-worthy finding(s) → advisory PRs",
-        "- Compute trends and send digest notification",
+        "1. **Review the issue** created for this run — uncheck any findings to skip",
+        "2. **Approve the review gate** to proceed",
+        "3. Only checked findings will be sent to the Security Engineer and Threat Analyst",
     ])
 
     summary_md = "\n".join(summary_lines)
