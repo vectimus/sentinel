@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
+import os
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -116,10 +118,20 @@ async def run_threat_hunter(config: Config, date: str) -> Path:
             stderr=lambda line: logger.warning("CLI stderr: %s", line),
         )
 
+        # Debug: log key env state for CI troubleshooting
+        logger.info("API key set: %s, length: %d", bool(os.environ.get("ANTHROPIC_API_KEY")), len(os.environ.get("ANTHROPIC_API_KEY", "")))
+        logger.info("Python executable: %s", sys.executable)
+        logger.info("MCP server config: %s", config.mcp_server_config)
+
         result_text = ""
-        async for message in query(prompt=user_message, options=options):
-            if isinstance(message, ResultMessage):
-                result_text = message.result if hasattr(message, "result") else str(message)
+        try:
+            async for message in query(prompt=user_message, options=options):
+                if isinstance(message, ResultMessage):
+                    result_text = message.result if hasattr(message, "result") else str(message)
+        except Exception as e:
+            logger.error("Agent SDK query failed: %s", e)
+            logger.error("Exception type: %s", type(e).__name__)
+            raise
 
         logger.info("Threat Hunter agent completed: %s", result_text[:200] if result_text else "no output")
 
