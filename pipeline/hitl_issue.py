@@ -24,14 +24,18 @@ SEVERITY_MAP = {1: "THEORETICAL", 2: "LOW", 3: "MEDIUM", 4: "HIGH", 5: "CRITICAL
 REPO = os.environ.get("GITHUB_REPOSITORY", "vectimus/sentinel")
 
 
-def _gh(*args: str) -> str:
+def _gh(*args: str, stdin: str | None = None) -> str:
     """Run a gh CLI command and return stdout."""
     result = subprocess.run(
         ["gh", *args],
+        input=stdin,
         capture_output=True,
         text=True,
-        check=True,
     )
+    if result.returncode != 0:
+        print(f"gh command failed (exit {result.returncode}): {' '.join(args[:4])}")
+        print(f"stderr: {result.stderr}")
+        result.check_returncode()
     return result.stdout.strip()
 
 
@@ -123,7 +127,8 @@ def create() -> None:
         "--repo", REPO,
         "--title", f"Sentinel Review — {date}",
         "--label", "sentinel-review",
-        "--body", body,
+        "--body-file", "-",
+        stdin=body,
     )
     # gh issue create returns the URL, extract the number
     number = issue_number.rstrip("/").split("/")[-1]

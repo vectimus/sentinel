@@ -70,6 +70,6 @@ class Config:
             r2_bucket_name=os.environ.get("R2_BUCKET_NAME", "vectimus-research-archive"),
             pushover_user_key=os.environ.get("PUSHOVER_USER_KEY", ""),
             pushover_app_token=os.environ.get("PUSHOVER_APP_TOKEN", ""),
-            bot_github_token=os.environ["BOT_GITHUB_TOKEN"],
+            bot_github_token=os.environ.get("BOT_GITHUB_TOKEN", ""),
             policies_repo_path=os.environ.get("POLICIES_REPO_PATH", "_policies"),
         )
