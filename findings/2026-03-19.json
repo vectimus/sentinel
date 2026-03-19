@@ -1,0 +1,264 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0006",
+    "title": "SmartLoader campaign uses trojanized Oura MCP server to deliver StealC infostealer targeting developers",
+    "discovered_at": "2026-03-19T08:00:00Z",
+    "incident_date": "2026-02-17",
+    "severity": 3,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GV-1",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 16.1"
+    ],
+    "cve_ids": [],
+    "coverage_status": "partial",
+    "coverage_detail": "Policy vectimus-mcp-001 blocks connections to MCP servers absent from the agent's approved-server allowlist. If the trojanized Oura server was not allowlisted before installation, the agent's first mcp_tool_call to it would be denied. However, the initial installation of the trojanized server\u2014driven by social engineering through a convincing MCP Market registry listing\u2014occurs entirely outside the agent's tool-call pipeline and cannot be intercepted by Cedar. If a developer is deceived into adding the malicious server to their allowlist before the attack is detected, subsequent calls to the server cannot be distinguished from legitimate ones by server URL alone.",
+    "existing_policy_ids": [
+      "vectimus-mcp-001"
+    ],
+    "gap_description": "Installation of the trojanized server via the MCP registry is outside the tool-call boundary. The gap is in publisher-identity verification at registry listing time and at the moment of first agent connection. An enhancement to vectimus-mcp-001 in the mcp policy pack should require a verified cryptographic manifest hash or signed publisher attestation at MCP server connection time, not merely URL allowlist membership.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/02/smartloader-attack-uses-trojanized-oura.html",
+        "title": "SmartLoader Attack Uses Trojanized Oura MCP Server to Deploy StealC Infostealer",
+        "r2_key": "sources/VTMS-2026-0006/thehackernews-smartloader.txt"
+      },
+      {
+        "url": "https://aembit.io/blog/the-ultimate-guide-to-mcp-security-vulnerabilities/",
+        "title": "MCP Security Vulnerabilities: Complete Guide for 2026",
+        "r2_key": "sources/VTMS-2026-0006/aembit-mcp-security.txt"
+      }
+    ],
+    "tools_involved": [
+      "MCP",
+      "Oura Health MCP Server"
+    ],
+    "summary": "Threat actors created at least five fake GitHub accounts to manufacture contributor credibility, cloned the legitimate Oura Health MCP server, and submitted the trojanized version to the MCP Market registry under a deceptive identity. When developers installed the malicious server, it executed an obfuscated Lua script that dropped the SmartLoader malware loader, which subsequently deployed the StealC information stealer to harvest credentials, browser data, and cryptocurrency wallet secrets. The campaign targets developers directly\u2014whose machines hold cloud credentials, API keys, and production access\u2014mirroring typosquatting patterns previously seen in the npm ecosystem, now adapted for MCP registries.",
+    "recommended_action": "update_existing",
+    "recommended_policy_description": "Update vectimus-mcp-001 (mcp pack) to require verification of a cryptographic publisher signature or manifest hash at the moment an agent first connects to any MCP server. Connections to MCP servers whose binary hash does not match a vendor-signed manifest on record must be denied. URL allowlist membership alone is insufficient when social engineering can cause users to allowlist a trojanized server.",
+    "content_worthy": true,
+    "content_angle": "covered_by_vectimus",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0007",
+    "title": "RoguePilot: indirect prompt injection via GitHub issue hijacks Copilot in Codespaces to exfiltrate GITHUB_TOKEN",
+    "discovered_at": "2026-03-19T08:00:00Z",
+    "incident_date": "2026-02-24",
+    "severity": 3,
+    "owasp_category": "ASI01: Goal Hijacking",
+    "nist_ai_rmf": "GV-1",
+    "cis_controls": [
+      "CIS 3.3",
+      "CIS 16.1"
+    ],
+    "cve_ids": [],
+    "coverage_status": "partial",
+    "coverage_detail": "The initial prompt injection is embedded in a GitHub issue HTML comment and is processed within Copilot's LLM reasoning phase\u2014entirely outside Vectimus's enforcement boundary. However, the exfiltration chain requires a sequence of observable tool calls: (1) a git_operation to check out a crafted pull request containing a symbolic link, (2) a file_read following the symlink to a privileged internal token path, and (3) a web_fetch to an attacker-controlled domain carrying the exfiltrated GITHUB_TOKEN encoded in a remote JSON schema request. Policy vectimus-secrets-001 blocks file_read on credential paths and provides partial coverage at step 2. No current Vectimus policy blocks the subsequent web_fetch exfiltration step to an unknown external domain.",
+    "existing_policy_ids": [
+      "vectimus-secrets-001"
+    ],
+    "gap_description": "No current Vectimus policy denies agent-initiated web_fetch calls to arbitrary external domains in sessions where a sensitive credential file_read has recently occurred. The exfil policy pack should be extended with a rule that denies web_fetch to non-allowlisted domains when the agent has read a path matching credential patterns (e.g., *GITHUB_TOKEN*, */.git/config, */token) within the same session context.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/02/roguepilot-flaw-in-github-codespaces.html",
+        "title": "RoguePilot Flaw in GitHub Codespaces Enabled Copilot to Leak GITHUB_TOKEN",
+        "r2_key": "sources/VTMS-2026-0007/thehackernews-roguepilot.txt"
+      },
+      {
+        "url": "https://orca.security/resources/blog/roguepilot-github-copilot-vulnerability/",
+        "title": "RoguePilot: Critical GitHub Copilot Vulnerability Exploit",
+        "r2_key": "sources/VTMS-2026-0007/orca-roguepilot.txt"
+      }
+    ],
+    "tools_involved": [
+      "GitHub Copilot",
+      "GitHub Codespaces"
+    ],
+    "summary": "Orca Security researcher Roi Nisimi disclosed a patched vulnerability (RoguePilot) in GitHub Codespaces. When a codespace is launched from a GitHub issue, Copilot automatically ingests the issue description as a prompt. An attacker embedding malicious instructions in invisible HTML comment tags within a public issue can hijack the in-Codespace Copilot agent: directing it to check out a crafted pull request containing a symbolic link to internal filesystem paths, read the privileged GITHUB_TOKEN, and exfiltrate it to an attacker-controlled server via a remote JSON schema fetch. The stolen GITHUB_TOKEN enables full repository takeover. Microsoft patched the vulnerability following responsible disclosure from Orca Security.",
+    "recommended_action": "update_existing",
+    "recommended_policy_description": "Extend the exfil policy pack with a rule that denies web_fetch requests to external domains not on a project-level allowlist when the agent session has previously executed a file_read on a path matching credential patterns (e.g., *token*, *GITHUB_TOKEN*, */.git/*). This closes the credential-exfiltration channel via remote schema fetch even if LLM-level prompt injection succeeds.",
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0008",
+    "title": "SANDWORM_MODE: worm-like npm campaign injects rogue MCP servers into Claude Code, Cursor, and Windsurf configurations",
+    "discovered_at": "2026-03-19T08:00:00Z",
+    "incident_date": "2026-02-24",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GV-1",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 16.1",
+      "CIS 10.2"
+    ],
+    "cve_ids": [],
+    "coverage_status": "partial",
+    "coverage_detail": "The npm postinstall scripts that write rogue MCP server entries to AI coding tool configuration files execute entirely outside the agent's tool-call pipeline; Cedar cannot intercept filesystem writes performed by the npm process. However, once the rogue server entry is injected and the agent is next launched, any agent attempt to connect to or invoke tools on that rogue server generates an mcp_tool_call. Policy vectimus-mcp-001 blocks connections to MCP servers not present on the approved-server allowlist: if the injected server URL was not pre-allowlisted, the downstream connection will be denied before the attacker's hidden-instruction channel can operate. Stage-1 credential exfiltration executed directly by the postinstall script remains fully out of scope.",
+    "existing_policy_ids": [
+      "vectimus-mcp-001"
+    ],
+    "gap_description": "The npm install phase\u2014where malicious postinstall scripts modify AI tool MCP config files on disk\u2014is architecturally outside the tool-call boundary. Vectimus can only provide downstream protection once the agent attempts to connect to the injected server. If the injected server URL is one previously allowlisted (e.g., if the attacker registered a plausible-looking URL before the attack), vectimus-mcp-001 will not prevent the connection.",
+    "sources": [
+      {
+        "url": "https://www.helpnetsecurity.com/2026/02/24/npm-worm-sandworm-mode-supply-cain-attack/",
+        "title": "Self-spreading npm malware targets developers in new supply chain attack",
+        "r2_key": "sources/VTMS-2026-0008/helpnetsecurity-sandworm.txt"
+      },
+      {
+        "url": "https://thehackernews.com/2026/02/malicious-npm-packages-harvest-crypto.html",
+        "title": "Malicious npm Packages Harvest Crypto Keys, CI Secrets, and API Tokens",
+        "r2_key": "sources/VTMS-2026-0008/thehackernews-malicious-npm.txt"
+      }
+    ],
+    "tools_involved": [
+      "npm",
+      "Claude Code",
+      "Cursor",
+      "Windsurf",
+      "MCP"
+    ],
+    "summary": "Socket's Threat Research Team disclosed 19 malicious npm packages published by two accounts (official334, javaorg) exhibiting worm-like behaviour. Postinstall scripts silently modified local MCP configuration files for Claude Code, Claude Desktop, Cursor, VS Code Continue, and Windsurf/Codeium, injecting a rogue MCP server entry. On the developer's next agent launch, the rogue server feeds hidden instructions to the AI assistant, directing it to read and transmit sensitive files externally. A two-stage payload performs deep credential harvesting from password managers, SSH key stores, and cryptocurrency wallets, and propagates via Git hook injection. Cloudflare, GitHub, and npm terminated associated infrastructure after disclosure.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0009",
+    "title": "GhostClaw RAT distributed via fake @openclaw-ai/openclawai npm package targeting macOS developers",
+    "discovered_at": "2026-03-19T08:00:00Z",
+    "incident_date": "2026-03-03",
+    "severity": 2,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GV-1",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 16.1"
+    ],
+    "cve_ids": [],
+    "coverage_status": "gap",
+    "coverage_detail": "The attack executes entirely through the npm package installation lifecycle. The GhostClaw RAT installer and all C2 communications are initiated by the npm process running the malicious postinstall script\u2014not by an AI agent making tool calls. No Vectimus Cedar policy can intercept actions occurring within the package manager install pipeline. This is architecturally outside the tool-call boundary.",
+    "existing_policy_ids": [],
+    "gap_description": "The attack vector is the npm install process. Cedar operates at the agent tool-call boundary and has no visibility into package manager install scripts or the processes they spawn. This class of attack cannot be addressed by any tool-call governance policy; it requires supply-chain hygiene controls at the package manager layer (e.g., lock files, provenance attestations, install script sandboxing).",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/03/malicious-npm-package-posing-as.html",
+        "title": "Malicious npm Package Posing as OpenClaw Installer Deploys RAT, Steals macOS Credentials",
+        "r2_key": "sources/VTMS-2026-0009/thehackernews-ghostclaw.txt"
+      }
+    ],
+    "tools_involved": [
+      "npm",
+      "OpenClaw"
+    ],
+    "summary": "JFrog discovered the malicious package @openclaw-ai/openclawai (uploaded March 3, 2026; removed March 10, 2026; approximately 178 downloads). Targeting macOS OpenClaw users, the package presents a convincing fake CLI installer with animated progress bars and bogus iCloud prompts. The payload (GhostClaw/GhostLoader RAT) steals Apple Keychain databases, browser credentials, cryptocurrency wallets, SSH keys, and iMessage history; installs a persistent daemon with SOCKS5 proxy and C2 capability; and clones live browser sessions via headless Chromium. Exfiltration channels include a dedicated C2 server, Telegram Bot API, and GoFile.io. This incident is part of a continuing pattern of supply-chain attacks targeting the OpenClaw/MCP developer ecosystem following the February 2026 ClawHavoc campaign.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0010",
+    "title": "Azure MCP Server SSRF CVE-2026-26118 allows managed identity token theft enabling broad Azure privilege escalation",
+    "discovered_at": "2026-03-19T08:00:00Z",
+    "incident_date": "2026-03-10",
+    "severity": 4,
+    "owasp_category": "ASI09: Trust Boundary Violations",
+    "nist_ai_rmf": "MP-2",
+    "cis_controls": [
+      "CIS 4.1",
+      "CIS 16.8"
+    ],
+    "cve_ids": [
+      "CVE-2026-26118"
+    ],
+    "coverage_status": "partial",
+    "coverage_detail": "CVE-2026-26118 is triggered when an attacker supplies a malicious external URL as a parameter to an Azure MCP Server tool call. This mcp_tool_call is visible to Vectimus at the pretool hook point; Cedar can inspect the action type and its parameters before they are forwarded. However, no current Cedar policy in the mcp pack validates URL-typed parameter values for SSRF patterns within Azure resource tool calls. Policy vectimus-mcp-001 governs which MCP server endpoints an agent may call but does not inspect individual parameter values for malicious content. The actual SSRF request\u2014where the Azure MCP Server makes an outbound call including its managed identity token\u2014occurs server-side after Vectimus has already forwarded the unvalidated tool call. Primary remediation remains vendor patching to Azure MCP Server v2.0.0-beta.17+.",
+    "existing_policy_ids": [
+      "vectimus-mcp-001"
+    ],
+    "gap_description": "No current Vectimus policy inspects URL-typed parameter values within mcp_tool_call actions to detect SSRF payloads. Extending the mcp policy pack to add a rule that denies mcp_tool_call actions where any string parameter matches a non-Azure external URL pattern would provide defence-in-depth independently of server-side patch status.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/03/microsoft-patches-84-flaws-in-march.html",
+        "title": "Microsoft Patches 84 Flaws in March Patch Tuesday, Including Two Public Zero-Days",
+        "r2_key": "sources/VTMS-2026-0010/thehackernews-patch-tuesday.txt"
+      },
+      {
+        "url": "https://www.thehackerwire.com/azure-mcp-server-ssrf-for-privilege-elevation-cve-2026-26118/",
+        "title": "Azure MCP Server SSRF for Privilege Elevation (CVE-2026-26118)",
+        "r2_key": "sources/VTMS-2026-0010/thehackerwire-cve-2026-26118.txt"
+      },
+      {
+        "url": "https://blog.blueinfy.com/2026/03/ssrf-in-azure-mcp-server-tools.html",
+        "title": "SSRF in Azure MCP Server Tools",
+        "r2_key": "sources/VTMS-2026-0010/blueinfy-ssrf-azure-mcp.txt"
+      }
+    ],
+    "tools_involved": [
+      "Azure MCP Server"
+    ],
+    "summary": "Microsoft's March 2026 Patch Tuesday (March 10, 2026) included a fix for CVE-2026-26118 (CVSS 8.8), a Server-Side Request Forgery vulnerability in Azure MCP Server Tools prior to v2.0.0-beta.17. An authorised attacker who can influence parameters passed to an MCP-backed agent substitutes a malicious external URL for a legitimate Azure resource identifier. The MCP Server issues an outbound HTTP request to the attacker-controlled endpoint and may include its managed identity token in that request. The captured token grants the attacker all permissions held by the managed identity\u2014including access to Azure ML pipelines, storage accounts, virtual machines, and databases\u2014without requiring administrative credentials. Public proof-of-concept code was available on GitHub at patch time; no confirmed in-the-wild exploitation was reported.",
+    "recommended_action": "update_existing",
+    "recommended_policy_description": "Extend the mcp policy pack (as an additional check within vectimus-mcp-001 or a new rule vectimus-mcp-002) to deny mcp_tool_call actions where any string parameter value matches a non-trusted external URL pattern (e.g., ^https?://(?!.*\\.azure\\.com).*) when the target MCP server is an Azure resource management tool. This provides defence-in-depth against SSRF parameter injection independently of whether the target Azure MCP Server installation has been patched.",
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0011",
+    "title": "LangGrinch: LangChain Core serialization injection CVE-2025-68664 enables environment variable theft and RCE via prompt injection",
+    "discovered_at": "2026-03-19T08:00:00Z",
+    "incident_date": "2025-12-25",
+    "severity": 4,
+    "owasp_category": "ASI05: Unsafe Code Execution",
+    "nist_ai_rmf": "MP-2",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 16.1",
+      "CIS 3.3"
+    ],
+    "cve_ids": [
+      "CVE-2025-68664",
+      "CVE-2025-68665"
+    ],
+    "coverage_status": "gap",
+    "coverage_detail": "The LangGrinch vulnerability operates entirely within LangChain's internal serialization framework. The attack chain proceeds as follows: (1) an attacker supplies a prompt injection steering LLM output to include a crafted 'lc' marker key; (2) LangChain's dumps()/dumpd() serializes this LLM output as a trusted LangChain object during normal streaming, caching, or logging operations; (3) on deserialization, load()/loads() with the previously-default secrets_from_env=True reads all environment variables and may execute Jinja2 templates leading to RCE. All three stages are internal to the framework's state management and generate no externally observable tool call at the point of exploitation. Cedar operates at the tool-call boundary and cannot intercept serialization or deserialization events inside the agent framework. Per the AGENTS.md enforcement boundary definition, agent framework internals are explicitly out of scope for Cedar. No existing Vectimus policy can address this class of vulnerability.",
+    "existing_policy_ids": [],
+    "gap_description": "Framework-internal serialization injection is architecturally outside the tool-call boundary. Cedar cannot intercept events occurring within an agent framework's memory or state-management routines. This class of gap cannot be closed by any tool-call governance policy. Affected organisations must patch to langchain-core >= 0.3.81 or >= 1.2.5 and set secrets_from_env=False explicitly in all load()/loads() invocations until patched.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2025/12/critical-langchain-core-vulnerability.html",
+        "title": "Critical LangChain Core Vulnerability Exposes Secrets via Serialization Injection",
+        "r2_key": "sources/VTMS-2026-0011/thehackernews-langgrinch.txt"
+      },
+      {
+        "url": "https://cyata.ai/blog/langgrinch-langchain-core-cve-2025-68664/",
+        "title": "LangGrinch hits LangChain Core (CVE-2025-68664)",
+        "r2_key": "sources/VTMS-2026-0011/cyata-langgrinch.txt"
+      },
+      {
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2025-68664",
+        "title": "NVD - CVE-2025-68664",
+        "r2_key": "sources/VTMS-2026-0011/nvd-cve-2025-68664.txt"
+      }
+    ],
+    "tools_involved": [
+      "LangChain",
+      "LangGraph"
+    ],
+    "summary": "Security researcher Yarden Porat disclosed CVE-2025-68664 (CVSS 9.3), dubbed LangGrinch, in langchain-core's serialization APIs (dumps/dumpd/load/loads). An attacker who can influence LLM outputs via prompt injection constructs responses containing the reserved 'lc' marker key. LangChain serializes and later deserializes such LLM response metadata during streaming, caching, and logging without properly escaping user-controlled 'lc' keys, causing the deserializer to instantiate attacker-chosen classes within trusted namespaces. With the then-default secrets_from_env=True, all environment variables\u2014including cloud provider credentials, database connection strings, LLM API keys, and vector database secrets\u2014are exfiltrated. Potential RCE exists via Jinja2 template instantiation. A parallel JavaScript flaw is CVE-2025-68665 (CVSS 8.6). Patches are available in langchain-core 0.3.81 and 1.2.5; public PoC is available with no confirmed mass exploitation at time of reporting.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  }
+]
