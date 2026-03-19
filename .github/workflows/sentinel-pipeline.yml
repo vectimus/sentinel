@@ -79,18 +79,20 @@ jobs:
           BOT_GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
         run: python -m pipeline discover
 
-      - name: Create review issue
-        id: create-review-issue
-        env:
-          GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
-        run: python pipeline/hitl_issue.py create
-
       - name: Upload findings
+        if: always()
         uses: actions/upload-artifact@v7
         with:
           name: findings
           path: findings/
           retention-days: 90
+          if-no-files-found: warn
+
+      - name: Create review issue
+        id: create-review-issue
+        env:
+          GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+        run: python pipeline/hitl_issue.py create
 
       - name: Upload traces
         if: always()
@@ -119,7 +121,7 @@ jobs:
           python-version: '3.12'
 
       - name: Download findings
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: findings
           path: findings/
@@ -167,7 +169,7 @@ jobs:
         run: pip install -r pipeline/requirements.txt
 
       - name: Download approved findings
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: approved-findings
           path: findings/
@@ -223,7 +225,7 @@ jobs:
         run: pip install -r pipeline/requirements.txt
 
       - name: Download approved findings
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: approved-findings
           path: findings/
@@ -279,20 +281,20 @@ jobs:
         run: pip install -r pipeline/requirements.txt
 
       - name: Download findings
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: findings
           path: findings/
 
       - name: Download engineer output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: stage-output-engineer
           path: stage-outputs/
         continue-on-error: true
 
       - name: Download analyst output
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: stage-output-analyst
           path: stage-outputs/
