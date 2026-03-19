@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
-import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -117,11 +115,6 @@ async def run_threat_hunter(config: Config, date: str) -> Path:
             mcp_servers=config.mcp_server_config,
             stderr=lambda line: logger.warning("CLI stderr: %s", line),
         )
-
-        # Debug: log key env state for CI troubleshooting
-        logger.info("API key set: %s, length: %d", bool(os.environ.get("ANTHROPIC_API_KEY")), len(os.environ.get("ANTHROPIC_API_KEY", "")))
-        logger.info("Python executable: %s", sys.executable)
-        logger.info("MCP server config: %s", config.mcp_server_config)
 
         result_text = ""
         try:
