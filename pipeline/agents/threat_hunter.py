@@ -77,7 +77,7 @@ async def run_threat_hunter(config: Config, date: str) -> Path:
 
     try:
         last_id = d1.get_max_vtms_sequence(year)
-        total_incidents = len(d1.execute("SELECT COUNT(*) as cnt FROM incidents"))
+        total_incidents = d1.execute("SELECT COUNT(*) as cnt FROM incidents")[0]["cnt"]
 
         # Fetch recent incidents for dedup context
         recent_incidents = d1.list_incidents(limit=200)
@@ -111,14 +111,18 @@ async def run_threat_hunter(config: Config, date: str) -> Path:
                 "mcp__sentinel__pushover_alert",
             ],
             permission_mode="bypassPermissions",
-            max_turns=30,
+            max_turns=50,
             mcp_servers=config.mcp_server_config,
             stderr=lambda line: logger.warning("CLI stderr: %s", line),
         )
 
+        logger.info("User message: %s", user_message[:500])
+
         result_text = ""
+        turn_count = 0
         try:
             async for message in query(prompt=user_message, options=options):
+                turn_count += 1
                 if isinstance(message, ResultMessage):
                     result_text = message.result if hasattr(message, "result") else str(message)
         except Exception as e:
@@ -126,7 +130,7 @@ async def run_threat_hunter(config: Config, date: str) -> Path:
             logger.error("Exception type: %s", type(e).__name__)
             raise
 
-        logger.info("Threat Hunter agent completed: %s", result_text[:200] if result_text else "no output")
+        logger.info("Threat Hunter completed in %d turns: %s", turn_count, result_text[:500] if result_text else "no output")
 
         if not findings_path.exists():
             logger.warning("Threat Hunter did not write findings file; creating empty one")
