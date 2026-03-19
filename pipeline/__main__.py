@@ -1,11 +1,11 @@
 """Allow running with `python -m pipeline` or `python -m pipeline <stage>`.
 
 Stages:
-    (none)     — run full orchestrator (legacy, local dev)
-    discover   — Threat Hunter + validation + D1 scrub
-    engineer   — Security Engineer (needs findings artifact)
-    analyst    — Threat Analyst (needs findings artifact)
-    publish    — Trends + digest notification
+    (none)           — run full orchestrator (legacy, local dev)
+    threat-hunter    — Threat Hunter + validation + D1 scrub
+    policy-engineer  — Security Engineer (needs findings artifact)
+    threat-analyst   — Threat Analyst (needs findings artifact)
+    publish          — Trends + digest notification
 """
 
 import os
@@ -29,9 +29,9 @@ if not os.environ.get("ANTHROPIC_API_KEY"):
 os.environ.setdefault("SENTINEL_PYTHON", sys.executable)
 
 STAGES = {
-    "discover": "pipeline.stages:discover",
-    "engineer": "pipeline.stages:engineer",
-    "analyst": "pipeline.stages:analyst",
+    "threat-hunter": "pipeline.stages:threat_hunter",
+    "policy-engineer": "pipeline.stages:policy_engineer",
+    "threat-analyst": "pipeline.stages:threat_analyst",
     "publish": "pipeline.stages:publish",
 }
 

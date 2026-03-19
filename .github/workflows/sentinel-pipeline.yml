@@ -47,7 +47,7 @@ jobs:
   # Stage 1: Threat Hunter discovers and classifies incidents
   # Outputs findings JSON as an artifact + human-readable job summary
   # -----------------------------------------------------------------------
-  discover:
+  threat-hunter:
     needs: checks
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -77,7 +77,7 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
           BOT_GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
-        run: python -m pipeline discover
+        run: python -m pipeline threat-hunter
 
       - name: Upload findings
         if: always()
@@ -98,17 +98,17 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: traces-discover-${{ github.run_id }}
+          name: traces-threat-hunter-${{ github.run_id }}
           path: traces/
           retention-days: 90
           if-no-files-found: ignore
 
   # -----------------------------------------------------------------------
-  # HITL gate: human reviews the discover job summary before proceeding.
+  # HITL gate: human reviews findings before proceeding.
   # Uses the "sentinel-review" environment (required reviewer: joseph-holland)
   # -----------------------------------------------------------------------
   review-gate:
-    needs: discover
+    needs: threat-hunter
     runs-on: ubuntu-latest
     environment: sentinel-review
     steps:
@@ -129,7 +129,7 @@ jobs:
       - name: Filter approved findings
         env:
           GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
-          REVIEW_ISSUE: ${{ needs.discover.outputs.review_issue }}
+          REVIEW_ISSUE: ${{ needs.threat-hunter.outputs.review_issue }}
         run: python pipeline/hitl_issue.py filter
 
       - name: Upload approved findings
@@ -139,9 +139,9 @@ jobs:
           path: approved-findings/
 
   # -----------------------------------------------------------------------
-  # Stage 2: Security Engineer drafts Cedar policies and opens PRs
+  # Stage 2: Policy Engineer drafts Cedar policies and opens PRs
   # -----------------------------------------------------------------------
-  engineer:
+  policy-engineer:
     needs: review-gate
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -174,7 +174,7 @@ jobs:
           name: approved-findings
           path: findings/
 
-      - name: Run Security Engineer
+      - name: Run Policy Engineer
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -186,12 +186,12 @@ jobs:
           R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
           BOT_GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
           POLICIES_REPO_PATH: ${{ github.workspace }}/_policies
-        run: python -m pipeline engineer
+        run: python -m pipeline policy-engineer
 
       - name: Upload stage output
         uses: actions/upload-artifact@v7
         with:
-          name: stage-output-engineer
+          name: stage-output-policy-engineer
           path: stage-outputs/
           if-no-files-found: ignore
 
@@ -199,7 +199,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: traces-engineer-${{ github.run_id }}
+          name: traces-policy-engineer-${{ github.run_id }}
           path: traces/
           retention-days: 90
           if-no-files-found: ignore
@@ -207,7 +207,7 @@ jobs:
   # -----------------------------------------------------------------------
   # Stage 3: Threat Analyst writes advisory content and opens PRs
   # -----------------------------------------------------------------------
-  analyst:
+  threat-analyst:
     needs: review-gate
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -241,12 +241,12 @@ jobs:
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
           R2_ENDPOINT_URL: ${{ secrets.R2_ENDPOINT_URL }}
           BOT_GITHUB_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
-        run: python -m pipeline analyst
+        run: python -m pipeline threat-analyst
 
       - name: Upload stage output
         uses: actions/upload-artifact@v7
         with:
-          name: stage-output-analyst
+          name: stage-output-threat-analyst
           path: stage-outputs/
           if-no-files-found: ignore
 
@@ -254,7 +254,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: traces-analyst-${{ github.run_id }}
+          name: traces-threat-analyst-${{ github.run_id }}
           path: traces/
           retention-days: 90
           if-no-files-found: ignore
@@ -263,8 +263,8 @@ jobs:
   # Stage 4: Compute trends, send digest, commit findings
   # -----------------------------------------------------------------------
   publish:
-    needs: [engineer, analyst]
-    if: always() && needs.engineer.result != 'cancelled' && needs.analyst.result != 'cancelled'
+    needs: [policy-engineer, threat-analyst]
+    if: always() && needs.policy-engineer.result != 'cancelled' && needs.threat-analyst.result != 'cancelled'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -286,17 +286,17 @@ jobs:
           name: findings
           path: findings/
 
-      - name: Download engineer output
+      - name: Download policy engineer output
         uses: actions/download-artifact@v7
         with:
-          name: stage-output-engineer
+          name: stage-output-policy-engineer
           path: stage-outputs/
         continue-on-error: true
 
-      - name: Download analyst output
+      - name: Download threat analyst output
         uses: actions/download-artifact@v7
         with:
-          name: stage-output-analyst
+          name: stage-output-threat-analyst
           path: stage-outputs/
         continue-on-error: true
 

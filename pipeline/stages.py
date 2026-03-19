@@ -48,17 +48,17 @@ def _write_github_summary(text: str) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Stage: discover
+# Stage: threat-hunter
 # ---------------------------------------------------------------------------
 
-async def _discover_async() -> None:
+async def _threat_hunter_async() -> None:
     """Run Threat Hunter, validate findings, scrub D1, write summary."""
     _clean_env()
     config = Config.from_env()
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    init_tracing(project_name=f"sentinel-discover-{date}")
-    logger.info("Discover stage starting for %s", date)
+    init_tracing(project_name=f"sentinel-threat-hunter-{date}")
+    logger.info("Threat Hunter stage starting for %s", date)
 
     from pipeline.agents.threat_hunter import run_threat_hunter
 
@@ -98,7 +98,7 @@ async def _discover_async() -> None:
     severity_map = {1: "THEORETICAL", 2: "LOW", 3: "MEDIUM", 4: "HIGH", 5: "CRITICAL"}
 
     summary_lines = [
-        f"## Sentinel Discover — {date}",
+        f"## Sentinel Threat Hunter — {date}",
         "",
         f"**{len(findings)} finding(s)** discovered.",
         "",
@@ -134,12 +134,12 @@ async def _discover_async() -> None:
         "",
         "1. **Review the issue** created for this run — uncheck any findings to skip",
         "2. **Approve the review gate** to proceed",
-        "3. Only checked findings will be sent to the Security Engineer and Threat Analyst",
+        "3. Only checked findings will be sent to the Policy Engineer and Threat Analyst",
     ])
 
     summary_md = "\n".join(summary_lines)
     _write_github_summary(summary_md + "\n")
-    logger.info("Discover summary:\n%s", summary_md)
+    logger.info("Threat Hunter summary:\n%s", summary_md)
 
     trace_file = export_traces(date)
     if trace_file:
@@ -147,23 +147,23 @@ async def _discover_async() -> None:
     shutdown_tracing()
 
 
-def discover() -> None:
-    """Entry point for the discover stage."""
-    asyncio.run(_discover_async())
+def threat_hunter() -> None:
+    """Entry point for the threat-hunter stage."""
+    asyncio.run(_threat_hunter_async())
 
 
 # ---------------------------------------------------------------------------
-# Stage: engineer
+# Stage: policy-engineer
 # ---------------------------------------------------------------------------
 
-async def _engineer_async() -> None:
+async def _policy_engineer_async() -> None:
     """Run Security Engineer on findings."""
     _clean_env()
     config = Config.from_env()
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    init_tracing(project_name=f"sentinel-engineer-{date}")
-    logger.info("Engineer stage starting")
+    init_tracing(project_name=f"sentinel-policy-engineer-{date}")
+    logger.info("Policy Engineer stage starting")
 
     findings_path = Path(os.environ.get("FINDINGS_PATH", f"findings/{date}.json"))
     if not findings_path.exists():
@@ -172,14 +172,14 @@ async def _engineer_async() -> None:
 
     from pipeline.agents.security_engineer import run_security_engineer
     result = await run_security_engineer(config, findings_path)
-    logger.info("Security Engineer complete: %d PRs created", result["prs_created"])
+    logger.info("Policy Engineer complete: %d PRs created", result["prs_created"])
 
     # Write result for downstream consumption
-    result_path = Path("stage-outputs/engineer.json")
+    result_path = Path("stage-outputs/policy-engineer.json")
     result_path.parent.mkdir(parents=True, exist_ok=True)
     result_path.write_text(json.dumps(result, indent=2))
 
-    _write_github_summary(f"```\nSecurity Engineer: {result['prs_created']} PR(s) created\n```\n")
+    _write_github_summary(f"```\nPolicy Engineer: {result['prs_created']} PR(s) created\n```\n")
 
     trace_file = export_traces(date)
     if trace_file:
@@ -187,23 +187,23 @@ async def _engineer_async() -> None:
     shutdown_tracing()
 
 
-def engineer() -> None:
-    """Entry point for the engineer stage."""
-    asyncio.run(_engineer_async())
+def policy_engineer() -> None:
+    """Entry point for the policy-engineer stage."""
+    asyncio.run(_policy_engineer_async())
 
 
 # ---------------------------------------------------------------------------
-# Stage: analyst
+# Stage: threat-analyst
 # ---------------------------------------------------------------------------
 
-async def _analyst_async() -> None:
+async def _threat_analyst_async() -> None:
     """Run Threat Analyst on findings."""
     _clean_env()
     config = Config.from_env()
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    init_tracing(project_name=f"sentinel-analyst-{date}")
-    logger.info("Analyst stage starting")
+    init_tracing(project_name=f"sentinel-threat-analyst-{date}")
+    logger.info("Threat Analyst stage starting")
 
     findings_path = Path(os.environ.get("FINDINGS_PATH", f"findings/{date}.json"))
     if not findings_path.exists():
@@ -215,7 +215,7 @@ async def _analyst_async() -> None:
     logger.info("Threat Analyst complete: %d PRs created", result["prs_created"])
 
     # Write result for downstream consumption
-    result_path = Path("stage-outputs/analyst.json")
+    result_path = Path("stage-outputs/threat-analyst.json")
     result_path.parent.mkdir(parents=True, exist_ok=True)
     result_path.write_text(json.dumps(result, indent=2))
 
@@ -227,9 +227,9 @@ async def _analyst_async() -> None:
     shutdown_tracing()
 
 
-def analyst() -> None:
-    """Entry point for the analyst stage."""
-    asyncio.run(_analyst_async())
+def threat_analyst() -> None:
+    """Entry point for the threat-analyst stage."""
+    asyncio.run(_threat_analyst_async())
 
 
 # ---------------------------------------------------------------------------
@@ -248,14 +248,14 @@ async def _publish_async() -> None:
 
     findings_path = Path(os.environ.get("FINDINGS_PATH", f"findings/{date}.json"))
 
-    # Load engineer/analyst results if available
+    # Load policy-engineer/threat-analyst results if available
     engineer_result = None
     analyst_result = None
-    for name, var in [("engineer", "engineer_result"), ("analyst", "analyst_result")]:
+    for name, var in [("policy-engineer", "engineer_result"), ("threat-analyst", "analyst_result")]:
         path = Path(f"stage-outputs/{name}.json")
         if path.exists():
             data = json.loads(path.read_text())
-            if name == "engineer":
+            if name == "policy-engineer":
                 engineer_result = data
             else:
                 analyst_result = data

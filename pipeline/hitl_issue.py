@@ -1,11 +1,11 @@
 """HITL review issue management for the Sentinel pipeline.
 
-Creates a GitHub Issue with per-finding checkboxes after the discover
+Creates a GitHub Issue with per-finding checkboxes after the threat-hunter
 stage, then reads the issue after gate approval to filter findings
 down to only those the reviewer approved.
 
 Usage (called from GitHub Actions):
-    python pipeline/hitl_issue.py create   # after discover
+    python pipeline/hitl_issue.py create   # after threat-hunter
     python pipeline/hitl_issue.py filter   # after review-gate approval
 """
 
