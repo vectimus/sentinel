@@ -90,6 +90,7 @@ jobs:
 
       - name: Create review issue
         id: create-review-issue
+        continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
         run: python pipeline/hitl_issue.py create
