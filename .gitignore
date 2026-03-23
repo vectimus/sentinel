@@ -43,3 +43,6 @@ traces/
 
 # Local Claude Code settings (may contain local paths)
 .claude/settings.local.json
+
+# Vectimus local config (may contain disabled rules during dev)
+.vectimus/config.toml
