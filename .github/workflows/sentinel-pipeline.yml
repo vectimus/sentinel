@@ -63,6 +63,11 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Install and initialise Vectimus
+        run: |
+          pip install vectimus
+          vectimus init --ci
+
       - name: Install dependencies
         run: pip install -r pipeline/requirements.txt
 
@@ -101,6 +106,18 @@ jobs:
         with:
           name: traces-threat-hunter-${{ github.run_id }}
           path: traces/
+          retention-days: 90
+          if-no-files-found: ignore
+
+      - name: Upload vectimus audit trail
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: vectimus-audit-threat-hunter-${{ github.run_id }}
+          path: |
+            .vectimus/receipts/
+            .vectimus/keys/
+            ~/.vectimus/logs/
           retention-days: 90
           if-no-files-found: ignore
 
@@ -163,8 +180,10 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install Vectimus
-        run: pip install vectimus
+      - name: Install and initialise Vectimus
+        run: |
+          pip install vectimus
+          vectimus init --ci
 
       - name: Install pipeline dependencies
         run: pip install -r pipeline/requirements.txt
@@ -205,6 +224,18 @@ jobs:
           retention-days: 90
           if-no-files-found: ignore
 
+      - name: Upload vectimus audit trail
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: vectimus-audit-policy-engineer-${{ github.run_id }}
+          path: |
+            .vectimus/receipts/
+            .vectimus/keys/
+            ~/.vectimus/logs/
+          retention-days: 90
+          if-no-files-found: ignore
+
   # -----------------------------------------------------------------------
   # Stage 3: Threat Analyst writes advisory content and opens PRs
   # -----------------------------------------------------------------------
@@ -221,6 +252,11 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+
+      - name: Install and initialise Vectimus
+        run: |
+          pip install vectimus
+          vectimus init --ci
 
       - name: Install pipeline dependencies
         run: pip install -r pipeline/requirements.txt
@@ -257,6 +293,18 @@ jobs:
         with:
           name: traces-threat-analyst-${{ github.run_id }}
           path: traces/
+          retention-days: 90
+          if-no-files-found: ignore
+
+      - name: Upload vectimus audit trail
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: vectimus-audit-threat-analyst-${{ github.run_id }}
+          path: |
+            .vectimus/receipts/
+            .vectimus/keys/
+            ~/.vectimus/logs/
           retention-days: 90
           if-no-files-found: ignore
 

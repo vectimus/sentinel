@@ -37,3 +37,12 @@ evals/results.json
 
 # Trace exports (uploaded as CI artifacts)
 traces/
+
+# Vectimus governance receipts (local evidence)
+.vectimus/receipts/
+
+# Local Claude Code settings (may contain local paths)
+.claude/settings.local.json
+
+# Vectimus local config (may contain disabled rules during dev)
+.vectimus/config.toml
