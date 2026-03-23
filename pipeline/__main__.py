@@ -44,7 +44,7 @@ if stage is None:
 elif stage in STAGES:
     module_path, func_name = STAGES[stage].rsplit(":", 1)
     import importlib
-    mod = importlib.import_module(module_path)  # nosemgrep: non-literal-import
+    mod = importlib.import_module(module_path)  # nosemgrep: python.lang.security.audit.non-literal-import.non-literal-import
     getattr(mod, func_name)()
 else:
     print(f"Unknown stage: {stage!r}")

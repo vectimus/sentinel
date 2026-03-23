@@ -90,7 +90,7 @@ class D1Client:
                 values.append(v)
 
         sql = f"INSERT OR REPLACE INTO incidents ({col_names}) VALUES ({placeholders})"
-        self.execute(sql, values)  # nosemgrep: sqlalchemy-execute-raw-query
+        self.execute(sql, values)  # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
 
     def get_incident(self, vtms_id: str) -> dict | None:
         """Fetch a single incident by VTMS ID."""
@@ -124,7 +124,7 @@ class D1Client:
         }
         if field not in allowed_fields:
             raise ValueError(f"Field {field!r} not in allowed update fields")
-        self.execute(f"UPDATE incidents SET {field} = ? WHERE vtms_id = ?", [value, vtms_id])  # nosemgrep: sqlalchemy-execute-raw-query
+        self.execute(f"UPDATE incidents SET {field} = ? WHERE vtms_id = ?", [value, vtms_id])  # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
 
     def upsert_trend(self, trend: dict) -> None:
         """Insert or replace a trend record."""
@@ -142,7 +142,7 @@ class D1Client:
             else:
                 values.append(v)
         sql = f"INSERT OR REPLACE INTO trends ({col_names}) VALUES ({placeholders})"
-        self.execute(sql, values)  # nosemgrep: sqlalchemy-execute-raw-query
+        self.execute(sql, values)  # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
 
     def insert_content(self, content: dict) -> None:
         """Insert or replace a content record."""
@@ -155,7 +155,7 @@ class D1Client:
         col_names = ", ".join(cols)
         values = list(content.values())
         sql = f"INSERT OR REPLACE INTO content ({col_names}) VALUES ({placeholders})"
-        self.execute(sql, values)  # nosemgrep: sqlalchemy-execute-raw-query
+        self.execute(sql, values)  # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
 
     def close(self) -> None:
         self._client.close()
