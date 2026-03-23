@@ -1,0 +1,187 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0033",
+    "title": "CursorJack: Cursor IDE cursor:// deeplink abuse enables one-click malicious MCP server installation and arbitrary code execution via social engineering",
+    "discovered_at": "2026-03-23T08:00:00Z",
+    "incident_date": "2026-01-19",
+    "severity": 3,
+    "owasp_category": "ASI09: Trust Boundary Violations",
+    "nist_ai_rmf": "GV-6.2",
+    "cis_controls": [
+      "CIS 2.5",
+      "CIS 9.3"
+    ],
+    "cve_ids": [],
+    "coverage_status": "partial",
+    "coverage_detail": "Policy vectimus-mcp-001 (mcp pack) blocks unapproved MCP server connections and intercepts mcp_tool_call actions at tool-call time. Any subsequent tool calls originating from a maliciously installed MCP server would be caught at this boundary. However, Vectimus cannot prevent the initial deeplink-driven MCP server installation itself: the cursor:// protocol handler fires through the IDE's UI layer before the agent's tool-call pipeline is fully active, placing the installation step in pre-consent territory. The command-execution variant of CursorJack \u2014 where an OS command runs directly via the deeplink 'command' parameter \u2014 may similarly execute before Vectimus hooks are registered.",
+    "existing_policy_ids": [
+      "vectimus-mcp-001"
+    ],
+    "gap_description": "The cursor:// deeplink MCP installation flow bypasses tool-call-time enforcement. Vectimus intercepts subsequent mcp_tool_call actions from an installed MCP server, but cannot block the social-engineering-driven installation step itself. The command-execution deeplink variant (arbitrary OS command via the 'command' parameter) may also fire before Vectimus hooks are active, leaving a pre-consent execution gap.",
+    "sources": [
+      {
+        "url": "https://www.proofpoint.com/us/blog/threat-insight/cursorjack-weaponizing-deeplinks-exploit-cursor-ide",
+        "title": "CursorJack: Weaponizing Deeplinks to Exploit Cursor IDE \u2014 Proofpoint",
+        "r2_key": "sources/VTMS-2026-0033/proofpoint-cursorjack.txt"
+      },
+      {
+        "url": "https://www.infosecurity-magazine.com/news/cursor-jack-attack-path-ai/",
+        "title": "CursorJack Attack Path Exposes Code Execution Risk in AI Development \u2014 Infosecurity Magazine",
+        "r2_key": "sources/VTMS-2026-0033/infosec-cursorjack.txt"
+      },
+      {
+        "url": "https://securityonline.info/developer-alert-cursorjack-technique-weaponizes-deeplinks-hijack-cursor-ide/",
+        "title": "Developer Alert: CursorJack Technique Weaponizes Deeplinks to Hijack Cursor IDE \u2014 SecurityOnline",
+        "r2_key": "sources/VTMS-2026-0033/securityonline-cursorjack.txt"
+      }
+    ],
+    "tools_involved": [
+      "Cursor"
+    ],
+    "summary": "Proofpoint Threat Research published research on CursorJack, a technique that weaponises Cursor IDE's cursor:// deeplink protocol handler used for MCP server installation. A phishing link, browser redirect, or embedded document link can install a malicious MCP server or execute arbitrary OS commands on the developer's machine with a single click and one approval prompt. The Cursor IDE presents no visual distinction between a malicious deeplink and a legitimate one, allowing attackers to hide harmful command parameters beyond the preview window. Proofpoint published a functional PoC demonstrating a Meterpreter reverse shell. Cursor classified the report as out-of-scope. A related vulnerability, CVE-2025-64106 (CVSS 8.8), was independently identified by Cyata in Cursor's MCP installation validation and patched within two days.",
+    "recommended_action": "update_existing",
+    "recommended_policy_description": "In the mcp pack (vectimus-mcp-001), add a rule that classifies any MCP server whose registration metadata indicates installation via an IDE deeplink protocol handler (cursor://, vscode://, or equivalent) as untrusted by default. Any mcp_tool_call from such a server should require context.approved == true before execution, returning an escalate action pending explicit policy allowlisting. This extends existing unapproved-server blocking to cover the deeplink installation vector, ensuring that even if a social-engineering install succeeds, the installed server cannot execute tool calls without policy approval.",
+    "content_worthy": true,
+    "content_angle": "covered_by_vectimus",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0034",
+    "title": "CVE-2026-27794: LangGraph checkpoint pickle deserialization RCE enables full code execution via poisoned cache backend",
+    "discovered_at": "2026-03-23T08:00:00Z",
+    "incident_date": "2026-02-25",
+    "severity": 2,
+    "owasp_category": "ASI05: Unsafe Code Execution",
+    "nist_ai_rmf": "MS-2.6",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 16.12"
+    ],
+    "cve_ids": [
+      "CVE-2026-27794"
+    ],
+    "coverage_status": "gap",
+    "coverage_detail": "No Vectimus Cedar policy addresses deserialization attacks within agent framework internals. CVE-2026-27794 exploits LangGraph's caching layer: when a node opts into caching via CachePolicy and the JsonPlusSerializer falls back to pickle.loads() on a cache miss, an attacker who has written malicious pickle bytes to the cache backend gains full RCE on the LangGraph host. This attack path runs entirely inside the LangGraph Python process \u2014 from cache read to deserialization to arbitrary code execution \u2014 with no externally visible tool call at any point. Cedar policy enforcement operates at the tool-call boundary and has no visibility into or enforcement capability over internal framework deserialization events.",
+    "existing_policy_ids": [],
+    "gap_description": "The attack vector (writing attacker-controlled pickle bytes to a Redis or SQLite cache backend, then having LangGraph deserialize them during normal agent operation) occurs entirely within LangGraph framework internals. There is no tool call emitted at any stage of this attack chain. Cedar policies cannot intercept Python deserialization events inside a third-party framework.",
+    "sources": [
+      {
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-27794",
+        "title": "NVD \u2014 CVE-2026-27794",
+        "r2_key": "sources/VTMS-2026-0034/nvd-cve-2026-27794.txt"
+      },
+      {
+        "url": "https://github.com/langchain-ai/langgraph/security/advisories/GHSA-wwqv-p2pp-99h5",
+        "title": "GitHub Advisory GHSA-wwqv-p2pp-99h5: RCE in json mode of JsonPlusSerializer \u2014 LangGraph",
+        "r2_key": "sources/VTMS-2026-0034/ghsa-wwqv-p2pp-99h5.txt"
+      },
+      {
+        "url": "https://cvereports.com/reports/CVE-2026-27794",
+        "title": "CVE-2026-27794: Cache Me If You Can \u2014 LangGraph RCE via Pickle \u2014 CVEReports",
+        "r2_key": "sources/VTMS-2026-0034/cvereports-2026-27794.txt"
+      }
+    ],
+    "tools_involved": [
+      "LangGraph"
+    ],
+    "summary": "CVE-2026-27794 (CVSS 6.6 MEDIUM, CWE-502, published 2026-02-25) is a deserialization RCE vulnerability in LangGraph's checkpoint caching layer. When applications enable a cache backend (e.g. Redis, SQLite) and opt nodes into caching via CachePolicy, the JsonPlusSerializer falls back to pickle.loads() when msgpack deserialization fails. An attacker with write access to the cache backend \u2014 for example via a network-accessible Redis instance with weak or absent authentication \u2014 can inject a malicious pickle payload that executes arbitrary code on the LangGraph host when the agent next reads from cache. Impact includes full RCE, theft of API keys and database credentials from environment variables, lateral movement, and agent state poisoning. Patched in langgraph-checkpoint 4.0.0 / langgraph 1.0.6, which disable the pickle fallback by default.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0035",
+    "title": "Amazon suffers four Sev-1 production outages in 90 days linked to AI-generated code deployed without adequate human review, resulting in an estimated 6.3 million lost orders",
+    "discovered_at": "2026-03-23T08:00:00Z",
+    "incident_date": "2026-03-05",
+    "severity": 4,
+    "owasp_category": "ASI08: Cascading Failures",
+    "nist_ai_rmf": "GV-1.3",
+    "cis_controls": [
+      "CIS 16.7",
+      "CIS 6.5"
+    ],
+    "cve_ids": [],
+    "coverage_status": "gap",
+    "coverage_detail": "Vectimus Cedar policies operate at tool-call time on developer machines, intercepting agent-initiated shell commands, file writes, web fetches, and MCP calls before they execute. The Amazon March 2026 outages arose from AI-generated code (produced with Amazon Q and related tools) being deployed to production ecommerce infrastructure through CI/CD pipelines without the two-person approval safeguard that governed human developer changes. No tool-call boundary exists between AI code generation on a developer's workstation and the CI/CD deployment pipeline; Vectimus cannot intercept or govern code deployment actions that occur in pipeline infrastructure. This is a deployment-governance failure entirely outside the Cedar enforcement boundary.",
+    "existing_policy_ids": [],
+    "gap_description": "The root cause is absent or insufficiently enforced deployment governance: AI-generated code changes were merged and deployed to production without mandatory human review gates. Amazon's standard two-person approval process applied to human developers did not consistently apply to AI-assisted changes. This is a CI/CD pipeline and organisational process control gap \u2014 architecturally outside Vectimus's enforcement scope. No Cedar policy can mandate pre-deployment approval in a third-party CI/CD system.",
+    "sources": [
+      {
+        "url": "https://www.cnbc.com/2026/03/10/amazon-plans-deep-dive-internal-meeting-address-ai-related-outages.html",
+        "title": "Amazon Convenes Deep Dive Meeting to Address AI-Related Outages \u2014 CNBC",
+        "r2_key": "sources/VTMS-2026-0035/cnbc-amazon-outages.txt"
+      },
+      {
+        "url": "https://www.getautonoma.com/blog/amazon-vibe-coding-lessons",
+        "title": "Amazon Vibe Coding Failures: 4 Sev-1s in 90 Days \u2014 Autonoma AI",
+        "r2_key": "sources/VTMS-2026-0035/autonoma-amazon-sev1s.txt"
+      },
+      {
+        "url": "https://fortune.com/2026/03/18/ai-coding-risks-amazon-agents-enterprise/",
+        "title": "An AI Agent Destroyed This Coder's Entire Database \u2014 Fortune",
+        "r2_key": "sources/VTMS-2026-0035/fortune-amazon-ai-risks.txt"
+      }
+    ],
+    "tools_involved": [
+      "Amazon Q",
+      "Kiro"
+    ],
+    "summary": "Between December 2025 and March 2026, Amazon suffered at least four Sev-1 production incidents linked to AI-generated code deployed without adequate review gates \u2014 a distinct escalation from VTMS-2026-0025 (December 2025 Kiro AWS Cost Explorer deletion). The most severe March incident (March 5, 2026) caused a ~6-hour, 99% drop in U.S. order volume with an estimated 6.3 million lost orders. An earlier March 2 incident attributed to Amazon Q caused approximately 120,000 lost orders from incorrect delivery-time data in shopping carts. Internal Amazon documents cited 'Gen-AI assisted changes' in a 'trend of incidents'; that reference was subsequently removed from documents ahead of an emergency March 10 engineering deep-dive. Amazon's standard two-person approval process for production changes was not consistently enforced for AI-assisted code. Amazon subsequently implemented a 90-day safety reset: senior engineer sign-offs required for AI-assisted code deployments across 335 critical systems.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0036",
+    "title": "CVE-2026-22708: Cursor AI IDE shell built-in allowlist bypass enables zero-click RCE via indirect prompt injection and environment variable poisoning chains",
+    "discovered_at": "2026-03-23T08:00:00Z",
+    "incident_date": "2026-01-15",
+    "severity": 4,
+    "owasp_category": "ASI05: Unsafe Code Execution",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 16.7",
+      "CIS 9.3"
+    ],
+    "cve_ids": [
+      "CVE-2026-22708"
+    ],
+    "coverage_status": "partial",
+    "coverage_detail": "Vectimus codexec pack policies intercept shell_command tool calls issued by AI coding agents before they execute. Direct allowlist-governed external commands are subject to Vectimus enforcement at this boundary. However, CVE-2026-22708 exploits Cursor's failure to surface shell built-in commands (export, set, unset, alias, source) as discrete tool calls: these built-ins execute within the active shell session in Auto-Run Mode without triggering Vectimus hooks. The downstream RCE is then achieved through a subsequently executed 'trusted' allowlisted command (e.g. git branch, python3) that Vectimus would have approved, because the built-ins have already poisoned the environment variables (PYTHONWARNINGS, BROWSER, PERL5OPT) that subvert that command into a payload launcher. Vectimus can block the upstream prompt injection vector's resulting tool calls in other contexts, but the specific built-in bypass chain in Cursor Auto-Run Mode is not currently addressed by any existing policy.",
+    "existing_policy_ids": [
+      "vectimus-codexec-001"
+    ],
+    "gap_description": "Cursor Auto-Run Mode does not surface shell built-in commands (export, unset, set, source, alias) as discrete tool calls; they execute within the active shell session without triggering Vectimus hooks. An indirect prompt injection payload can instruct the agent to poison environment variables (e.g. PYTHONWARNINGS, BROWSER, PERL5OPT, LD_PRELOAD, PATH), which then subvert trusted allowlisted commands into executing attacker-controlled payloads. A policy blocking or escalating env-var modification built-ins in AI coding agent shell sessions would close this specific gap. Three public PoC exploits are available on GitHub.",
+    "sources": [
+      {
+        "url": "https://www.pillar.security/blog/the-agent-security-paradox-when-trusted-commands-in-cursor-become-attack-vectors",
+        "title": "The Agent Security Paradox: When Trusted Commands in Cursor Become Attack Vectors \u2014 Pillar Security",
+        "r2_key": "sources/VTMS-2026-0036/pillar-cve-2026-22708.txt"
+      },
+      {
+        "url": "https://www.sentinelone.com/vulnerability-database/cve-2026-22708/",
+        "title": "CVE-2026-22708: Cursor AI Code Editor RCE Vulnerability \u2014 SentinelOne",
+        "r2_key": "sources/VTMS-2026-0036/sentinelone-cve-2026-22708.txt"
+      },
+      {
+        "url": "https://www.scworld.com/news/cursor-vulnerability-enables-stealthy-rce-via-indirect-prompt-injection",
+        "title": "Cursor Vulnerability Enables Stealthy RCE via Indirect Prompt Injection \u2014 SC Media",
+        "r2_key": "sources/VTMS-2026-0036/scmedia-cve-2026-22708.txt"
+      }
+    ],
+    "tools_involved": [
+      "Cursor"
+    ],
+    "summary": "CVE-2026-22708 (CVSS 9.8, CWE-15, patched in Cursor 2.3) is a critical RCE vulnerability in Cursor AI IDE's Auto-Run Mode. When the Cursor Agent runs with allowlist mode enabled, shell built-in commands (export, set, unset, alias, source) bypass allowlist validation entirely and execute without user approval. Via indirect prompt injection \u2014 malicious instructions embedded in files, repositories, or web content processed by the agent \u2014 an attacker can instruct the agent to silently poison environment variables such as PYTHONWARNINGS, BROWSER, PERL5OPT, or PAGER. The next time the user approves a seemingly benign allowlisted command (git, python3, man), that command instead executes the attacker's payload through the poisoned environment. The attack separates setup (invisible built-in commands) from trigger (user-approved trusted command), making it extremely difficult to detect. Three public PoC exploits are available on GitHub. Reported to Cursor in August 2025; publicly disclosed January 2026.",
+    "recommended_action": "update_existing",
+    "recommended_policy_description": "In the codexec policy pack, extend shell_command rules to explicitly flag environment variable modification built-ins (export, unset, set, alias, source) when executed by an AI coding agent without context.approved == true. Specifically, block or escalate any shell_command that modifies PYTHONWARNINGS, BROWSER, PERL5OPT, LD_PRELOAD, LD_LIBRARY_PATH, PATH, PAGER, or MANPAGER environment variables, as these are the primary vectors in the CVE-2026-22708 env-var poisoning chains. This complements existing codexec shell_command blocking rules for direct destructive commands, closing the gap where built-in-mediated env-var manipulation subverts trusted allowlisted commands.",
+    "content_worthy": true,
+    "content_angle": "covered_by_vectimus",
+    "enforcement_scope": "tool_calling_only"
+  }
+]
