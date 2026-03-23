@@ -4,6 +4,9 @@ on:
   repository_dispatch:
     types: [policies-updated]
 
+permissions:
+  contents: read
+
 jobs:
   reevaluate:
     runs-on: ubuntu-latest

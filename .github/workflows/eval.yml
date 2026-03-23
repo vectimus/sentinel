@@ -17,6 +17,9 @@ on:
       - "evals/**"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   mcp-scan:
     name: MCP Scanner
