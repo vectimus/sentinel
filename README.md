@@ -3,7 +3,6 @@
 **Autonomous threat-to-policy pipeline. Three AI agents discover agentic AI security threats, write Cedar policies, prove them in a sandbox, then open PRs for human review.**
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
-[![Sentinel Pipeline](https://github.com/vectimus/sentinel/actions/workflows/sentinel-pipeline.yml/badge.svg)](https://github.com/vectimus/sentinel/actions/workflows/sentinel-pipeline.yml)
 
 Your policies stay current without you reading CVE feeds. Sentinel runs daily at 07:00 UTC and produces auditable, testable output. Every finding, every policy draft, every advisory is public.
 
