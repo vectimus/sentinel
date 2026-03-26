@@ -1,0 +1,26 @@
+# This workflow file should be placed in the vectimus/policies repo at:
+#   .github/workflows/notify-sentinel-on-release.yml
+#
+# It dispatches a repository_dispatch event to vectimus/sentinel whenever a
+# new policy release is tagged, triggering coverage re-evaluation.
+#
+# Copy this file to the policies repo and update the token secret name if needed.
+
+name: Notify Sentinel on policy release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger coverage re-evaluation in Sentinel
+        env:
+          GH_TOKEN: ${{ secrets.BOT_GITHUB_TOKEN }}
+        run: |
+          gh api repos/vectimus/sentinel/dispatches \
+            -f event_type=policies-updated \
+            -f "client_payload[tag]=${{ github.event.release.tag_name }}" \
+            -f "client_payload[release_url]=${{ github.event.release.html_url }}"

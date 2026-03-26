@@ -37,7 +37,7 @@ class Finding(BaseModel):
     nist_ai_rmf: str | None = Field(default=None, description="NIST AI RMF function (e.g. GV-1, MP-2)")
     cis_controls: list[str] = Field(default_factory=list, description="Relevant CIS Controls")
     cve_ids: list[str] = Field(default_factory=list, description="Linked CVE identifiers")
-    coverage_status: Literal["covered", "partial", "gap"] = Field(description="covered | partial | gap")
+    coverage_status: Literal["covered", "partial", "policy_pending"] = Field(description="covered | partial | policy_pending")
     coverage_detail: str | None = None
     existing_policy_ids: list[str] = Field(default_factory=list)
     gap_description: str | None = None
@@ -105,8 +105,8 @@ class Finding(BaseModel):
 
     @model_validator(mode="after")
     def validate_gap_requires_description(self) -> Finding:
-        if self.coverage_status == "gap" and not self.gap_description:
-            raise ValueError("gap_description is required when coverage_status is 'gap'")
+        if self.coverage_status == "policy_pending" and not self.gap_description:
+            raise ValueError("gap_description is required when coverage_status is 'policy_pending'")
         return self
 
     @model_validator(mode="after")

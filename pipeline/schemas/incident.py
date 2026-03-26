@@ -24,7 +24,7 @@ class Incident(BaseModel):
     nist_ai_rmf: str | None = None
     cis_controls: str | None = None  # JSON-encoded list
     cve_ids: str | None = None  # JSON-encoded list
-    coverage_status: Literal["covered", "partial", "gap"]
+    coverage_status: Literal["covered", "partial", "policy_pending"]
     coverage_detail: str | None = None
     existing_policy_ids: str | None = None  # JSON-encoded list
     gap_description: str | None = None

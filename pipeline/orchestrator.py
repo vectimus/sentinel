@@ -59,9 +59,9 @@ def _build_digest(
     if analyst_result:
         lines.append(f"Content PRs: {analyst_result['prs_created']} (vectimus/vectimus-website)")
 
-    gaps = sum(1 for f in findings if f.get("coverage_status") == "gap")
-    if gaps:
-        lines.append(f"Gaps found: {gaps}")
+    pending = sum(1 for f in findings if f.get("coverage_status") == "policy_pending")
+    if pending:
+        lines.append(f"Policy pending: {pending}")
 
     if errors:
         lines.append("")
@@ -150,31 +150,31 @@ async def main() -> None:
         logger.warning("Findings validation failed in orchestrator: %s", e)
         errors.append(f"Findings validation: {e}")
 
-    # Post-processing: scrub internal gaps from D1
-    # The Threat Hunter prompt instructs the agent not to write internal gaps
-    # (coverage_status=gap with enforcement_scope!=out_of_scope) to D1. This is
-    # a safety net in case the agent writes them anyway.
+    # Post-processing: scrub internal policy_pending items from D1
+    # The Threat Hunter prompt instructs the agent not to write internal
+    # policy_pending findings (enforcement_scope!=out_of_scope) to D1. This
+    # is a safety net in case the agent writes them anyway.
     try:
         from pipeline.tools.d1_client import D1Client as _D1
 
         d1_scrub = _D1(config.cloudflare_account_id, config.cloudflare_api_token, config.d1_database_id)
         try:
-            internal_gaps = d1_scrub.execute(
+            internal_pending = d1_scrub.execute(
                 "SELECT vtms_id FROM incidents "
-                "WHERE coverage_status = 'gap' AND "
+                "WHERE coverage_status = 'policy_pending' AND "
                 "(enforcement_scope IS NULL OR enforcement_scope != 'out_of_scope')"
             )
-            for row in internal_gaps:
+            for row in internal_pending:
                 vtms_id = row.get("vtms_id")
                 if vtms_id:
                     d1_scrub.execute(
                         "DELETE FROM incidents WHERE vtms_id = ?", [vtms_id]
                     )
-                    logger.info("Removed internal gap %s from D1 (pending policy work)", vtms_id)
+                    logger.info("Removed internal policy_pending %s from D1", vtms_id)
         finally:
             d1_scrub.close()
     except Exception as e:
-        logger.warning("D1 gap scrub failed (non-fatal): %s", e)
+        logger.warning("D1 policy_pending scrub failed (non-fatal): %s", e)
 
     # Stage 2: Security Engineer (sequential — Threat Analyst needs its output)
     logger.info("Stage 2: Running Security Engineer")

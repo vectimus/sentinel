@@ -63,7 +63,7 @@ def compute_and_store_trends(d1_client, date: str | None = None) -> dict:
     partial = coverage_counts.get("partial", 0)
     total_with_status = sum(coverage_counts.values()) or 1
     coverage_rate = (covered + partial * 0.5) / total_with_status
-    gap_rate = coverage_counts.get("gap", 0) / total_with_status
+    gap_rate = coverage_counts.get("policy_pending", 0) / total_with_status
 
     # Policy counts (from policy_meta if available, otherwise 0)
     try:

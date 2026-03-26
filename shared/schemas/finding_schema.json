@@ -55,7 +55,7 @@
     },
     "coverage_status": {
       "type": "string",
-      "enum": ["covered", "partial", "gap"]
+      "enum": ["covered", "partial", "policy_pending"]
     },
     "coverage_detail": {
       "type": ["string", "null"]

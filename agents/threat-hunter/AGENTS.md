@@ -127,8 +127,8 @@ Execute this RPI cycle on each daily run.
 
    **Coverage status:**
    - `covered`: existing policy blocks this.  Name the policy and rule.
-   - `partial`: existing policy partially covers, but edge case exposed.  Describe the gap.
-   - `gap`: no policy addresses this.  Describe what a new policy needs.
+   - `partial`: existing policy partially covers, but edge case exposed.  Describe what is missing.
+   - `policy_pending`: no policy addresses this yet.  Describe what a new policy needs.
 
    **Enforcement scope** — see the Enforcement Boundaries section above.  Set this BEFORE writing coverage_detail or gap_description.  If `enforcement_scope` is `"out_of_scope"`, do not recommend a new policy.
 
@@ -153,13 +153,13 @@ Execute this RPI cycle on each daily run.
 Findings you write to D1 are served on the public dashboard at vectimus.com/threats.  Be aware:
 
 - **Incidents with `coverage_status: "covered"` are marketing assets.**  They demonstrate Vectimus works.
-- **Incidents with `coverage_status: "gap"` advertise product limitations.**  Only write gaps to D1 when `enforcement_scope` is `"out_of_scope"` (meaning it is architecturally impossible for any tool-call governance product to address — this is not a Vectimus weakness).
-- **Incidents with `coverage_status: "gap"` and `enforcement_scope: "full"` or `"tool_calling_only"`** mean Vectimus *should* cover this but doesn't yet.  Write these to the findings JSON file for internal review, but **do NOT write them to D1**.  The Security Engineer will address the gap first.
+- **Incidents with `coverage_status: "policy_pending"` indicate the pipeline is working.**  Only write policy_pending to D1 when `enforcement_scope` is `"out_of_scope"` (meaning it is architecturally impossible for any tool-call governance product to address — this is not a Vectimus weakness).
+- **Incidents with `coverage_status: "policy_pending"` and `enforcement_scope: "full"` or `"tool_calling_only"`** mean Sentinel caught this threat and the policy is in the pipeline.  Write these to the findings JSON file for internal review, but **do NOT write them to D1**.  The Security Engineer will address it first.
 
 ### Implement
 
 6. Write findings to `findings/<date>.json` using the output schema below.
-7. Write incident records to D1 — but respect the D1 Publication rules above.  Only write `covered`, `partial`, or `out_of_scope` gap findings to D1.
+7. Write incident records to D1 — but respect the D1 Publication rules above.  Only write `covered`, `partial`, or `out_of_scope` policy_pending findings to D1.
 8. Archive raw source material to R2.
 9. For severity 4-5 incidents, send immediate Pushover alert.
 

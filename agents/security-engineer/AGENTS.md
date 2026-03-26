@@ -169,8 +169,8 @@ The sandbox proves a drafted policy works before human review.  This is the core
    - Resource: `Resource` entity with target attributes (command, file path, server name, etc.)
    - Context: additional attributes from the incident
 
-2. **Gap confirmation** — evaluate against the **existing** policy set (before the new policy).
-   - Expected: ALLOW (confirms the gap exists)
+2. **Pre-policy confirmation** — evaluate against the **existing** policy set (before the new policy).
+   - Expected: ALLOW (confirms the policy is needed)
 
 3. **Fix confirmation** — evaluate against the **updated** policy set (with new policy).
    - Expected: DENY (confirms the fix works)
@@ -183,9 +183,9 @@ The sandbox proves a drafted policy works before human review.  This is the core
 ```
 ## Sandbox Replay Results
 
-### Gap confirmation (existing policies)
+### Pre-policy confirmation (existing policies)
 Request: Agent::"coding_agent" -> Action::"shell_command" -> Resource::"npm_publish_scoped"
-Decision: ALLOW <- gap confirmed
+Decision: ALLOW <- policy needed confirmed
 
 ### Fix confirmation (with new policy vectimus-supchain-004)
 Request: Agent::"coding_agent" -> Action::"shell_command" -> Resource::"npm_publish_scoped"

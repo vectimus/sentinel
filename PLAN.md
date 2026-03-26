@@ -26,7 +26,7 @@ All repos are public.  All tools listed below are free and open source.
 - [ ] Add enums to Pydantic schemas: `coverage_status`, `recommended_action`, `content_angle`, `owasp_category`, `content_type`, `policy_status`, `content_status`
 - [ ] Add datetime validation to `discovered_at`, `incident_date` fields
 - [ ] Add VTMS ID format validation (`VTMS-YYYY-NNNN` regex)
-- [ ] Add cross-field validation: `gap_description` required when `coverage_status == "gap"`
+- [ ] Add cross-field validation: `gap_description` required when `coverage_status == "policy_pending"`
 - [ ] Validate findings against schema in `run_threat_hunter()` before returning
 - [ ] Validate findings in `run_security_engineer()` and `run_threat_analyst()` on load
 

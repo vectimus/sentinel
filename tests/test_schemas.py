@@ -19,7 +19,7 @@ class TestFindingValidation:
         finding = Finding(**sample_finding)
         assert finding.vtms_id == "VTMS-2026-0001"
         assert finding.severity == 4
-        assert finding.coverage_status == "gap"
+        assert finding.coverage_status == "policy_pending"
 
     def test_invalid_vtms_id_rejected(self, sample_finding):
         sample_finding["vtms_id"] = "VTMS-26-1"
@@ -62,8 +62,8 @@ class TestFindingValidation:
         finding = Finding(**sample_finding)
         assert finding.coverage_status == "partial"
 
-    def test_gap_description_required_when_gap(self, sample_finding):
-        sample_finding["coverage_status"] = "gap"
+    def test_gap_description_required_when_policy_pending(self, sample_finding):
+        sample_finding["coverage_status"] = "policy_pending"
         sample_finding["gap_description"] = None
         with pytest.raises(ValidationError, match="gap_description is required"):
             Finding(**sample_finding)

@@ -54,11 +54,11 @@ policy_pr: <link to policy PR if applicable>
 
 ## Root cause
 
-<1-2 paragraphs.  Technical root cause analysis.  Specific governance gap.  OWASP Agentic category mapping.>
+<1-2 paragraphs.  Technical root cause analysis.  Specific governance concern.  OWASP Agentic category mapping.>
 
 ## How Vectimus responds
 
-<1-2 paragraphs.  Either "existing policy X blocks this" (with Cedar snippet) or "we've drafted policy X to close this gap" (with Cedar snippet and sandbox results).  Link to the policy PR.>
+<1-2 paragraphs.  Either "existing policy X blocks this" (with Cedar snippet) or "we've drafted policy X to address this" (with Cedar snippet and sandbox results).  Link to the policy PR.>
 
 ## What you can do
 
@@ -74,7 +74,7 @@ title: "<Short title>"
 date: YYYY-MM-DD
 severity: N
 owasp_category: "<OWASP category>"
-coverage_status: covered | partial | gap
+coverage_status: covered | partial | policy_pending
 ---
 
 **Incident:** <One sentence summary>
@@ -103,7 +103,7 @@ For each content-worthy finding, execute this RPI cycle.
 4. Determine content type from `content_angle`:
 
    - `covered_by_vectimus`: incident analysis showing Vectimus policies would have prevented it.  Sales-oriented.
-   - `new_policy_needed`: incident analysis acknowledging the gap and introducing the new policy.  Shows Vectimus responds to real threats.
+   - `new_policy_needed`: incident analysis acknowledging the threat and introducing the new policy.  Shows Vectimus responds to real threats.
    - `trend_piece`: broader analysis covering multiple incidents in a category.  Thought leadership.
 
 5. Outline the post following the blog template.  Identify the key narrative: what happened, why it matters, what Vectimus does about it.

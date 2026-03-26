@@ -47,7 +47,7 @@ def reevaluate_coverage(d1_client, policies_dir: str) -> dict:
     incidents = d1_client.execute(
         "SELECT vtms_id, coverage_status, enforcement_scope, replay_request "
         "FROM incidents "
-        "WHERE coverage_status IN ('gap', 'partial') "
+        "WHERE coverage_status IN ('policy_pending', 'partial') "
         "AND replay_request IS NOT NULL"
     )
 
@@ -89,7 +89,7 @@ def reevaluate_coverage(d1_client, policies_dir: str) -> dict:
                 entities=replay.get("entities", []),
             )
 
-            # If the new policies now DENY what was previously a gap,
+            # If the new policies now DENY what was previously pending,
             # the incident is now covered
             if decision.decision == "Deny":
                 old_status = incident["coverage_status"]

@@ -95,25 +95,25 @@ async def _threat_hunter_async() -> None:
     except Exception as e:
         logger.warning("Findings validation issue: %s", e)
 
-    # Scrub internal gaps from D1
+    # Scrub internal policy_pending items from D1
     try:
         from pipeline.tools.d1_client import D1Client
         d1 = D1Client(config.cloudflare_account_id, config.cloudflare_api_token, config.d1_database_id)
         try:
             rows = d1.execute(
                 "SELECT vtms_id FROM incidents "
-                "WHERE coverage_status = 'gap' AND "
+                "WHERE coverage_status = 'policy_pending' AND "
                 "(enforcement_scope IS NULL OR enforcement_scope != 'out_of_scope')"
             )
             for row in rows:
                 vtms_id = row.get("vtms_id")
                 if vtms_id:
                     d1.execute("DELETE FROM incidents WHERE vtms_id = ?", [vtms_id])
-                    logger.info("Scrubbed internal gap %s from D1", vtms_id)
+                    logger.info("Scrubbed internal policy_pending %s from D1", vtms_id)
         finally:
             d1.close()
     except Exception as e:
-        logger.warning("D1 gap scrub failed (non-fatal): %s", e)
+        logger.warning("D1 policy_pending scrub failed (non-fatal): %s", e)
 
     # Write human-readable summary for HITL review
     findings = json.loads(findings_path.read_text()) if findings_path.exists() else []
@@ -140,9 +140,9 @@ async def _threat_hunter_async() -> None:
         f for f in findings
         if f.get("content_worthy") and f.get("enforcement_scope") != "out_of_scope"
     ]
-    gaps = [
+    pending = [
         f for f in findings
-        if f.get("coverage_status") == "gap"
+        if f.get("coverage_status") == "policy_pending"
         and f.get("enforcement_scope") != "out_of_scope"
     ]
 
@@ -150,7 +150,7 @@ async def _threat_hunter_async() -> None:
         "",
         f"**Actionable (policy work):** {len(actionable)}  ",
         f"**Content-worthy (advisories):** {len(content_worthy)}  ",
-        f"**Gaps:** {len(gaps)}  ",
+        f"**Policy pending:** {len(pending)}  ",
         "",
         "### What happens next",
         "",

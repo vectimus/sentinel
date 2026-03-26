@@ -92,9 +92,9 @@ def _build_issue_body(findings: list[dict]) -> str:
         f for f in findings
         if f.get("content_worthy") and f.get("enforcement_scope") != "out_of_scope"
     ]
-    gaps = [
+    pending = [
         f for f in findings
-        if f.get("coverage_status") == "gap"
+        if f.get("coverage_status") == "policy_pending"
         and f.get("enforcement_scope") != "out_of_scope"
     ]
 
@@ -103,7 +103,7 @@ def _build_issue_body(findings: list[dict]) -> str:
         "",
         f"**Actionable (policy work):** {len(actionable)}  ",
         f"**Content-worthy (advisories):** {len(content_worthy)}  ",
-        f"**Gaps:** {len(gaps)}  ",
+        f"**Policy pending:** {len(pending)}  ",
     ])
 
     return "\n".join(lines)
