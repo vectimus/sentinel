@@ -58,7 +58,7 @@ GitHub Actions (daily 07:00 UTC)
 │   └── Sandbox verification → PRs → vectimus/policies
 │
 ├── Stage 3: Threat Analyst
-│   └── Advisory content → PRs → vectimus/vectimus-website
+│   └── Advisory content → PRs → website
 │
 └── Stage 4: Pushover digest + GitHub Actions summary
 ```
@@ -85,7 +85,7 @@ Live threat intelligence: [vectimus.com/threats](https://vectimus.com/threats)
 |------|---------|-----------------|
 | [`vectimus/sentinel`](https://github.com/vectimus/sentinel) | Pipeline code, agent specs, findings | Threat Hunter commits findings |
 | [`vectimus/policies`](https://github.com/vectimus/policies) | Cedar policies, test fixtures | Security Engineer opens PRs |
-| [`vectimus/vectimus-website`](https://github.com/vectimus/vectimus-website) | Blog posts, advisories, threat dashboard | Threat Analyst opens PRs |
+| [vectimus.com](https://vectimus.com) | Blog posts, advisories, threat dashboard | Threat Analyst opens PRs |
 
 ---
 
