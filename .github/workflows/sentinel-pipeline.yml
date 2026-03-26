@@ -367,4 +367,5 @@ jobs:
           git config user.email "sentinel@vectimus.com"
           git add findings/
           git diff --staged --quiet || git commit -m "chore: findings $(date -u +%Y-%m-%d)"
+          git pull --rebase origin main
           git push

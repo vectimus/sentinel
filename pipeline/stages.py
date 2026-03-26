@@ -26,6 +26,28 @@ logging.basicConfig(
 logger = logging.getLogger("sentinel")
 
 
+def _resolve_findings_path() -> Path:
+    """Resolve the findings file, tolerating date skew across approval gates."""
+    env_path = os.environ.get("FINDINGS_PATH")
+    if env_path:
+        return Path(env_path)
+
+    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today = Path(f"findings/{date}.json")
+    if today.exists():
+        return today
+
+    # Approval gate may have delayed us past midnight — find the most recent file
+    findings_dir = Path("findings")
+    if findings_dir.exists():
+        files = sorted(findings_dir.glob("*.json"), reverse=True)
+        if files:
+            logger.info("Date-skew fallback: using %s instead of %s", files[0], today)
+            return files[0]
+
+    return today  # will fail downstream with a clear "not found" message
+
+
 def _clean_env() -> None:
     """Clean Claude Code / OTEL env vars before agent work."""
     _oauth = os.environ.get("CLAUDE_CODE_OAUTH_TOKEN", "")
@@ -165,7 +187,7 @@ async def _policy_engineer_async() -> None:
     init_tracing(project_name=f"sentinel-policy-engineer-{date}")
     logger.info("Policy Engineer stage starting")
 
-    findings_path = Path(os.environ.get("FINDINGS_PATH", f"findings/{date}.json"))
+    findings_path = _resolve_findings_path()
     if not findings_path.exists():
         logger.error("Findings file not found: %s", findings_path)
         sys.exit(1)
@@ -205,7 +227,7 @@ async def _threat_analyst_async() -> None:
     init_tracing(project_name=f"sentinel-threat-analyst-{date}")
     logger.info("Threat Analyst stage starting")
 
-    findings_path = Path(os.environ.get("FINDINGS_PATH", f"findings/{date}.json"))
+    findings_path = _resolve_findings_path()
     if not findings_path.exists():
         logger.error("Findings file not found: %s", findings_path)
         sys.exit(1)
@@ -246,7 +268,7 @@ async def _publish_async() -> None:
 
     logger.info("Publish stage starting")
 
-    findings_path = Path(os.environ.get("FINDINGS_PATH", f"findings/{date}.json"))
+    findings_path = _resolve_findings_path()
 
     # Load policy-engineer/threat-analyst results if available
     engineer_result = None
