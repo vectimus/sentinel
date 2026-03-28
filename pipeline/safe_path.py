@@ -49,7 +49,12 @@ def safe_open_for_append(path: str | Path, *, allowed_bases: list[str | Path] | 
     """Open a validated path for appending.
 
     This is a convenience wrapper for the common GitHub Actions pattern of
-    appending to ``GITHUB_STEP_SUMMARY`` or ``GITHUB_OUTPUT``.
+    appending to ``GITHUB_STEP_SUMMARY`` or ``GITHUB_OUTPUT``.  When no
+    *allowed_bases* are given the parent directory of *path* is used, since
+    GitHub Actions sets these to paths under a runner temp directory that
+    is outside the working directory.
     """
+    if allowed_bases is None:
+        allowed_bases = [Path(path).resolve().parent]
     validated = validate_path(path, allowed_bases=allowed_bases)
     return open(validated, "a")  # noqa: SIM115
