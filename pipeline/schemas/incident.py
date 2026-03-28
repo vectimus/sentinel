@@ -8,8 +8,16 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 VALID_ASI_CATEGORIES = [
-    "ASI01", "ASI02", "ASI03", "ASI04", "ASI05",
-    "ASI06", "ASI07", "ASI08", "ASI09", "ASI10",
+    "ASI01",
+    "ASI02",
+    "ASI03",
+    "ASI04",
+    "ASI05",
+    "ASI06",
+    "ASI07",
+    "ASI08",
+    "ASI09",
+    "ASI10",
 ]
 
 
@@ -55,9 +63,7 @@ class Incident(BaseModel):
             return v
         prefix = v.split(":")[0].strip()
         if prefix.startswith("LLM"):
-            raise ValueError(
-                f"LLM prefix is deprecated; use ASI01-ASI10. Got: {v}"
-            )
+            raise ValueError(f"LLM prefix is deprecated; use ASI01-ASI10. Got: {v}")
         if prefix not in VALID_ASI_CATEGORIES and prefix != "uncategorised":
             raise ValueError(
                 f"owasp_category prefix must be one of {VALID_ASI_CATEGORIES} or 'uncategorised'. Got: {prefix}"

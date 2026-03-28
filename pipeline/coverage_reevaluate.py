@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ def reevaluate_coverage(d1_client, policies_dir: str) -> dict:
 
     updated = 0
     skipped = 0
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
 
     for incident in incidents:
         vtms_id = incident["vtms_id"]
@@ -104,9 +104,7 @@ def reevaluate_coverage(d1_client, policies_dir: str) -> dict:
                     ],
                 )
                 updated += 1
-                logger.info(
-                    "Updated %s: %s → covered (policies now deny)", vtms_id, old_status
-                )
+                logger.info("Updated %s: %s → covered (policies now deny)", vtms_id, old_status)
             else:
                 logger.info("No change for %s — still allowed by policies", vtms_id)
 
@@ -122,6 +120,7 @@ def reevaluate_coverage(d1_client, policies_dir: str) -> dict:
 if __name__ == "__main__":
     import argparse
     import os
+
     from pipeline.tools.d1_client import D1Client
 
     parser = argparse.ArgumentParser(description="Re-evaluate incident coverage")

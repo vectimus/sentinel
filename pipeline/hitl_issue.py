@@ -16,11 +16,8 @@ import os
 import re
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-
-from pipeline.safe_path import safe_open_for_append
-
 
 SEVERITY_MAP = {1: "THEORETICAL", 2: "LOW", 3: "MEDIUM", 4: "HIGH", 5: "CRITICAL"}
 REPO = os.environ.get("GITHUB_REPOSITORY", "vectimus/sentinel")
@@ -43,7 +40,7 @@ def _gh(*args: str, stdin: str | None = None) -> str:
 
 def _find_findings_file() -> Path:
     """Locate today's findings JSON file."""
-    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    date = datetime.now(UTC).strftime("%Y-%m-%d")
     path = Path(f"findings/{date}.json")
     if path.exists():
         return path
@@ -61,11 +58,8 @@ def _build_issue_body(findings: list[dict]) -> str:
 
     All checkboxes default to checked. Uncheck to skip a finding.
     """
-    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    run_url = (
-        f"https://github.com/{REPO}/actions/runs/"
-        f"{os.environ.get('GITHUB_RUN_ID', '?')}"
-    )
+    date = datetime.now(UTC).strftime("%Y-%m-%d")
+    run_url = f"https://github.com/{REPO}/actions/runs/{os.environ.get('GITHUB_RUN_ID', '?')}"
 
     lines = [
         f"## Sentinel Review — {date}",
@@ -91,22 +85,26 @@ def _build_issue_body(findings: list[dict]) -> str:
     # Summary stats
     actionable = [f for f in findings if f.get("recommended_action") != "no_change"]
     content_worthy = [
-        f for f in findings
+        f
+        for f in findings
         if f.get("content_worthy") and f.get("enforcement_scope") != "out_of_scope"
     ]
     pending = [
-        f for f in findings
+        f
+        for f in findings
         if f.get("coverage_status") == "policy_pending"
         and f.get("enforcement_scope") != "out_of_scope"
     ]
 
-    lines.extend([
-        "---",
-        "",
-        f"**Actionable (policy work):** {len(actionable)}  ",
-        f"**Content-worthy (advisories):** {len(content_worthy)}  ",
-        f"**Policy pending:** {len(pending)}  ",
-    ])
+    lines.extend(
+        [
+            "---",
+            "",
+            f"**Actionable (policy work):** {len(actionable)}  ",
+            f"**Content-worthy (advisories):** {len(content_worthy)}  ",
+            f"**Policy pending:** {len(pending)}  ",
+        ]
+    )
 
     return "\n".join(lines)
 
@@ -122,14 +120,19 @@ def create() -> None:
         return
 
     body = _build_issue_body(findings)
-    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    date = datetime.now(UTC).strftime("%Y-%m-%d")
 
     issue_number = _gh(
-        "issue", "create",
-        "--repo", REPO,
-        "--title", f"Sentinel Review — {date}",
-        "--label", "sentinel-review",
-        "--body-file", "-",
+        "issue",
+        "create",
+        "--repo",
+        REPO,
+        "--title",
+        f"Sentinel Review — {date}",
+        "--label",
+        "sentinel-review",
+        "--body-file",
+        "-",
         stdin=body,
     )
     # gh issue create returns the URL, extract the number
@@ -141,7 +144,7 @@ def create() -> None:
     # Also add the issue link to the job summary
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
-        with safe_open_for_append(summary_path) as f:
+        with open(summary_path, "a") as f:
             f.write(f"\n**Review issue:** {issue_number}\n")
 
 
@@ -155,10 +158,15 @@ def filter() -> None:
 
     # Fetch issue body
     body = _gh(
-        "issue", "view", issue_number,
-        "--repo", REPO,
-        "--json", "body",
-        "--jq", ".body",
+        "issue",
+        "view",
+        issue_number,
+        "--repo",
+        REPO,
+        "--json",
+        "body",
+        "--jq",
+        ".body",
     )
 
     # Parse checked VTMS IDs from checkboxes
@@ -190,9 +198,13 @@ def filter() -> None:
     # Close the issue
     try:
         _gh(
-            "issue", "close", issue_number,
-            "--repo", REPO,
-            "--comment", f"Approved {len(approved)}/{len(findings)} findings. Pipeline proceeding.",
+            "issue",
+            "close",
+            issue_number,
+            "--repo",
+            REPO,
+            "--comment",
+            f"Approved {len(approved)}/{len(findings)} findings. Pipeline proceeding.",
         )
     except Exception as e:
         print(f"Warning: could not close issue: {e}")
@@ -212,7 +224,7 @@ def _set_output(name: str, value: str) -> None:
     """Set a GitHub Actions output variable."""
     output_file = os.environ.get("GITHUB_OUTPUT")
     if output_file:
-        with safe_open_for_append(output_file) as f:
+        with open(output_file, "a") as f:
             f.write(f"{name}={value}\n")
 
 

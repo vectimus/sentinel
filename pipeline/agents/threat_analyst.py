@@ -7,7 +7,7 @@ import logging
 import re
 from pathlib import Path
 
-from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
+from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
 
 from pipeline.config import Config
 
@@ -30,7 +30,8 @@ async def run_threat_analyst(config: Config, findings_path: Path) -> dict:
     """
     findings = json.loads(findings_path.read_text())
     content_worthy = [
-        f for f in findings
+        f
+        for f in findings
         if f.get("content_worthy") and f.get("enforcement_scope") != "out_of_scope"
     ]
 
@@ -80,7 +81,9 @@ async def run_threat_analyst(config: Config, findings_path: Path) -> dict:
         if isinstance(message, ResultMessage):
             result_text = message.result if hasattr(message, "result") else str(message)
 
-    logger.info("Threat Analyst agent completed: %s", result_text[:200] if result_text else "no output")
+    logger.info(
+        "Threat Analyst agent completed: %s", result_text[:200] if result_text else "no output"
+    )
 
     pr_urls = _extract_pr_urls(result_text)
     return {"prs_created": len(pr_urls), "pr_urls": pr_urls}

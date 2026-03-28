@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -20,16 +20,16 @@ def compute_and_store_trends(d1_client, date: str | None = None) -> dict:
         The trend record that was stored.
     """
     if date is None:
-        date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        date = datetime.now(UTC).strftime("%Y-%m-%d")
 
     # Total incidents
     total_result = d1_client.execute("SELECT COUNT(*) as cnt FROM incidents")
     total_incidents = total_result[0]["cnt"] if total_result else 0
 
     # Incidents in last 30 days
-    thirty_days_ago = (
-        datetime.strptime(date, "%Y-%m-%d") - timedelta(days=30)
-    ).strftime("%Y-%m-%d")
+    thirty_days_ago = (datetime.strptime(date, "%Y-%m-%d") - timedelta(days=30)).strftime(
+        "%Y-%m-%d"
+    )
     recent_result = d1_client.execute(
         "SELECT COUNT(*) as cnt FROM incidents WHERE discovered_at >= ?",
         [thirty_days_ago],
@@ -41,18 +41,13 @@ def compute_and_store_trends(d1_client, date: str | None = None) -> dict:
         "SELECT owasp_category, COUNT(*) as cnt FROM incidents "
         "GROUP BY owasp_category ORDER BY cnt DESC"
     )
-    incidents_by_category = {
-        row["owasp_category"]: row["cnt"] for row in category_result
-    }
+    incidents_by_category = {row["owasp_category"]: row["cnt"] for row in category_result}
 
     # Incidents by severity
     severity_result = d1_client.execute(
-        "SELECT severity, COUNT(*) as cnt FROM incidents "
-        "GROUP BY severity ORDER BY severity DESC"
+        "SELECT severity, COUNT(*) as cnt FROM incidents GROUP BY severity ORDER BY severity DESC"
     )
-    incidents_by_severity = {
-        str(row["severity"]): row["cnt"] for row in severity_result
-    }
+    incidents_by_severity = {str(row["severity"]): row["cnt"] for row in severity_result}
 
     # Coverage rate
     coverage_result = d1_client.execute(
@@ -75,9 +70,7 @@ def compute_and_store_trends(d1_client, date: str | None = None) -> dict:
         policies_total = 0
 
     try:
-        rules_meta = d1_client.execute(
-            "SELECT value FROM policy_meta WHERE key = 'total_rules'"
-        )
+        rules_meta = d1_client.execute("SELECT value FROM policy_meta WHERE key = 'total_rules'")
         rules_total = int(rules_meta[0]["value"]) if rules_meta else 0
     except Exception:
         rules_total = 0
@@ -95,6 +88,11 @@ def compute_and_store_trends(d1_client, date: str | None = None) -> dict:
     }
 
     d1_client.upsert_trend(trend)
-    logger.info("Stored trend for %s: %d incidents, %.1f%% coverage", date, total_incidents, coverage_rate * 100)
+    logger.info(
+        "Stored trend for %s: %d incidents, %.1f%% coverage",
+        date,
+        total_incidents,
+        coverage_rate * 100,
+    )
 
     return trend

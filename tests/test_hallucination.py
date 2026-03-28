@@ -27,7 +27,6 @@ from deepeval import assert_test
 from deepeval.metrics import FaithfulnessMetric, HallucinationMetric
 from deepeval.test_case import LLMTestCase
 
-
 # ---------------------------------------------------------------------------
 # Fixtures — sample agent outputs and their source contexts
 # ---------------------------------------------------------------------------
@@ -56,9 +55,7 @@ def hallucination_metric() -> HallucinationMetric:
 
 
 class TestThreatHunterFaithfulness:
-    def test_finding_summary_faithful_to_context(
-        self, example_finding, faithfulness_metric
-    ):
+    def test_finding_summary_faithful_to_context(self, example_finding, faithfulness_metric):
         """The finding summary should be derivable from the source context."""
         context = [
             f"Incident: {example_finding['title']}",
@@ -75,9 +72,7 @@ class TestThreatHunterFaithfulness:
         )
         assert_test(test_case, [faithfulness_metric])
 
-    def test_coverage_assessment_not_hallucinated(
-        self, example_finding, hallucination_metric
-    ):
+    def test_coverage_assessment_not_hallucinated(self, example_finding, hallucination_metric):
         """Coverage status and policy references should match the context."""
         context = [
             f"Policy IDs in the Vectimus set: {example_finding['existing_policy_ids']}",
@@ -108,7 +103,7 @@ class TestSecurityEngineerFaithfulness:
             "// VTMS-2026-0042 | OWASP: ASI02 | SOC 2: CC6.1 | NIST: GV-1\n"
             "// Blocks agent-initiated npm publish commands\n"
             "forbid (\n"
-            '  principal,\n'
+            "  principal,\n"
             '  action == Action::"shell_command",\n'
             "  resource\n"
             ")\n"

@@ -44,7 +44,6 @@ def allow_policy_dir(tmp_path: Path) -> Path:
 
 
 class TestAuthorize:
-
     def test_returns_deny_for_forbidden_request(self, cedar, deny_policy_dir):
         request = {
             "principal": 'User::"attacker"',
@@ -87,7 +86,6 @@ class TestAuthorize:
 
 
 class TestValidate:
-
     def test_valid_policy_returns_valid(self, cedar, tmp_path):
         policy = """
         permit(
@@ -98,24 +96,26 @@ class TestValidate:
         """
         (tmp_path / "valid.cedar").write_text(policy)
 
-        schema = json.dumps({
-            "": {
-                "entityTypes": {
-                    "User": {
-                        "memberOfTypes": [],
-                        "shape": {"type": "Record", "attributes": {}},
-                    }
-                },
-                "actions": {
-                    "read": {
-                        "appliesTo": {
-                            "principalTypes": ["User"],
-                            "resourceTypes": ["User"],
+        schema = json.dumps(
+            {
+                "": {
+                    "entityTypes": {
+                        "User": {
+                            "memberOfTypes": [],
+                            "shape": {"type": "Record", "attributes": {}},
                         }
-                    }
-                },
+                    },
+                    "actions": {
+                        "read": {
+                            "appliesTo": {
+                                "principalTypes": ["User"],
+                                "resourceTypes": ["User"],
+                            }
+                        }
+                    },
+                }
             }
-        })
+        )
         schema_path = tmp_path / "schema.json"
         schema_path.write_text(schema)
 
@@ -135,24 +135,26 @@ class TestValidate:
         """
         (tmp_path / "invalid.cedar").write_text(policy)
 
-        schema = json.dumps({
-            "": {
-                "entityTypes": {
-                    "User": {
-                        "memberOfTypes": [],
-                        "shape": {"type": "Record", "attributes": {}},
-                    }
-                },
-                "actions": {
-                    "read": {
-                        "appliesTo": {
-                            "principalTypes": ["User"],
-                            "resourceTypes": ["User"],
+        schema = json.dumps(
+            {
+                "": {
+                    "entityTypes": {
+                        "User": {
+                            "memberOfTypes": [],
+                            "shape": {"type": "Record", "attributes": {}},
                         }
-                    }
-                },
+                    },
+                    "actions": {
+                        "read": {
+                            "appliesTo": {
+                                "principalTypes": ["User"],
+                                "resourceTypes": ["User"],
+                            }
+                        }
+                    },
+                }
             }
-        })
+        )
         schema_path = tmp_path / "schema.json"
         schema_path.write_text(schema)
 

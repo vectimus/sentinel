@@ -2,13 +2,13 @@
 
 import json
 import os
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
 
 import pipeline.tracing as tracing_mod
-from pipeline.tracing import init_tracing, export_traces, shutdown
+from pipeline.tracing import export_traces, init_tracing, shutdown
 
 
 @pytest.fixture(autouse=True)
@@ -46,10 +46,12 @@ class TestExportTraces:
     def test_exports_to_json(self, tmp_path):
         tracing_mod._phoenix_session = MagicMock()
 
-        mock_df = pd.DataFrame([
-            {"name": "llm_call", "duration_ms": 1200, "status": "OK"},
-            {"name": "tool_call", "duration_ms": 300, "status": "OK"},
-        ])
+        mock_df = pd.DataFrame(
+            [
+                {"name": "llm_call", "duration_ms": 1200, "status": "OK"},
+                {"name": "tool_call", "duration_ms": 300, "status": "OK"},
+            ]
+        )
 
         mock_px = MagicMock()
         mock_px.Client.return_value.get_spans_dataframe.return_value = mock_df

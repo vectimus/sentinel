@@ -26,6 +26,7 @@ logger = logging.getLogger("sentinel.mcp")
 
 def _log_tool_call(func):
     """Decorator to log all MCP tool calls for audit trail."""
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         # Log the call (truncate large arguments)
@@ -40,6 +41,7 @@ def _log_tool_call(func):
         except Exception as e:
             logger.error("MCP tool error: %s → %s", func.__name__, e)
             raise
+
     return wrapper
 
 
@@ -117,9 +119,7 @@ def d1_write(sql: str, params: list | None = None) -> str:
     # Validate SQL statement — only allow INSERT/UPDATE/REPLACE
     sql_upper = sql.strip().upper()
     if not sql_upper.startswith(("INSERT", "UPDATE", "REPLACE")):
-        raise ValueError(
-            f"d1_write only allows INSERT/UPDATE/REPLACE statements. Got: {sql[:50]}"
-        )
+        raise ValueError(f"d1_write only allows INSERT/UPDATE/REPLACE statements. Got: {sql[:50]}")
     # Block dangerous keywords
     dangerous = {"DROP", "DELETE", "ALTER", "TRUNCATE", "PRAGMA"}
     sql_words = set(sql_upper.split())
@@ -148,9 +148,7 @@ def r2_put(key: str, content: str, content_type: str = "text/plain") -> str:
     # Validate key path — must be under allowed prefixes
     allowed_prefixes = ("sources/", "findings/", "drafts/")
     if not key.startswith(allowed_prefixes):
-        raise ValueError(
-            f"r2_put key must start with one of {allowed_prefixes}. Got: {key!r}"
-        )
+        raise ValueError(f"r2_put key must start with one of {allowed_prefixes}. Got: {key!r}")
     # Block path traversal
     if ".." in key:
         raise ValueError("r2_put key must not contain '..'")
@@ -309,9 +307,7 @@ def github_push_file(
         )
     # Validate branch — must be sentinel-prefixed
     if not branch.startswith("sentinel/"):
-        raise ValueError(
-            f"github_push_file branch must start with 'sentinel/'. Got: {branch!r}"
-        )
+        raise ValueError(f"github_push_file branch must start with 'sentinel/'. Got: {branch!r}")
     # Block path traversal
     if ".." in path:
         raise ValueError("github_push_file path must not contain '..'")

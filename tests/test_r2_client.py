@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from io import BytesIO
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -31,7 +30,6 @@ def r2_client(mock_s3):
 
 
 class TestPut:
-
     def test_calls_put_object_with_correct_params(self, r2_client, mock_s3):
         r2_client.put("sources/test.txt", "hello world", content_type="text/plain")
 
@@ -57,7 +55,6 @@ class TestPut:
 
 
 class TestGet:
-
     def test_returns_decoded_content(self, r2_client, mock_s3):
         mock_body = MagicMock()
         mock_body.read.return_value = b"file content here"
@@ -73,7 +70,6 @@ class TestGet:
 
 
 class TestListKeys:
-
     def test_returns_keys_from_paginator(self, r2_client, mock_s3):
         mock_paginator = MagicMock()
         mock_paginator.paginate.return_value = [
@@ -98,7 +94,6 @@ class TestListKeys:
 
 
 class TestExists:
-
     def test_returns_true_when_object_exists(self, r2_client, mock_s3):
         mock_s3.head_object.return_value = {}
 

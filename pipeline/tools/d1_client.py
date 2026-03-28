@@ -18,25 +18,65 @@ class D1Client:
     BASE_URL = "https://api.cloudflare.com/client/v4"
 
     # Allowed column names for each table — prevents SQL injection via dict keys
-    _INCIDENT_COLUMNS = frozenset({
-        "vtms_id", "title", "summary", "discovered_at", "incident_date",
-        "severity", "owasp_category", "nist_ai_rmf", "cis_controls", "cve_ids",
-        "coverage_status", "coverage_detail", "existing_policy_ids", "gap_description",
-        "tools_involved", "sources", "policy_pr_url", "content_pr_url",
-        "policy_status", "content_status", "recommended_action", "content_angle",
-        "replay_request", "enforcement_scope", "created_at", "updated_at",
-    })
+    _INCIDENT_COLUMNS = frozenset(
+        {
+            "vtms_id",
+            "title",
+            "summary",
+            "discovered_at",
+            "incident_date",
+            "severity",
+            "owasp_category",
+            "nist_ai_rmf",
+            "cis_controls",
+            "cve_ids",
+            "coverage_status",
+            "coverage_detail",
+            "existing_policy_ids",
+            "gap_description",
+            "tools_involved",
+            "sources",
+            "policy_pr_url",
+            "content_pr_url",
+            "policy_status",
+            "content_status",
+            "recommended_action",
+            "content_angle",
+            "replay_request",
+            "enforcement_scope",
+            "created_at",
+            "updated_at",
+        }
+    )
 
-    _TREND_COLUMNS = frozenset({
-        "date", "total_incidents", "incidents_30d", "incidents_by_category",
-        "incidents_by_severity", "coverage_rate", "gap_rate",
-        "policies_total", "rules_total",
-    })
+    _TREND_COLUMNS = frozenset(
+        {
+            "date",
+            "total_incidents",
+            "incidents_30d",
+            "incidents_by_category",
+            "incidents_by_severity",
+            "coverage_rate",
+            "gap_rate",
+            "policies_total",
+            "rules_total",
+        }
+    )
 
-    _CONTENT_COLUMNS = frozenset({
-        "id", "vtms_id", "content_type", "title", "slug", "status",
-        "pr_url", "published_url", "created_at", "updated_at",
-    })
+    _CONTENT_COLUMNS = frozenset(
+        {
+            "id",
+            "vtms_id",
+            "content_type",
+            "title",
+            "slug",
+            "status",
+            "pr_url",
+            "published_url",
+            "created_at",
+            "updated_at",
+        }
+    )
 
     def __init__(self, account_id: str, api_token: str, database_id: str) -> None:
         self.account_id = account_id
@@ -90,7 +130,9 @@ class D1Client:
                 values.append(v)
 
         sql = f"INSERT OR REPLACE INTO incidents ({col_names}) VALUES ({placeholders})"
-        self.execute(sql, values)  # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
+        self.execute(
+            sql, values
+        )  # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
 
     def get_incident(self, vtms_id: str) -> dict | None:
         """Fetch a single incident by VTMS ID."""
@@ -118,13 +160,21 @@ class D1Client:
     def update_incident_field(self, vtms_id: str, field: str, value: Any) -> None:
         """Update a single field on an incident."""
         allowed_fields = {
-            "policy_pr_url", "content_pr_url", "policy_status", "content_status",
-            "coverage_status", "coverage_detail", "updated_at",
-            "replay_request", "enforcement_scope",
+            "policy_pr_url",
+            "content_pr_url",
+            "policy_status",
+            "content_status",
+            "coverage_status",
+            "coverage_detail",
+            "updated_at",
+            "replay_request",
+            "enforcement_scope",
         }
         if field not in allowed_fields:
             raise ValueError(f"Field {field!r} not in allowed update fields")
-        self.execute(f"UPDATE incidents SET {field} = ? WHERE vtms_id = ?", [value, vtms_id])  # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
+        self.execute(
+            f"UPDATE incidents SET {field} = ? WHERE vtms_id = ?", [value, vtms_id]
+        )  # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
 
     def upsert_trend(self, trend: dict) -> None:
         """Insert or replace a trend record."""
@@ -142,7 +192,9 @@ class D1Client:
             else:
                 values.append(v)
         sql = f"INSERT OR REPLACE INTO trends ({col_names}) VALUES ({placeholders})"
-        self.execute(sql, values)  # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
+        self.execute(
+            sql, values
+        )  # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
 
     def insert_content(self, content: dict) -> None:
         """Insert or replace a content record."""
@@ -155,7 +207,9 @@ class D1Client:
         col_names = ", ".join(cols)
         values = list(content.values())
         sql = f"INSERT OR REPLACE INTO content ({col_names}) VALUES ({placeholders})"
-        self.execute(sql, values)  # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
+        self.execute(
+            sql, values
+        )  # nosemgrep: python.sqlalchemy.security.sqlalchemy-execute-raw-query.sqlalchemy-execute-raw-query
 
     def close(self) -> None:
         self._client.close()

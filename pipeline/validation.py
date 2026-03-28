@@ -12,10 +12,16 @@ import logging
 import re
 from typing import Any
 
-from guardrails import Guard, OnFailAction
-from guardrails.validators import register_validator, Validator, ValidationResult, PassResult, FailResult
+from guardrails.validators import (
+    FailResult,
+    PassResult,
+    ValidationResult,
+    Validator,
+    register_validator,
+)
 from pydantic import ValidationError
 
+from guardrails import Guard, OnFailAction
 from pipeline.schemas.finding import Finding
 
 logger = logging.getLogger(__name__)
@@ -117,12 +123,15 @@ class ValidCedarPolicy(Validator):
             errors.append("No forbid or permit statement found")
 
         # Check that policy statements end with semicolons
-        if self.POLICY_STATEMENT_PATTERN.search(value) and not self.SEMICOLON_CLOSE_PATTERN.search(value):
+        if self.POLICY_STATEMENT_PATTERN.search(value) and not self.SEMICOLON_CLOSE_PATTERN.search(
+            value
+        ):
             errors.append("Policy statement may be missing closing semicolon")
 
         if errors:
             return FailResult(
-                error_message="Cedar policy validation failed:\n" + "\n".join(f"  - {e}" for e in errors)
+                error_message="Cedar policy validation failed:\n"
+                + "\n".join(f"  - {e}" for e in errors)
             )
 
         return PassResult()
@@ -191,7 +200,8 @@ class ValidBlogPost(Validator):
 
         if errors:
             return FailResult(
-                error_message="Blog post validation failed:\n" + "\n".join(f"  - {e}" for e in errors)
+                error_message="Blog post validation failed:\n"
+                + "\n".join(f"  - {e}" for e in errors)
             )
 
         return PassResult()
@@ -200,6 +210,7 @@ class ValidBlogPost(Validator):
 # ---------------------------------------------------------------------------
 # Public validation functions
 # ---------------------------------------------------------------------------
+
 
 def validate_findings(findings_json: str) -> list[dict]:
     """Validate and optionally auto-correct findings JSON.

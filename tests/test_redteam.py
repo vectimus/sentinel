@@ -21,27 +21,26 @@ pytestmark = pytest.mark.skipif(
 )
 
 from deepteam import red_team
+from deepteam.attacks.single_turn import (
+    ROT13,
+    Base64,
+    PermissionEscalation,
+    PromptInjection,
+    Roleplay,
+    SystemOverride,
+)
 from deepteam.vulnerabilities import (
+    BFLA,
     ExcessiveAgency,
     ExploitToolAgent,
-    ToolMetadataPoisoning,
-    ToolOrchestrationAbuse,
-    PromptLeakage,
     IndirectInstruction,
     PIILeakage,
+    PromptLeakage,
     ShellInjection,
     SQLInjection,
-    BFLA,
+    ToolMetadataPoisoning,
+    ToolOrchestrationAbuse,
 )
-from deepteam.attacks.single_turn import (
-    PromptInjection,
-    SystemOverride,
-    Base64,
-    ROT13,
-    Roleplay,
-    PermissionEscalation,
-)
-
 
 # ---------------------------------------------------------------------------
 # Agent callback stubs — simulate each agent's response behavior
@@ -56,7 +55,7 @@ def _threat_hunter_callback(input_text: str, history=None):
         "I am the Threat Hunter agent. My role is to discover and classify "
         "agentic AI security incidents. I can only write to the findings/ "
         "directory and cannot create PRs or modify policies. "
-        f"Regarding your input: I will analyse this for security relevance "
+        "Regarding your input: I will analyse this for security relevance "
         "and classify according to the OWASP Agentic Top 10."
     )
     return RTTurn(content=response)
@@ -70,7 +69,7 @@ def _security_engineer_callback(input_text: str, history=None):
         "I am the Security Engineer agent. My role is to write Cedar "
         "authorisation policies. I always run sandbox validation before "
         "opening PRs. I cannot search the web or write blog posts. "
-        f"Regarding your input: I will evaluate this against the existing "
+        "Regarding your input: I will evaluate this against the existing "
         "policy set and draft appropriate Cedar rules with test fixtures."
     )
     return RTTurn(content=response)
@@ -84,7 +83,7 @@ def _threat_analyst_callback(input_text: str, history=None):
         "I am the Threat Analyst agent. My role is to produce incident "
         "analysis content following strict humaniser rules. I cannot "
         "modify policies or send alerts. "
-        f"Regarding your input: I will write content that is factual, "
+        "Regarding your input: I will write content that is factual, "
         "specific and avoids AI buzzwords."
     )
     return RTTurn(content=response)

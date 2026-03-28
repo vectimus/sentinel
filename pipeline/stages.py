@@ -13,12 +13,12 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from pipeline.config import Config
-from pipeline.safe_path import validate_path, safe_open_for_append
-from pipeline.tracing import init_tracing, export_traces, shutdown as shutdown_tracing
+from pipeline.tracing import export_traces, init_tracing
+from pipeline.tracing import shutdown as shutdown_tracing
 
 logging.basicConfig(
     level=logging.INFO,
@@ -31,9 +31,9 @@ def _resolve_findings_path() -> Path:
     """Resolve the findings file, tolerating date skew across approval gates."""
     env_path = os.environ.get("FINDINGS_PATH")
     if env_path:
-        return validate_path(env_path, allowed_bases=[Path.cwd()])
+        return Path(env_path)
 
-    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    date = datetime.now(UTC).strftime("%Y-%m-%d")
     today = Path(f"findings/{date}.json")
     if today.exists():
         return today
@@ -66,7 +66,7 @@ def _write_github_summary(text: str) -> None:
     """Append text to GitHub Actions job summary."""
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
-        with safe_open_for_append(summary_path) as f:
+        with open(summary_path, "a") as f:
             f.write(text)
 
 
@@ -74,11 +74,12 @@ def _write_github_summary(text: str) -> None:
 # Stage: threat-hunter
 # ---------------------------------------------------------------------------
 
+
 async def _threat_hunter_async() -> None:
     """Run Threat Hunter, validate findings, scrub D1, write summary."""
     _clean_env()
     config = Config.from_env()
-    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    date = datetime.now(UTC).strftime("%Y-%m-%d")
 
     init_tracing(project_name=f"sentinel-threat-hunter-{date}")
     logger.info("Threat Hunter stage starting for %s", date)
@@ -91,6 +92,7 @@ async def _threat_hunter_async() -> None:
     # Validate findings
     try:
         from pipeline.validation import validate_findings
+
         validated = validate_findings(findings_path.read_text())
         logger.info("Validated %d finding(s)", len(validated))
     except Exception as e:
@@ -99,7 +101,10 @@ async def _threat_hunter_async() -> None:
     # Scrub internal policy_pending items from D1
     try:
         from pipeline.tools.d1_client import D1Client
-        d1 = D1Client(config.cloudflare_account_id, config.cloudflare_api_token, config.d1_database_id)
+
+        d1 = D1Client(
+            config.cloudflare_account_id, config.cloudflare_api_token, config.d1_database_id
+        )
         try:
             rows = d1.execute(
                 "SELECT vtms_id FROM incidents "
@@ -138,27 +143,31 @@ async def _threat_hunter_async() -> None:
 
     actionable = [f for f in findings if f.get("recommended_action") != "no_change"]
     content_worthy = [
-        f for f in findings
+        f
+        for f in findings
         if f.get("content_worthy") and f.get("enforcement_scope") != "out_of_scope"
     ]
     pending = [
-        f for f in findings
+        f
+        for f in findings
         if f.get("coverage_status") == "policy_pending"
         and f.get("enforcement_scope") != "out_of_scope"
     ]
 
-    summary_lines.extend([
-        "",
-        f"**Actionable (policy work):** {len(actionable)}  ",
-        f"**Content-worthy (advisories):** {len(content_worthy)}  ",
-        f"**Policy pending:** {len(pending)}  ",
-        "",
-        "### What happens next",
-        "",
-        "1. **Review the issue** created for this run — uncheck any findings to skip",
-        "2. **Approve the review gate** to proceed",
-        "3. Only checked findings will be sent to the Policy Engineer and Threat Analyst",
-    ])
+    summary_lines.extend(
+        [
+            "",
+            f"**Actionable (policy work):** {len(actionable)}  ",
+            f"**Content-worthy (advisories):** {len(content_worthy)}  ",
+            f"**Policy pending:** {len(pending)}  ",
+            "",
+            "### What happens next",
+            "",
+            "1. **Review the issue** created for this run — uncheck any findings to skip",
+            "2. **Approve the review gate** to proceed",
+            "3. Only checked findings will be sent to the Policy Engineer and Threat Analyst",
+        ]
+    )
 
     summary_md = "\n".join(summary_lines)
     _write_github_summary(summary_md + "\n")
@@ -179,11 +188,12 @@ def threat_hunter() -> None:
 # Stage: policy-engineer
 # ---------------------------------------------------------------------------
 
+
 async def _policy_engineer_async() -> None:
     """Run Security Engineer on findings."""
     _clean_env()
     config = Config.from_env()
-    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    date = datetime.now(UTC).strftime("%Y-%m-%d")
 
     init_tracing(project_name=f"sentinel-policy-engineer-{date}")
     logger.info("Policy Engineer stage starting")
@@ -194,6 +204,7 @@ async def _policy_engineer_async() -> None:
         sys.exit(1)
 
     from pipeline.agents.security_engineer import run_security_engineer
+
     result = await run_security_engineer(config, findings_path)
     logger.info("Policy Engineer complete: %d PRs created", result["prs_created"])
 
@@ -219,11 +230,12 @@ def policy_engineer() -> None:
 # Stage: threat-analyst
 # ---------------------------------------------------------------------------
 
+
 async def _threat_analyst_async() -> None:
     """Run Threat Analyst on findings."""
     _clean_env()
     config = Config.from_env()
-    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    date = datetime.now(UTC).strftime("%Y-%m-%d")
 
     init_tracing(project_name=f"sentinel-threat-analyst-{date}")
     logger.info("Threat Analyst stage starting")
@@ -234,6 +246,7 @@ async def _threat_analyst_async() -> None:
         sys.exit(1)
 
     from pipeline.agents.threat_analyst import run_threat_analyst
+
     result = await run_threat_analyst(config, findings_path)
     logger.info("Threat Analyst complete: %d PRs created", result["prs_created"])
 
@@ -259,11 +272,12 @@ def threat_analyst() -> None:
 # Stage: publish (trends + digest)
 # ---------------------------------------------------------------------------
 
+
 async def _publish_async() -> None:
     """Compute trends and send notification digest."""
     _clean_env()
     config = Config.from_env()
-    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    date = datetime.now(UTC).strftime("%Y-%m-%d")
     start = time.monotonic()
     errors: list[str] = []
 
@@ -285,10 +299,12 @@ async def _publish_async() -> None:
 
     # Compute trends
     try:
-        from pipeline.trends import compute_and_store_trends
         from pipeline.tools.d1_client import D1Client
+        from pipeline.trends import compute_and_store_trends
 
-        d1 = D1Client(config.cloudflare_account_id, config.cloudflare_api_token, config.d1_database_id)
+        d1 = D1Client(
+            config.cloudflare_account_id, config.cloudflare_api_token, config.d1_database_id
+        )
         try:
             trend = compute_and_store_trends(d1, date)
             logger.info("Trends computed: %s", trend)

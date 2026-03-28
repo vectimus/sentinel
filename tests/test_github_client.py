@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -12,8 +12,10 @@ from pipeline.tools.github_client import GitHubClient
 @pytest.fixture
 def mock_gh():
     """Patch Github and return the mock instance."""
-    with patch("pipeline.tools.github_client.Github") as MockGithub, \
-         patch("pipeline.tools.github_client.Auth") as MockAuth:
+    with (
+        patch("pipeline.tools.github_client.Github") as MockGithub,
+        patch("pipeline.tools.github_client.Auth") as MockAuth,
+    ):
         mock_instance = MagicMock()
         MockGithub.return_value = mock_instance
         yield mock_instance
@@ -26,7 +28,6 @@ def gh_client(mock_gh):
 
 
 class TestCreatePr:
-
     def test_returns_pr_url(self, gh_client, mock_gh):
         mock_repo = MagicMock()
         mock_pr = MagicMock()
@@ -84,7 +85,6 @@ class TestCreatePr:
 
 
 class TestCreateBranch:
-
     def test_creates_git_ref(self, gh_client, mock_gh):
         mock_repo = MagicMock()
         mock_branch = MagicMock()
@@ -112,7 +112,6 @@ class TestCreateBranch:
 
 
 class TestPushFile:
-
     def test_creates_file_when_not_exists(self, gh_client, mock_gh):
         from github import GithubException
 
@@ -160,7 +159,6 @@ class TestPushFile:
 
 
 class TestGetPrByBranch:
-
     def test_returns_dict_when_pr_found(self, gh_client, mock_gh):
         mock_repo = MagicMock()
         mock_owner = MagicMock()

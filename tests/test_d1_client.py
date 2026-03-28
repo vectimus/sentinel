@@ -13,7 +13,9 @@ from pipeline.tools.d1_client import D1Client
 ACCOUNT_ID = "test-account-id"
 API_TOKEN = "test-api-token"
 DATABASE_ID = "test-db-id"
-D1_URL = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/d1/database/{DATABASE_ID}/query"
+D1_URL = (
+    f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/d1/database/{DATABASE_ID}/query"
+)
 
 
 @pytest.fixture
@@ -23,7 +25,6 @@ def d1_client():
 
 
 class TestExecute:
-
     @respx.mock
     def test_successful_query_returns_rows(self, d1_client):
         rows = [{"vtms_id": "VTMS-2026-0001", "title": "Test"}]
@@ -72,7 +73,6 @@ class TestExecute:
 
 
 class TestGetMaxVtmsSequence:
-
     @respx.mock
     def test_no_rows_returns_zero(self, d1_client):
         respx.post(D1_URL).mock(
@@ -102,7 +102,6 @@ class TestGetMaxVtmsSequence:
 
 
 class TestInsertIncident:
-
     @respx.mock
     def test_builds_correct_sql(self, d1_client):
         respx.post(D1_URL).mock(
@@ -130,7 +129,6 @@ class TestInsertIncident:
 
 
 class TestUpdateIncidentField:
-
     @respx.mock
     def test_rejects_disallowed_field(self, d1_client):
         with pytest.raises(ValueError, match="not in allowed update fields"):
