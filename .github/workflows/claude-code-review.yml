@@ -1,0 +1,44 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+  issue_comment:
+    types: [created]
+
+jobs:
+  claude-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: >
+      (github.event_name == 'pull_request') ||
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       contains(github.event.comment.body, '@claude'))
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install and initialise governance
+        run: |
+          pip install vectimus
+          vectimus init --ci
+
+      - name: Run Claude Code Review
+        id: claude-review
+        uses: anthropics/claude-code-action@v1.0.77
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          allowed_bots: "claude[bot]"
+          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
+          plugins: 'code-review@claude-code-plugins'
+          show_full_output: true
+          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number || github.event.issue.number }} --comment --force'
