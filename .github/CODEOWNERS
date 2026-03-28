@@ -1,0 +1,9 @@
+# Default owners for all files
+* @vectimus/security
+
+# Pipeline and agent code requires security review
+/pipeline/ @vectimus/security
+/agents/ @vectimus/security
+
+# Cloudflare infrastructure
+/cloudflare/ @vectimus/security
