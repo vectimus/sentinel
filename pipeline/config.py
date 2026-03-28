@@ -2,7 +2,8 @@
 
 import os
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from pathlib import Path
 
 
 @dataclass
@@ -71,5 +72,21 @@ class Config:
             pushover_user_key=os.environ.get("PUSHOVER_USER_KEY", ""),
             pushover_app_token=os.environ.get("PUSHOVER_APP_TOKEN", ""),
             bot_github_token=os.environ.get("BOT_GITHUB_TOKEN", ""),
-            policies_repo_path=os.environ.get("POLICIES_REPO_PATH", "_policies"),
+            policies_repo_path=cls._validate_repo_path(
+                os.environ.get("POLICIES_REPO_PATH", "_policies")
+            ),
         )
+
+    @staticmethod
+    def _validate_repo_path(raw: str) -> str:
+        """Resolve and validate that a repo-relative path stays within cwd."""
+        resolved = Path(raw).resolve()
+        cwd = Path.cwd().resolve()
+        try:
+            resolved.relative_to(cwd)
+        except ValueError:
+            raise ValueError(
+                f"POLICIES_REPO_PATH ({raw}) resolves outside the working "
+                f"directory ({cwd})"
+            )
+        return str(resolved)

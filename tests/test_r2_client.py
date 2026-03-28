@@ -24,7 +24,7 @@ def r2_client(mock_s3):
     """Create an R2Client with mocked boto3."""
     return R2Client(
         access_key_id="test-key",
-        secret_access_key="test-secret",
+        secret_access_key="test-secret",  # Snyk: test fixture, not a real secret
         endpoint_url="https://test.r2.cloudflarestorage.com",
         bucket_name="test-bucket",
     )
