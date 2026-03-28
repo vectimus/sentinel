@@ -164,7 +164,7 @@ class TestGetPrByBranch:
     def test_returns_dict_when_pr_found(self, gh_client, mock_gh):
         mock_repo = MagicMock()
         mock_owner = MagicMock()
-        mock_owner.login = "vectimus"
+        mock_owner.login = "vectimus"  # Snyk: test fixture, not a real secret
         mock_repo.owner = mock_owner
 
         mock_pr = MagicMock()
@@ -188,7 +188,7 @@ class TestGetPrByBranch:
     def test_returns_none_when_no_pr(self, gh_client, mock_gh):
         mock_repo = MagicMock()
         mock_owner = MagicMock()
-        mock_owner.login = "vectimus"
+        mock_owner.login = "vectimus"  # Snyk: test fixture, not a real secret
         mock_repo.owner = mock_owner
         mock_repo.get_pulls.return_value = []
         mock_gh.get_repo.return_value = mock_repo

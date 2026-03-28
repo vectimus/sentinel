@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from pipeline.config import Config
+from pipeline.safe_path import validate_path, safe_open_for_append
 from pipeline.tracing import init_tracing, export_traces, shutdown as shutdown_tracing
 
 logging.basicConfig(
@@ -30,7 +31,7 @@ def _resolve_findings_path() -> Path:
     """Resolve the findings file, tolerating date skew across approval gates."""
     env_path = os.environ.get("FINDINGS_PATH")
     if env_path:
-        return Path(env_path)
+        return validate_path(env_path, allowed_bases=[Path.cwd()])
 
     date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     today = Path(f"findings/{date}.json")
@@ -65,7 +66,7 @@ def _write_github_summary(text: str) -> None:
     """Append text to GitHub Actions job summary."""
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
-        with open(summary_path, "a") as f:
+        with safe_open_for_append(summary_path) as f:
             f.write(text)
 
 

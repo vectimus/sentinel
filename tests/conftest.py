@@ -77,13 +77,13 @@ def sample_incident() -> dict:
 def sample_config() -> Config:
     """Return a Config with fake test values."""
     return Config(
-        anthropic_api_key="test-key-anthropic",
+        anthropic_api_key="test-key-anthropic",  # Snyk: test fixture, not a real secret
         model="claude-sonnet-4-20250514",
         cloudflare_account_id="test-account-id",
         cloudflare_api_token="test-cf-token",
         d1_database_id="test-db-id",
         r2_access_key_id="test-r2-key",
-        r2_secret_access_key="test-r2-secret",
+        r2_secret_access_key="test-r2-secret",  # Snyk: test fixture, not a real secret
         r2_endpoint_url="https://test.r2.cloudflarestorage.com",
         r2_bucket_name="test-bucket",
         pushover_user_key="test-pushover-user",

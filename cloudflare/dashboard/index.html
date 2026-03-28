@@ -316,6 +316,7 @@
     </footer>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
   <script>
     const API_BASE = '/api';
     const SEVERITY_LABELS = { 5: 'Critical', 4: 'High', 3: 'Medium', 2: 'Low', 1: 'Theoretical' };
@@ -347,10 +348,14 @@
       try {
         const data = await fetchJSON('/incidents?limit=20');
         if (!data.incidents || data.incidents.length === 0) {
-          container.innerHTML = '<div class="loading">No incidents recorded yet.  Pipeline runs daily at 07:00 UTC.</div>';
+          container.textContent = '';
+          const msg = document.createElement('div');
+          msg.className = 'loading';
+          msg.textContent = 'No incidents recorded yet.  Pipeline runs daily at 07:00 UTC.';
+          container.appendChild(msg);
           return;
         }
-        container.innerHTML = data.incidents.map(inc => {
+        container.innerHTML = DOMPurify.sanitize(data.incidents.map(inc => {
           let sources = [];
           try { sources = typeof inc.sources === 'string' ? JSON.parse(inc.sources) : (inc.sources || []); } catch(e) {}
           const links = [];
@@ -373,9 +378,13 @@
               ${linksHtml}
             </div>
           `;
-        }).join('');
+        }).join(''));
       } catch (e) {
-        container.innerHTML = `<div class="error">Failed to load incidents: ${escapeHtml(e.message)}</div>`;
+        container.textContent = '';
+        const errDiv = document.createElement('div');
+        errDiv.className = 'error';
+        errDiv.textContent = `Failed to load incidents: ${e.message}`;
+        container.appendChild(errDiv);
       }
     }
 
@@ -384,10 +393,14 @@
       try {
         const data = await fetchJSON('/coverage');
         if (!data.categories || data.categories.length === 0) {
-          container.innerHTML = '<div class="loading">No coverage data yet.</div>';
+          container.textContent = '';
+          const msg = document.createElement('div');
+          msg.className = 'loading';
+          msg.textContent = 'No coverage data yet.';
+          container.appendChild(msg);
           return;
         }
-        container.innerHTML = data.categories.map(cat => {
+        container.innerHTML = DOMPurify.sanitize(data.categories.map(cat => {
           const total = cat.total || 1;
           const covPct = ((cat.covered || 0) / total * 100).toFixed(0);
           const partPct = ((cat.partial || 0) / total * 100).toFixed(0);
@@ -407,9 +420,13 @@
               </div>
             </div>
           `;
-        }).join('');
+        }).join(''));
       } catch (e) {
-        container.innerHTML = `<div class="error">Failed to load coverage: ${escapeHtml(e.message)}</div>`;
+        container.textContent = '';
+        const errDiv = document.createElement('div');
+        errDiv.className = 'error';
+        errDiv.textContent = `Failed to load coverage: ${e.message}`;
+        container.appendChild(errDiv);
       }
     }
 

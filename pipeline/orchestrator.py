@@ -22,6 +22,7 @@ from pipeline.config import Config
 from pipeline.agents.threat_hunter import run_threat_hunter
 from pipeline.agents.security_engineer import run_security_engineer
 from pipeline.agents.threat_analyst import run_threat_analyst
+from pipeline.safe_path import safe_open_for_append
 from pipeline.tools.pushover_client import PushoverClient
 from pipeline.tracing import init_tracing, export_traces, shutdown as shutdown_tracing
 
@@ -81,7 +82,7 @@ def _write_github_summary(digest: str) -> None:
     """Write to GitHub Actions job summary if available."""
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
-        with open(summary_path, "a") as f:
+        with safe_open_for_append(summary_path) as f:
             f.write(f"```\n{digest}\n```\n")
 
 

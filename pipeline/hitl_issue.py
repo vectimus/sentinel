@@ -19,6 +19,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
+from pipeline.safe_path import safe_open_for_append
+
 
 SEVERITY_MAP = {1: "THEORETICAL", 2: "LOW", 3: "MEDIUM", 4: "HIGH", 5: "CRITICAL"}
 REPO = os.environ.get("GITHUB_REPOSITORY", "vectimus/sentinel")
@@ -139,7 +141,7 @@ def create() -> None:
     # Also add the issue link to the job summary
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
-        with open(summary_path, "a") as f:
+        with safe_open_for_append(summary_path) as f:
             f.write(f"\n**Review issue:** {issue_number}\n")
 
 
@@ -210,7 +212,7 @@ def _set_output(name: str, value: str) -> None:
     """Set a GitHub Actions output variable."""
     output_file = os.environ.get("GITHUB_OUTPUT")
     if output_file:
-        with open(output_file, "a") as f:
+        with safe_open_for_append(output_file) as f:
             f.write(f"{name}={value}\n")
 
 
