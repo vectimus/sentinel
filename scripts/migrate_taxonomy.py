@@ -10,7 +10,6 @@ Requires env vars: CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN, D1_DATABASE_ID
 from __future__ import annotations
 
 import argparse
-import json
 import logging
 import os
 import re
@@ -20,7 +19,6 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from pipeline.tools.d1_client import D1Client
-from pipeline.dedup import deduplicate
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -72,9 +70,7 @@ def run_migration(dry_run: bool = True) -> None:
             old_cat = inc.get("owasp_category")
             new_cat = map_owasp_category(old_cat)
             if new_cat != old_cat:
-                logger.info(
-                    "  %s: %s → %s", inc["vtms_id"], old_cat, new_cat
-                )
+                logger.info("  %s: %s → %s", inc["vtms_id"], old_cat, new_cat)
                 if not dry_run:
                     d1.execute(
                         "UPDATE incidents SET owasp_category = ? WHERE vtms_id = ?",
@@ -97,16 +93,18 @@ def run_migration(dry_run: bool = True) -> None:
         for i, inc_a in enumerate(incidents):
             if inc_a["vtms_id"] in seen:
                 continue
-            for inc_b in incidents[i + 1:]:
+            for inc_b in incidents[i + 1 :]:
                 if inc_b["vtms_id"] in seen:
                     continue
 
                 # Check title similarity
-                from pipeline.dedup import _check_title_similarity, _parse_json_field, _check_cve_overlap
-
-                similarity = _check_title_similarity(
-                    inc_a.get("title", ""), inc_b.get("title", "")
+                from pipeline.dedup import (
+                    _check_cve_overlap,
+                    _check_title_similarity,
+                    _parse_json_field,
                 )
+
+                similarity = _check_title_similarity(inc_a.get("title", ""), inc_b.get("title", ""))
 
                 cve_overlap = _check_cve_overlap(
                     _parse_json_field(inc_a.get("cve_ids")),
@@ -115,8 +113,12 @@ def run_migration(dry_run: bool = True) -> None:
 
                 if similarity > 0.7 or cve_overlap:
                     # Keep the one with more data (longer summary, more fields filled)
-                    a_score = len(inc_a.get("summary") or "") + len(inc_a.get("coverage_detail") or "")
-                    b_score = len(inc_b.get("summary") or "") + len(inc_b.get("coverage_detail") or "")
+                    a_score = len(inc_a.get("summary") or "") + len(
+                        inc_a.get("coverage_detail") or ""
+                    )
+                    b_score = len(inc_b.get("summary") or "") + len(
+                        inc_b.get("coverage_detail") or ""
+                    )
 
                     if a_score >= b_score:
                         keep, remove = inc_a["vtms_id"], inc_b["vtms_id"]

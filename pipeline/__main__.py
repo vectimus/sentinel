@@ -40,11 +40,15 @@ stage = sys.argv[1] if len(sys.argv) > 1 else None
 if stage is None:
     # Full pipeline (legacy / local dev)
     from pipeline.orchestrator import _entry  # noqa: E402
+
     _entry()
 elif stage in STAGES:
     module_path, func_name = STAGES[stage].rsplit(":", 1)
     import importlib
-    mod = importlib.import_module(module_path)  # nosemgrep: python.lang.security.audit.non-literal-import.non-literal-import
+
+    mod = importlib.import_module(
+        module_path
+    )  # nosemgrep: python.lang.security.audit.non-literal-import.non-literal-import
     getattr(mod, func_name)()
 else:
     print(f"Unknown stage: {stage!r}")

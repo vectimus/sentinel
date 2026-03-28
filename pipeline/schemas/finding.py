@@ -9,8 +9,16 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 VALID_ASI_CATEGORIES = [
-    "ASI01", "ASI02", "ASI03", "ASI04", "ASI05",
-    "ASI06", "ASI07", "ASI08", "ASI09", "ASI10",
+    "ASI01",
+    "ASI02",
+    "ASI03",
+    "ASI04",
+    "ASI05",
+    "ASI06",
+    "ASI07",
+    "ASI08",
+    "ASI09",
+    "ASI10",
 ]
 
 
@@ -34,10 +42,14 @@ class Finding(BaseModel):
     incident_date: str | None = None
     severity: int = Field(ge=1, le=5)
     owasp_category: str
-    nist_ai_rmf: str | None = Field(default=None, description="NIST AI RMF function (e.g. GV-1, MP-2)")
+    nist_ai_rmf: str | None = Field(
+        default=None, description="NIST AI RMF function (e.g. GV-1, MP-2)"
+    )
     cis_controls: list[str] = Field(default_factory=list, description="Relevant CIS Controls")
     cve_ids: list[str] = Field(default_factory=list, description="Linked CVE identifiers")
-    coverage_status: Literal["covered", "partial", "policy_pending"] = Field(description="covered | partial | policy_pending")
+    coverage_status: Literal["covered", "partial", "policy_pending"] = Field(
+        description="covered | partial | policy_pending"
+    )
     coverage_detail: str | None = None
     existing_policy_ids: list[str] = Field(default_factory=list)
     gap_description: str | None = None
@@ -49,9 +61,11 @@ class Finding(BaseModel):
     )
     recommended_policy_description: str | None = None
     content_worthy: bool = False
-    content_angle: Literal["covered_by_vectimus", "new_policy_needed", "trend_piece"] | None = Field(
-        default=None,
-        description="covered_by_vectimus | new_policy_needed | trend_piece",
+    content_angle: Literal["covered_by_vectimus", "new_policy_needed", "trend_piece"] | None = (
+        Field(
+            default=None,
+            description="covered_by_vectimus | new_policy_needed | trend_piece",
+        )
     )
     enforcement_scope: Literal["full", "tool_calling_only", "out_of_scope"] = Field(
         default="full",
@@ -88,9 +102,7 @@ class Finding(BaseModel):
     def validate_owasp_category(cls, v: str) -> str:
         prefix = v.split(":")[0].strip()
         if prefix.startswith("LLM"):
-            raise ValueError(
-                f"LLM prefix is deprecated; use ASI01-ASI10. Got: {v}"
-            )
+            raise ValueError(f"LLM prefix is deprecated; use ASI01-ASI10. Got: {v}")
         if prefix not in VALID_ASI_CATEGORIES and prefix != "uncategorised":
             raise ValueError(
                 f"owasp_category prefix must be one of {VALID_ASI_CATEGORIES} or 'uncategorised'. Got: {prefix}"

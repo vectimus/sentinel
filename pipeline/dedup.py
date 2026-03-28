@@ -11,7 +11,7 @@ from __future__ import annotations
 import json
 import logging
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
 from difflib import SequenceMatcher
 from typing import Any
 
@@ -52,9 +52,7 @@ def _parse_date(date_str: str | None) -> datetime | None:
         return None
 
 
-def _check_cve_overlap(
-    finding_cves: list[str], existing_cves: list[str]
-) -> bool:
+def _check_cve_overlap(finding_cves: list[str], existing_cves: list[str]) -> bool:
     """Return True if any CVE IDs overlap (case-insensitive)."""
     if not finding_cves or not existing_cves:
         return False
@@ -121,10 +119,7 @@ def deduplicate(
 
             # Strategy 1: CVE overlap
             if _check_cve_overlap(finding_cves, existing_cves):
-                reason = (
-                    f"CVE overlap with {existing_id}: "
-                    f"{set(finding_cves) & set(existing_cves)}"
-                )
+                reason = f"CVE overlap with {existing_id}: {set(finding_cves) & set(existing_cves)}"
                 duplicates.append((finding, reason))
                 match_found = True
                 logger.info("Dedup: %s — %s", finding.get("vtms_id", "?"), reason)
@@ -133,10 +128,7 @@ def deduplicate(
             # Strategy 2: Title similarity
             similarity = _check_title_similarity(finding_title, existing_title)
             if similarity > TITLE_SIMILARITY_THRESHOLD:
-                reason = (
-                    f"Title similarity {similarity:.2f} with {existing_id}: "
-                    f"{existing_title!r}"
-                )
+                reason = f"Title similarity {similarity:.2f} with {existing_id}: {existing_title!r}"
                 duplicates.append((finding, reason))
                 match_found = True
                 logger.info("Dedup: %s — %s", finding.get("vtms_id", "?"), reason)

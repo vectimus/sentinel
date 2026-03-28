@@ -62,7 +62,6 @@ def mock_cedar():
 
 
 class TestD1Query:
-
     def test_returns_json_string(self, mock_d1):
         rows = [{"vtms_id": "VTMS-2026-0001", "title": "Test"}]
         mock_d1.execute.return_value = rows
@@ -74,7 +73,6 @@ class TestD1Query:
 
 
 class TestD1Write:
-
     def test_returns_ok(self, mock_d1):
         mock_d1.execute.return_value = []
 
@@ -88,11 +86,12 @@ class TestD1Write:
 
         mcp_server.d1_write("INSERT INTO incidents (vtms_id) VALUES ('test')")
 
-        mock_d1.execute.assert_called_once_with("INSERT INTO incidents (vtms_id) VALUES ('test')", None)
+        mock_d1.execute.assert_called_once_with(
+            "INSERT INTO incidents (vtms_id) VALUES ('test')", None
+        )
 
 
 class TestR2Get:
-
     def test_truncates_to_10k_chars(self, mock_r2):
         long_content = "x" * 20000
         mock_r2.get.return_value = long_content
@@ -111,7 +110,6 @@ class TestR2Get:
 
 
 class TestR2Put:
-
     def test_calls_client_put(self, mock_r2):
         result = mcp_server.r2_put("sources/test.txt", "content here", "text/plain")
 
@@ -120,7 +118,6 @@ class TestR2Put:
 
 
 class TestPushoverAlert:
-
     def test_calls_send_critical_alert(self, mock_pushover):
         result = mcp_server.pushover_alert(
             vtms_id="VTMS-2026-0001",
@@ -135,7 +132,6 @@ class TestPushoverAlert:
 
 
 class TestGitHubCreatePr:
-
     def test_returns_pr_url_string(self, mock_gh):
         mock_gh.create_pr.return_value = "https://github.com/vectimus/policies/pull/42"
 
@@ -151,7 +147,6 @@ class TestGitHubCreatePr:
 
 
 class TestGitHubCreateBranch:
-
     def test_returns_success_message(self, mock_gh):
         result = mcp_server.github_create_branch(
             repo_name="vectimus/policies",
@@ -167,7 +162,6 @@ class TestGitHubCreateBranch:
 
 
 class TestGitHubPushFile:
-
     def test_returns_success_message(self, mock_gh):
         result = mcp_server.github_push_file(
             repo_name="vectimus/policies",
@@ -188,7 +182,6 @@ class TestGitHubPushFile:
 
 
 class TestGitHubGetPr:
-
     def test_returns_json_when_found(self, mock_gh):
         mock_gh.get_pr_by_branch.return_value = {
             "url": "https://github.com/vectimus/policies/pull/42",

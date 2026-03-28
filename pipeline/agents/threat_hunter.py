@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
+from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
 
 from pipeline.config import Config
 from pipeline.tools.d1_client import D1Client
@@ -35,6 +35,7 @@ def _remap_owasp_categories(findings: list[dict]) -> int:
     Mutates findings in place. Returns number of remapped findings.
     """
     import re
+
     remapped = 0
     for finding in findings:
         cat = finding.get("owasp_category", "")
@@ -67,7 +68,7 @@ async def run_threat_hunter(config: Config, date: str) -> Path:
 
     Returns the path to the findings JSON file.
     """
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     year = now.year
     findings_path = Path(f"findings/{date}.json")
 
@@ -130,7 +131,11 @@ async def run_threat_hunter(config: Config, date: str) -> Path:
             logger.error("Exception type: %s", type(e).__name__)
             raise
 
-        logger.info("Threat Hunter completed in %d turns: %s", turn_count, result_text[:500] if result_text else "no output")
+        logger.info(
+            "Threat Hunter completed in %d turns: %s",
+            turn_count,
+            result_text[:500] if result_text else "no output",
+        )
 
         if not findings_path.exists():
             logger.warning("Threat Hunter did not write findings file; creating empty one")

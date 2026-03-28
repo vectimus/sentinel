@@ -18,12 +18,9 @@ def pushover_client():
 
 
 class TestSend:
-
     @respx.mock
     def test_posts_correct_payload(self, pushover_client):
-        route = respx.post(API_URL).mock(
-            return_value=httpx.Response(200, json={"status": 1})
-        )
+        route = respx.post(API_URL).mock(return_value=httpx.Response(200, json={"status": 1}))
 
         pushover_client.send(message="Test message", title="Test Title", priority=0)
 
@@ -36,9 +33,7 @@ class TestSend:
 
     @respx.mock
     def test_priority_2_adds_retry_and_expire(self, pushover_client):
-        respx.post(API_URL).mock(
-            return_value=httpx.Response(200, json={"status": 1})
-        )
+        respx.post(API_URL).mock(return_value=httpx.Response(200, json={"status": 1}))
 
         pushover_client.send(message="Emergency!", priority=2)
 
@@ -49,9 +44,7 @@ class TestSend:
 
     @respx.mock
     def test_priority_0_does_not_add_retry(self, pushover_client):
-        respx.post(API_URL).mock(
-            return_value=httpx.Response(200, json={"status": 1})
-        )
+        respx.post(API_URL).mock(return_value=httpx.Response(200, json={"status": 1}))
 
         pushover_client.send(message="Normal", priority=0)
 
@@ -62,9 +55,7 @@ class TestSend:
 
     @respx.mock
     def test_includes_url_when_provided(self, pushover_client):
-        respx.post(API_URL).mock(
-            return_value=httpx.Response(200, json={"status": 1})
-        )
+        respx.post(API_URL).mock(return_value=httpx.Response(200, json={"status": 1}))
 
         pushover_client.send(
             message="Check this",
@@ -79,12 +70,9 @@ class TestSend:
 
 
 class TestSendCriticalAlert:
-
     @respx.mock
     def test_sets_priority_1(self, pushover_client):
-        respx.post(API_URL).mock(
-            return_value=httpx.Response(200, json={"status": 1})
-        )
+        respx.post(API_URL).mock(return_value=httpx.Response(200, json={"status": 1}))
 
         pushover_client.send_critical_alert(
             vtms_id="VTMS-2026-0001",
@@ -99,12 +87,9 @@ class TestSendCriticalAlert:
 
 
 class TestSendDigest:
-
     @respx.mock
     def test_sets_priority_0(self, pushover_client):
-        respx.post(API_URL).mock(
-            return_value=httpx.Response(200, json={"status": 1})
-        )
+        respx.post(API_URL).mock(return_value=httpx.Response(200, json={"status": 1}))
 
         pushover_client.send_digest("Daily digest: 3 incidents processed")
 

@@ -5,16 +5,14 @@ from __future__ import annotations
 import pytest
 from pydantic import ValidationError
 
+from pipeline.schemas.content import Content
 from pipeline.schemas.finding import Finding
 from pipeline.schemas.incident import Incident
-from pipeline.schemas.content import Content
-
 
 # ── Finding ──────────────────────────────────────────────────────────────
 
 
 class TestFindingValidation:
-
     def test_valid_finding_passes_validation(self, sample_finding):
         finding = Finding(**sample_finding)
         assert finding.vtms_id == "VTMS-2026-0001"
@@ -120,7 +118,6 @@ class TestFindingValidation:
 
 
 class TestIncidentValidation:
-
     def test_valid_incident_passes_validation(self, sample_incident):
         incident = Incident(**sample_incident)
         assert incident.vtms_id == "VTMS-2026-0001"
@@ -161,7 +158,6 @@ class TestIncidentValidation:
 
 
 class TestContentValidation:
-
     def test_valid_content_passes_validation(self):
         content = Content(
             id="content-001",

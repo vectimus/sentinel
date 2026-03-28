@@ -15,16 +15,16 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
-from pipeline.config import Config
-from pipeline.agents.threat_hunter import run_threat_hunter
 from pipeline.agents.security_engineer import run_security_engineer
 from pipeline.agents.threat_analyst import run_threat_analyst
-from pipeline.safe_path import safe_open_for_append
+from pipeline.agents.threat_hunter import run_threat_hunter
+from pipeline.config import Config
 from pipeline.tools.pushover_client import PushoverClient
-from pipeline.tracing import init_tracing, export_traces, shutdown as shutdown_tracing
+from pipeline.tracing import export_traces, init_tracing
+from pipeline.tracing import shutdown as shutdown_tracing
 
 logging.basicConfig(
     level=logging.INFO,
@@ -82,7 +82,7 @@ def _write_github_summary(digest: str) -> None:
     """Write to GitHub Actions job summary if available."""
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
-        with safe_open_for_append(summary_path) as f:
+        with open(summary_path, "a") as f:
             f.write(f"```\n{digest}\n```\n")
 
 
@@ -108,7 +108,7 @@ async def main() -> None:
         os.environ.pop("ANTHROPIC_API_KEY", None)
 
     config = Config.from_env()
-    date = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    date = datetime.now(UTC).strftime("%Y-%m-%d")
     errors: list[str] = []
 
     # Start observability tracing
@@ -158,7 +158,9 @@ async def main() -> None:
     try:
         from pipeline.tools.d1_client import D1Client as _D1
 
-        d1_scrub = _D1(config.cloudflare_account_id, config.cloudflare_api_token, config.d1_database_id)
+        d1_scrub = _D1(
+            config.cloudflare_account_id, config.cloudflare_api_token, config.d1_database_id
+        )
         try:
             internal_pending = d1_scrub.execute(
                 "SELECT vtms_id FROM incidents "
@@ -168,9 +170,7 @@ async def main() -> None:
             for row in internal_pending:
                 vtms_id = row.get("vtms_id")
                 if vtms_id:
-                    d1_scrub.execute(
-                        "DELETE FROM incidents WHERE vtms_id = ?", [vtms_id]
-                    )
+                    d1_scrub.execute("DELETE FROM incidents WHERE vtms_id = ?", [vtms_id])
                     logger.info("Removed internal policy_pending %s from D1", vtms_id)
         finally:
             d1_scrub.close()
@@ -200,10 +200,12 @@ async def main() -> None:
     # Compute and store trends
     logger.info("Computing trends")
     try:
-        from pipeline.trends import compute_and_store_trends
         from pipeline.tools.d1_client import D1Client
+        from pipeline.trends import compute_and_store_trends
 
-        d1 = D1Client(config.cloudflare_account_id, config.cloudflare_api_token, config.d1_database_id)
+        d1 = D1Client(
+            config.cloudflare_account_id, config.cloudflare_api_token, config.d1_database_id
+        )
         try:
             trend = compute_and_store_trends(d1, date)
             logger.info("Trends computed: %s", trend)

@@ -7,7 +7,7 @@ import logging
 import re
 from pathlib import Path
 
-from claude_agent_sdk import query, ClaudeAgentOptions, ResultMessage
+from claude_agent_sdk import ClaudeAgentOptions, ResultMessage, query
 
 from pipeline.config import Config
 
@@ -77,7 +77,9 @@ async def run_security_engineer(config: Config, findings_path: Path) -> dict:
         if isinstance(message, ResultMessage):
             result_text = message.result if hasattr(message, "result") else str(message)
 
-    logger.info("Security Engineer agent completed: %s", result_text[:200] if result_text else "no output")
+    logger.info(
+        "Security Engineer agent completed: %s", result_text[:200] if result_text else "no output"
+    )
 
     pr_urls = _extract_pr_urls(result_text)
     return {"prs_created": len(pr_urls), "pr_urls": pr_urls}

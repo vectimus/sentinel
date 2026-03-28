@@ -5,9 +5,6 @@ import json
 import pytest
 
 from pipeline.validation import (
-    AI_BUZZWORDS,
-    REQUIRED_BLOG_SECTIONS,
-    REQUIRED_FRONTMATTER_FIELDS,
     ValidBlogPost,
     ValidCedarPolicy,
     ValidFindingJson,
@@ -15,7 +12,6 @@ from pipeline.validation import (
     validate_cedar_policy,
     validate_findings,
 )
-
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -53,6 +53,7 @@ def init_tracing(project_name: str = "sentinel") -> None:
         logger.info("OpenTelemetry tracer provider registered (HTTP/protobuf)")
 
         from openinference.instrumentation.claude_agent_sdk import ClaudeAgentSDKInstrumentor
+
         ClaudeAgentSDKInstrumentor().instrument(tracer_provider=tracer_provider)
         logger.info("Claude Agent SDK instrumentor registered")
 
