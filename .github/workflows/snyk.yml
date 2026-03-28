@@ -35,11 +35,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Install Snyk CLI
+        run: npm install -g snyk
       - name: Install dependencies
-        run: pip install -e ".[dev]" 2>/dev/null || pip install -r requirements.txt 2>/dev/null || true
+        run: pip install -e ".[dev]" 2>/dev/null || pip install . 2>/dev/null || true
       - name: Run Snyk SCA
-        uses: snyk/actions/python@master
+        run: snyk test --severity-threshold=high --package-manager=pip --command=python3
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --severity-threshold=high --file=pyproject.toml --command=python3
