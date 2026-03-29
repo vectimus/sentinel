@@ -1,0 +1,65 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0047",
+    "title": "IDEsaster: Systemic Prompt-Injection-to-IDE-Feature Attack Chain Exposes 1.8M Developers Across 100% of Tested AI Coding Tools \u2014 24 CVEs, AWS Advisory AWS-2025-019, Ongoing Vendor Patches",
+    "discovered_at": "2026-03-29T08:00:00Z",
+    "incident_date": "2025-12-06",
+    "severity": 4,
+    "owasp_category": "ASI01: Goal Hijacking",
+    "nist_ai_rmf": "GV-4.1",
+    "cis_controls": [
+      "CIS 4.7",
+      "CIS 10.1"
+    ],
+    "cve_ids": [
+      "CVE-2025-49150",
+      "CVE-2025-54130",
+      "CVE-2025-53773",
+      "CVE-2025-64660",
+      "CVE-2025-61590",
+      "CVE-2025-53097",
+      "CVE-2025-53536",
+      "CVE-2025-55012",
+      "CVE-2025-58372",
+      "CVE-2025-58335"
+    ],
+    "coverage_status": "partial",
+    "coverage_detail": "Vectimus partially covers downstream tool-call consequences of the IDEsaster attack chain. The attack proceeds: (1) indirect prompt injection hijacks agent goals (outside Cedar scope); (2) the hijacked agent issues file_write or shell_command tool calls to write attacker-controlled content to IDE workspace configuration files; (3) the IDE processes those files to trigger RCE (e.g., via task runners or debugger launchers) or data is exfiltrated via JSON schema validation background requests. Stage-2 file_write tool calls are interceptable by Vectimus: existing fileint pack policies may catch writes to sensitive config paths. However, current fileint rules do not explicitly enumerate IDE workspace config paths (.vscode/settings.json, .cursor/settings.json, .idea/workspace.xml, *.code-workspace), leaving the settings-overwrite RCE vector incompletely covered. The remote JSON schema exfiltration vector (stage-3 background GET request by IDE internals during schema validation) is triggered by IDE functionality, not an agent tool call, and is entirely outside Cedar enforcement scope.",
+    "existing_policy_ids": [],
+    "gap_description": "The fileint pack should be extended to explicitly deny agent-initiated file_write tool calls to IDE workspace configuration paths. Current fileint rules cover general sensitive file paths but do not enumerate the specific IDE config files that the IDEsaster attack chain weaponises. The remote JSON schema exfiltration vector \u2014 where poisoned context causes the IDE to make background GET requests to attacker-controlled schema URLs during schema validation \u2014 is triggered by IDE internals, not by agent tool calls, and cannot be addressed by Cedar policy.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2025/12/researchers-uncover-30-flaws-in-ai.html",
+        "title": "Researcher Uncovers 30+ Flaws in AI Coding Tools Enabling Data Theft and RCE Attacks (IDEsaster)",
+        "r2_key": "sources/VTMS-2026-0047/thehackernews-idesaster-disclosure.txt"
+      },
+      {
+        "url": "https://maccarita.com/posts/idesaster/",
+        "title": "IDEsaster: A Novel Vulnerability Class in AI IDEs",
+        "r2_key": "sources/VTMS-2026-0047/maccarita-idesaster-research.txt"
+      },
+      {
+        "url": "https://gbhackers.com/ai-developer-tools/",
+        "title": "Critical Vulnerabilities Found in GitHub Copilot, Gemini CLI, Claude, and Other AI Tools Affect Millions",
+        "r2_key": "sources/VTMS-2026-0047/gbhackers-idesaster-cves.txt"
+      }
+    ],
+    "tools_involved": [
+      "Cursor",
+      "GitHub Copilot",
+      "Windsurf",
+      "Claude Code",
+      "Roo Code",
+      "JetBrains Junie",
+      "Kiro.dev",
+      "Zed.dev",
+      "Gemini CLI"
+    ],
+    "summary": "IDEsaster (disclosed December 6, 2025 by researcher Ari Marzouk; 24 CVEs assigned; AWS advisory AWS-2025-019; vendor patches ongoing into Q1 2026) identifies a novel vulnerability class in AI-powered IDEs: attackers chain indirect prompt injection with legitimate base-IDE features to achieve data exfiltration and RCE without requiring any bug in the AI model itself. Three primary attack vectors: (1) Remote JSON Schema Poisoning \u2014 poisoned context causes the IDE to make background GET requests to attacker-controlled domains during schema validation, exfiltrating workspace data; (2) IDE Settings Overwrite \u2014 the AI agent writes attacker-controlled values into .vscode/settings.json or similar workspace config files, enabling RCE via configured task runners or debugger launchers; (3) Multi-Root Workspace manipulation via .code-workspace files. Every AI IDE tested was vulnerable. Estimated 1.8 million developers at risk. Ongoing CVE assignments and vendor patches from GitHub Copilot, Cursor, and others through March 2026 bring this within the active disclosure window.",
+    "recommended_action": "update_existing",
+    "recommended_policy_description": "Extend the fileint pack with explicit deny rules for agent-initiated file_write tool calls targeting IDE workspace configuration paths: `.vscode/settings.json`, `.vscode/tasks.json`, `.vscode/launch.json`, `.vscode/*.json` (within .vscode directories), `.idea/workspace.xml`, `.idea/*.xml`, `.cursor/settings.json`, `*.code-workspace`, `.mcp.json`, and `mcp_settings.json`. These files configure task runners, debugger launchers, and tool registrations that execute automatically when the IDE loads them, converting any agent-authored write into a persistent RCE primitive.",
+    "content_worthy": true,
+    "content_angle": "covered_by_vectimus",
+    "enforcement_scope": "tool_calling_only"
+  }
+]
