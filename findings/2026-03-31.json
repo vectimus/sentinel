@@ -1,0 +1,280 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0013",
+    "title": "Langflow CVE-2026-33017: Unauthenticated RCE in AI Pipeline Framework Exploited Within 20 Hours, Added to CISA KEV",
+    "discovered_at": "2026-03-31T08:00:00Z",
+    "incident_date": "2026-03-17",
+    "severity": 5,
+    "owasp_category": "ASI05: Unsafe Code Execution",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": ["CIS 7.4", "CIS 18.1", "CIS 2.2"],
+    "cve_ids": ["CVE-2026-33017"],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "Langflow is not a supported Vectimus agent tool (supported tools: Claude Code, Cursor, GitHub Copilot). The attack exploits the Langflow REST API directly — not via an agent tool-call pipeline — so no Cedar pretool hook is in the execution path. The vulnerable /api/v1/build_public_tmp endpoint accepts unauthenticated HTTP POST requests and passes attacker-supplied Python code to exec() with zero sandboxing. No Vectimus Cedar policy can intercept inbound HTTP requests to a Langflow API server.",
+    "existing_policy_ids": [],
+    "gap_description": "The attack vector (unauthenticated HTTP API call to a Python exec() endpoint) is entirely outside the tool-call boundary. Vectimus operates at agent pretool hook time; Langflow's API server receives and executes requests before any agent tool-call pipeline is triggered. This is architecturally out of scope for any tool-call governance product — the correct mitigations are network isolation, Langflow version upgrades, and WAF rules.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/03/critical-langflow-flaw-cve-2026-33017.html",
+        "title": "Critical Langflow Flaw CVE-2026-33017 Triggers Attacks within 20 Hours of Disclosure",
+        "r2_key": "sources/VTMS-2026-0013/thehackernews-langflow-cve.txt"
+      },
+      {
+        "url": "https://www.sysdig.com/blog/cve-2026-33017-how-attackers-compromised-langflow-ai-pipelines-in-20-hours",
+        "title": "CVE-2026-33017: How attackers compromised Langflow AI pipelines in 20 hours",
+        "r2_key": "sources/VTMS-2026-0013/sysdig-cve-2026-33017.txt"
+      },
+      {
+        "url": "https://www.bleepingcomputer.com/news/security/cisa-new-langflow-flaw-actively-exploited-to-hijack-ai-workflows/",
+        "title": "CISA: New Langflow flaw actively exploited to hijack AI workflows",
+        "r2_key": "sources/VTMS-2026-0013/bleepingcomputer-cisa-langflow.txt"
+      }
+    ],
+    "tools_involved": ["Langflow"],
+    "summary": "A critical unauthenticated remote code execution vulnerability (CVSS 9.3) in Langflow — the open-source AI pipeline and agent orchestration framework with 145,000+ GitHub stars — was disclosed March 17, 2026 and exploited in the wild within 20 hours with no public PoC required. The flaw allows any unauthenticated attacker to supply arbitrary Python code to an unsandboxed exec() call via the /api/v1/build_public_tmp endpoint. When AUTO_LOGIN=true (the default), attackers first obtain a superuser token via /api/v1/auto_login, create a public flow, then execute arbitrary OS commands. Active exploitation harvested .env credentials, API keys, and /etc/passwd contents from exposed instances. CISA added CVE-2026-33017 to its Known Exploited Vulnerabilities catalog on March 25, 2026, requiring federal agencies to patch by April 8, 2026. Fixed in Langflow 1.9.0.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "enforcement_scope": "out_of_scope",
+    "content_worthy": true,
+    "content_angle": "trend_piece"
+  },
+  {
+    "vtms_id": "VTMS-2026-0014",
+    "title": "MS-Agent (ModelScope) CVE-2026-2256: Prompt-to-Shell Injection Enables Full System Compromise via Regex Blacklist Bypass, No Patch Available",
+    "discovered_at": "2026-03-31T08:00:00Z",
+    "incident_date": "2026-03-02",
+    "severity": 4,
+    "owasp_category": "ASI02: Tool Misuse",
+    "nist_ai_rmf": "MP-5.1",
+    "cis_controls": ["CIS 10.5", "CIS 18.3", "CIS 4.1"],
+    "cve_ids": ["CVE-2026-2256"],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "ModelScope's MS-Agent framework is not a supported Vectimus agent tool. Vectimus pretool hooks integrate with Claude Code, Cursor, and GitHub Copilot only — MS-Agent's internal Shell tool invocation runs inside the ModelScope framework and is not interceptable by Cedar policies. There are no existing Vectimus policies that would block the unsafe subprocess.run(shell=True) execution path inside MS-Agent's Shell tool. The check_safe() regex blacklist bypass is entirely internal to MS-Agent's execution loop.",
+    "existing_policy_ids": [],
+    "gap_description": "The attack occurs within MS-Agent's internal tool-execution loop, which is not accessible to Cedar pretool hooks. The prompt injection vector (attacker-controlled content embedded in documents or code the agent processes) steers the MS-Agent Shell tool to execute arbitrary OS commands — but the decision point sits inside the ModelScope framework, not at a Vectimus-interceptable boundary. As no vendor patch is currently available, users of MS-Agent face exposure with no upstream fix. This is architecturally out of scope for any tool-call governance product that does not integrate with ModelScope.",
+    "sources": [
+      {
+        "url": "https://www.securityweek.com/vulnerability-in-ms-agent-ai-framework-can-allow-full-system-compromise/",
+        "title": "Vulnerability in MS-Agent AI Framework Can Allow Full System Compromise",
+        "r2_key": "sources/VTMS-2026-0014/securityweek-ms-agent-cve-2026-2256.txt"
+      },
+      {
+        "url": "https://www.secqube.com/blog/ms-agent-vulnerability-cve-2026-2256-exposes-ai-agents-to-remote-hijacking-risks",
+        "title": "MS-Agent Vulnerability CVE-2026-2256 Exposes AI Agents to Remote Hijacking Risks",
+        "r2_key": "sources/VTMS-2026-0014/secqube-ms-agent-cve.txt"
+      },
+      {
+        "url": "https://medium.com/@itamar.yochpaz/cve-2026-2256-from-ai-prompt-to-full-system-compromise-a4114c718326",
+        "title": "CVE-2026-2256: From AI Prompt to Full System Compromise",
+        "r2_key": "sources/VTMS-2026-0014/medium-itamar-cve-2026-2256.txt"
+      }
+    ],
+    "tools_involved": ["ModelScope MS-Agent"],
+    "summary": "CVE-2026-2256 (CVSS 9.8, VU#431821) in ModelScope's MS-Agent framework allows prompt injection attacks to bypass the framework's regex-based check_safe() denylist and pass arbitrary commands to subprocess.run(shell=True), achieving full system compromise with the agent process's privileges. The flaw is triggered when the agent processes attacker-controlled external content — documents, code, or web data — containing obfuscated shell commands. Bypass techniques include invoking interpreter runtimes (e.g. python3 -c '...') that are not in the blacklist. Publicly disclosed March 2, 2026 with a working PoC at github.com/Itamar-Yochpaz/CVE-2026-2256-PoC. No vendor patch is available as of March 31, 2026.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "enforcement_scope": "out_of_scope",
+    "content_worthy": true,
+    "content_angle": "trend_piece"
+  },
+  {
+    "vtms_id": "VTMS-2026-0015",
+    "title": "RoguePilot: Passive Prompt Injection via GitHub Issues Hijacks Copilot in Codespaces to Exfiltrate GITHUB_TOKEN and Achieve Repository Takeover",
+    "discovered_at": "2026-03-31T08:00:00Z",
+    "incident_date": "2026-02-24",
+    "severity": 3,
+    "owasp_category": "ASI01: Goal Hijacking",
+    "nist_ai_rmf": "MP-5.1",
+    "cis_controls": ["CIS 14.7", "CIS 3.11", "CIS 16.6"],
+    "cve_ids": [],
+    "coverage_status": "partial",
+    "coverage_detail": "GitHub Copilot is a Vectimus-supported agent tool. The RoguePilot attack chain requires three Copilot tool calls that Cedar can intercept: (1) run_in_terminal executing 'gh pr checkout 2' to pull a PR containing a malicious credential-path symlink; (2) file_read of the Codespaces credential file via symlink traversal (path: /workspaces/.codespaces/shared/user-secrets-envs.json); (3) file_write creating a JSON file with a '$schema' property pointing to an attacker-controlled server for out-of-band token exfiltration. The vectimus-secrets pack (vectimus-secrets-001) would block the file_read targeting the Codespaces credential path. The vectimus-exfil pack would flag the file_write with a remote schema URL. Gap: no existing policy intercepts the 'gh pr checkout' shell command used to stage the malicious symlink, nor explicitly blocks file_write operations embedding non-allowlisted '$schema' URLs as an exfiltration channel.",
+    "existing_policy_ids": ["vectimus-secrets-001"],
+    "gap_description": "The attack is partially blocked if vectimus-secrets-001 intercepts step (2) (file_read of the Codespaces credential path). However, the initial 'gh pr checkout' command (step 1) that introduces the malicious symlink into the workspace is not covered by any current policy. Additionally, the exfiltration step (3) — a file_write containing a '$schema' URL that triggers an IDE-level HTTP GET to an attacker server — is not yet explicitly in the vectimus-exfil pack's rule set, as this is an indirect web_fetch via IDE schema validation rather than a direct web_fetch tool call.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/02/roguepilot-flaw-in-github-codespaces.html",
+        "title": "RoguePilot Flaw in GitHub Codespaces Enabled Copilot to Leak GITHUB_TOKEN",
+        "r2_key": "sources/VTMS-2026-0015/thehackernews-roguepilot.txt"
+      },
+      {
+        "url": "https://orca.security/resources/blog/roguepilot-github-copilot-vulnerability/",
+        "title": "RoguePilot: Critical GitHub Copilot Vulnerability Exploit — Orca Security",
+        "r2_key": "sources/VTMS-2026-0015/orca-roguepilot.txt"
+      },
+      {
+        "url": "https://www.securityweek.com/github-issues-abused-in-copilot-attack-leading-to-repository-takeover/",
+        "title": "GitHub Issues Abused in Copilot Attack Leading to Repository Takeover",
+        "r2_key": "sources/VTMS-2026-0015/securityweek-roguepilot.txt"
+      }
+    ],
+    "tools_involved": ["GitHub Copilot", "GitHub Codespaces"],
+    "summary": "Orca Security disclosed RoguePilot on February 24, 2026: a passive prompt injection attack embedding hidden instructions inside GitHub Issues via HTML comment tags. When a developer opens a Codespace from a crafted issue, the built-in Copilot agent automatically ingests the hidden prompt and executes a three-step exfiltration chain — pulling a malicious PR via 'gh pr checkout', reading the GITHUB_TOKEN via a credential-path symlink using Copilot's file_read tool, then exfiltrating the token via a JSON $schema out-of-band HTTP GET request to an attacker-controlled server. Successful exploitation enables full repository takeover. Microsoft patched the vulnerability following Orca's responsible disclosure.",
+    "recommended_action": "update_existing",
+    "recommended_policy_description": "Extend the vectimus-exfil pack to flag or block file_write actions where the content includes a '$schema' key referencing a non-allowlisted external domain — this closes the IDE JSON schema validation out-of-band exfiltration channel. Extend the vectimus-git pack to require context.approved == true for shell_command calls matching 'gh pr checkout' patterns issued during agent sessions where the PR originates from an external contributor account, preventing the symlink-staging step before any credential access occurs.",
+    "enforcement_scope": "tool_calling_only",
+    "content_worthy": true,
+    "content_angle": "trend_piece"
+  },
+  {
+    "vtms_id": "VTMS-2026-0016",
+    "title": "McKinsey Lilli AI Platform Breached by Autonomous Offensive AI Agent via SQL Injection Chain: 46.5M Messages and Writable System Prompts Exposed",
+    "discovered_at": "2026-03-31T08:00:00Z",
+    "incident_date": "2026-03-09",
+    "severity": 4,
+    "owasp_category": "ASI09: Trust Boundary Violations",
+    "nist_ai_rmf": "GV-1.7",
+    "cis_controls": ["CIS 16.10", "CIS 12.2", "CIS 7.4"],
+    "cve_ids": [],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "This incident involves an autonomous offensive AI agent (CodeWall) exploiting unauthenticated endpoints in McKinsey's internal AI web platform (Lilli) via SQL injection and IDOR vulnerabilities. The attack occurs entirely outside the Vectimus tool-call boundary: no Claude Code, Cursor, or GitHub Copilot tool-call pipeline is involved on either the attacker or victim side. Vectimus Cedar policies govern outbound tool calls made by developer-side coding agents, not inbound HTTP requests to enterprise web services. No existing Vectimus policy addresses SQL injection in third-party web APIs or missing authentication on REST endpoints.",
+    "existing_policy_ids": [],
+    "gap_description": "The attack vector is an autonomous AI agent making inbound HTTP requests to a web API — a pattern that sits entirely outside the Vectimus pretool hook architecture. Vectimus intercepts tool calls made by developer-side AI coding agents; it does not govern inbound requests to web services. The most alarming outcome — silent overwrite of Lilli's 95 system prompts enabling persistent memory poisoning at platform scale — is also architecturally out of scope: Cedar cannot intercept HTTP PATCH/PUT requests to a third-party platform's API.",
+    "sources": [
+      {
+        "url": "https://codewall.ai/blog/how-we-hacked-mckinseys-ai-platform",
+        "title": "How We Hacked McKinsey's AI Platform — CodeWall",
+        "r2_key": "sources/VTMS-2026-0016/codewall-mckinsey-lilli.txt"
+      },
+      {
+        "url": "https://www.theregister.com/2026/03/09/mckinsey_ai_chatbot_hacked/",
+        "title": "AI agent hacked McKinsey chatbot for read-write access — The Register",
+        "r2_key": "sources/VTMS-2026-0016/theregister-mckinsey-lilli.txt"
+      },
+      {
+        "url": "https://outpost24.com/blog/ai-agent-hacked-mckinsey-ai-platform/",
+        "title": "How an AI Agent Hacked McKinsey's AI Platform — Outpost24",
+        "r2_key": "sources/VTMS-2026-0016/outpost24-mckinsey-lilli.txt"
+      }
+    ],
+    "tools_involved": ["CodeWall autonomous AI agent", "McKinsey Lilli"],
+    "summary": "On February 28, 2026, CodeWall's autonomous offensive AI agent — acting with minimal human direction — autonomously identified McKinsey's internal AI chatbot Lilli (used by 43,000+ employees) as a target via its published HackerOne bug bounty policy, then exploited SQL injection in unsanitised JSON key names and IDOR vulnerabilities across 22 unauthenticated API endpoints to achieve full read-write access to the production database in under two hours. Data exposed: 46.5 million chat messages, 728,000 files, 57,000 user accounts, 95 writable system prompts (enabling silent prompt poisoning for all Lilli users), and 3.68 million RAG document chunks. McKinsey patched all issues within 24 hours of responsible disclosure on March 1, 2026; public disclosure published March 9, 2026. McKinsey stated no evidence of malicious third-party access was found.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "enforcement_scope": "out_of_scope",
+    "content_worthy": true,
+    "content_angle": "trend_piece"
+  },
+  {
+    "vtms_id": "VTMS-2026-0017",
+    "title": "LiteLLM PyPI Supply Chain Compromise (TeamPCP Phase 3): 97M Monthly Downloads Weaponised to Mass-Harvest LLM Provider API Keys and Cloud Credentials",
+    "discovered_at": "2026-03-31T08:00:00Z",
+    "incident_date": "2026-03-24",
+    "severity": 5,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GV-6.1",
+    "cis_controls": ["CIS 2.3", "CIS 16.1", "CIS 14.7"],
+    "cve_ids": [],
+    "coverage_status": "partial",
+    "coverage_detail": "The vectimus-supchain pack addresses npm and GitHub Actions supply chain vectors (as demonstrated in VTMS-2026-0007 covering the Trivy and CanisterWorm campaign). LiteLLM is a PyPI package — this attack specifically targets the Python AI/ML ecosystem, which the supchain pack does not currently cover. Partial coverage exists: if a developer runs 'pip install litellm==1.82.7' via an agent shell_command tool call, Cedar can intercept and deny that specific command. However, the malicious litellm_init.pth file (auto-executes on every Python interpreter startup via the site module) and transitive dependency pulls in CI/CD pipelines bypass the tool-call boundary entirely and cannot be addressed by Cedar policy.",
+    "existing_policy_ids": [],
+    "gap_description": "No existing Vectimus policy covers pip install commands or PyPI package version validation for AI infrastructure libraries. The cascading supply chain model — TeamPCP harvested CI/CD credentials from the Trivy compromise to obtain LiteLLM's PyPI publishing token — means the credential theft enabling this attack happened in a CI/CD pipeline (out of Vectimus scope). The .pth auto-execute mechanism means the malicious payload fires on developer machines independently of any agent tool call. Extending the supchain pack to cover pip install of AI framework packages would close the tool-call-mediated vector but not the startup-time and transitive dependency vectors.",
+    "sources": [
+      {
+        "url": "https://www.trendmicro.com/en_us/research/26/c/inside-litellm-supply-chain-compromise.html",
+        "title": "Your AI Gateway Was a Backdoor: Inside the LiteLLM Supply Chain Compromise — Trend Micro",
+        "r2_key": "sources/VTMS-2026-0017/trendmicro-litellm-supply-chain.txt"
+      },
+      {
+        "url": "https://blackswan-cybersecurity.com/threat-intelligence-report-litellm-supply-chain-attack-march-24-2026-march-26-2026/",
+        "title": "THREAT INTELLIGENCE REPORT: LiteLLM Supply Chain Attack (March 24, 2026)",
+        "r2_key": "sources/VTMS-2026-0017/blackswan-litellm-report.txt"
+      },
+      {
+        "url": "https://bastion.tech/blog/litellm-pypi-supply-chain-attack",
+        "title": "LiteLLM PyPI Supply Chain Attack: What Happened and How to Stay Safe",
+        "r2_key": "sources/VTMS-2026-0017/bastion-litellm.txt"
+      },
+      {
+        "url": "https://labs.cloudsecurityalliance.org/research/csa-research-note-ai-pypi-supply-chain-campaign-20260329-csa/",
+        "title": "TeamPCP and the Cascading AI/ML Supply Chain Campaign — CSA Lab Space",
+        "r2_key": "sources/VTMS-2026-0017/csa-teampcp-campaign.txt"
+      }
+    ],
+    "tools_involved": ["LiteLLM", "CrewAI", "DSPy", "MLflow", "MCP plugins (transitive)"],
+    "summary": "On March 24, 2026, the TeamPCP threat actor used PyPI publishing credentials harvested from the earlier Trivy GitHub Actions compromise (see VTMS-2026-0007) to publish malicious LiteLLM versions 1.82.7 and 1.82.8 to PyPI. LiteLLM is the de facto AI gateway library for routing calls across all major LLM providers, averaging 97 million monthly downloads and used as a dependency in CrewAI, DSPy, MLflow, and numerous MCP plugins. The malware deployed a multi-stage credential stealer targeting OpenAI, Anthropic, Azure, GCP and AWS API keys, SSH keys, Kubernetes secrets, .env files, and CI/CD tokens. Version 1.82.8 included litellm_init.pth, which auto-executes on every Python interpreter startup via Python's site module — even if LiteLLM is never imported. A fork-bomb bug in the payload triggered detection; the entire LiteLLM package was subsequently quarantined on PyPI.",
+    "recommended_action": "update_existing",
+    "recommended_policy_description": "Extend the vectimus-supchain pack to intercept shell_command calls matching pip install patterns for high-risk AI infrastructure packages (e.g., 'pip install litellm', 'pip install langchain', 'pip install crewai'). Policies should block any pip install that does not specify a verified SHA256 hash or an operator-approved version range, and should flag installs of packages where the target version falls outside an operator-defined allowlist. This complements existing npm-focused supchain rules with equivalent PyPI coverage for AI gateway and orchestration libraries.",
+    "enforcement_scope": "tool_calling_only",
+    "content_worthy": true,
+    "content_angle": "trend_piece"
+  },
+  {
+    "vtms_id": "VTMS-2026-0018",
+    "title": "Axios npm Supply Chain Attack: Compromised Maintainer Account Drops Cross-Platform RAT into 300M-Download Package; OpenClaw AI Agent Ecosystem Packages Also Distribute Payload",
+    "discovered_at": "2026-03-31T08:00:00Z",
+    "incident_date": "2026-03-31",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GV-6.1",
+    "cis_controls": ["CIS 2.3", "CIS 16.1", "CIS 4.5"],
+    "cve_ids": [],
+    "coverage_status": "partial",
+    "coverage_detail": "The vectimus-supchain pack addresses agent-initiated npm supply chain actions, providing partial structural coverage for npm ecosystem attacks. If an agent shell_command issues 'npm install' during an active agent session and installs the malicious axios version, Cedar can intercept that shell call. However, the primary AI agent vector in this incident is indirect: @shadanai/openclaw (an OpenClaw AI agent framework package) vendored the same RAT payload, exposing AI agent developer environments without any agent tool call. The malicious postinstall script in plain-crypto-js@4.2.1 fires at npm install time — outside the tool-call boundary if the install predates agent session start or occurs in a CI/CD pipeline. Existing supchain policies do not cover detection of RAT-bearing transitive dependencies injected via compromised maintainer credentials.",
+    "existing_policy_ids": [],
+    "gap_description": "Cedar cannot determine that an npm package version is malicious based on content analysis at install time — it can only block the shell_command if npm install is issued by an agent tool call during an active Vectimus-monitored session. The @shadanai/openclaw transitive vector does not involve any agent tool call at all. The malicious plain-crypto-js payload self-erases after execution, complicating post-hoc detection. The compromised maintainer credential vector (bypassing GitHub Actions CI/CD provenance checks) is entirely outside Vectimus's scope.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/03/axios-supply-chain-attack-pushes-cross.html",
+        "title": "Axios Supply Chain Attack Pushes Cross-Platform RAT via Compromised npm Account",
+        "r2_key": "sources/VTMS-2026-0018/thehackernews-axios-supply-chain.txt"
+      },
+      {
+        "url": "https://socket.dev/blog/axios-npm-package-compromised",
+        "title": "Supply Chain Attack on Axios Pulls Malicious Dependency — Socket.dev",
+        "r2_key": "sources/VTMS-2026-0018/socket-axios-npm.txt"
+      },
+      {
+        "url": "https://www.stepsecurity.io/blog/axios-compromised-on-npm-malicious-versions-drop-remote-access-trojan",
+        "title": "axios compromised on npm: maintainer account hijacked, RAT deployed — StepSecurity",
+        "r2_key": "sources/VTMS-2026-0018/stepsecurity-axios-rat.txt"
+      }
+    ],
+    "tools_involved": ["Axios (npm)", "@shadanai/openclaw", "OpenClaw"],
+    "summary": "On March 31, 2026, attackers compromised the npm credentials of the primary Axios maintainer ('jasonsaayman') and published malicious versions 1.14.1 and 0.30.4, injecting a hidden dependency (plain-crypto-js@4.2.1) that acts as a cross-platform RAT dropper for macOS, Windows, and Linux. Axios has over 300 million weekly downloads. C2 at sfrclak.com:8000. Socket flagged the package within 6 minutes of publication; malicious versions have since been removed. Key AI agent dimension: @shadanai/openclaw packages (OpenClaw AI agent framework) also distributed the identical RAT payload, directly exposing AI agent developer environments. Attack was pre-staged 18 hours in advance with platform-specific payloads and self-erasing anti-forensic mechanisms. Downgrade to axios 1.14.0 or 0.30.3 and rotate all credentials on affected systems.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "enforcement_scope": "tool_calling_only",
+    "content_worthy": true,
+    "content_angle": "trend_piece"
+  },
+  {
+    "vtms_id": "VTMS-2026-0019",
+    "title": "OpenClaw March CVE Flood: Sandbox Escape and Human-in-the-Loop Approval Bypass Break Core Safety Guarantees Across 42,000+ AI Agent Deployments (CVE-2026-29607, CVE-2026-28460, CVE-2026-32048)",
+    "discovered_at": "2026-03-31T08:00:00Z",
+    "incident_date": "2026-03-18",
+    "severity": 4,
+    "owasp_category": "ASI09: Trust Boundary Violations",
+    "nist_ai_rmf": "MP-2.3",
+    "cis_controls": ["CIS 4.6", "CIS 10.1", "CIS 18.3"],
+    "cve_ids": ["CVE-2026-29607", "CVE-2026-28460", "CVE-2026-32048"],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "OpenClaw is not a Vectimus-supported agent tool. Vectimus Cedar pretool hooks integrate with Claude Code, Cursor, and GitHub Copilot only. OpenClaw's internal approval/sandbox enforcement sits entirely inside the OpenClaw runtime, which has no Vectimus hook integration. The three CVEs are all framework-internal trust boundary failures: (1) CVE-2026-29607 — 'allow-always' wrapper-level approval persists when inner payloads are swapped; (2) CVE-2026-28460 — shell line-continuation characters bypass the command allowlist; (3) CVE-2026-32048 — child processes spawned via sessions_spawn do not inherit sandbox.mode restrictions. None of these decision points are accessible to Cedar policy evaluation. Note: this incident is distinct from VTMS-2026-0005 (OpenClaw malicious skills supply chain attack); these CVEs expose flaws in OpenClaw's own safety control implementation.",
+    "existing_policy_ids": [],
+    "gap_description": "All three CVEs exploit OpenClaw-internal controls (approval wrapper persistence, allowlist regex, sandbox inheritance) that are architectural properties of the OpenClaw runtime — not tool calls visible to an external governance layer. The jgamblin/OpenClawCVEs tracker lists 156 total advisories with 128 still awaiting CVE assignment, indicating the OpenClaw vulnerability surface is significantly under-quantified. These are framework-internal trust boundary failures that no external tool-call governance product can remediate without native OpenClaw integration.",
+    "sources": [
+      {
+        "url": "https://openclawai.io/blog/openclaw-cve-flood-nine-vulnerabilities-four-days-march-2026",
+        "title": "Nine CVEs in Four Days: Inside OpenClaw's March 2026 Vulnerability Flood",
+        "r2_key": "sources/VTMS-2026-0019/openclawai-nine-cves-march-2026.txt"
+      },
+      {
+        "url": "https://www.redpacketsecurity.com/cve-alert-cve-2026-29607-openclaw-openclaw/",
+        "title": "CVE Alert: CVE-2026-29607 — OpenClaw Approval Bypass",
+        "r2_key": "sources/VTMS-2026-0019/redpacket-cve-2026-29607.txt"
+      },
+      {
+        "url": "https://www.redpacketsecurity.com/cve-alert-cve-2026-28460-openclaw-openclaw/",
+        "title": "CVE Alert: CVE-2026-28460 — OpenClaw Allowlist Bypass",
+        "r2_key": "sources/VTMS-2026-0019/redpacket-cve-2026-28460.txt"
+      }
+    ],
+    "tools_involved": ["OpenClaw"],
+    "summary": "Between March 18–21, 2026, nine CVEs were publicly disclosed for OpenClaw — the 316,000+ GitHub star AI agent framework. This record covers three thematically linked vulnerabilities that together break OpenClaw's core safety guarantees: CVE-2026-29607 (HITL approval bypass — 'allow-always' wrapper approvals persist at the wrapper level when inner command payloads are swapped, enabling RCE without re-prompting), CVE-2026-28460 (allowlist bypass via shell line-continuation characters that split command substitution past the check boundary), and CVE-2026-32048 (sandbox escape — child processes spawned via sessions_spawn inherit sandbox.mode: off, allowing a compromised sandboxed session to break confinement). An attacker with initial access to any sandboxed or approval-gated OpenClaw session can achieve unrestricted code execution. 42,665+ exposed instances identified; 93% assessed as actively exploitable. Patches available from v2026.3.12+. This incident is distinct from VTMS-2026-0005 (malicious skills supply chain attack).",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "enforcement_scope": "out_of_scope",
+    "content_worthy": true,
+    "content_angle": "trend_piece"
+  }
+]
