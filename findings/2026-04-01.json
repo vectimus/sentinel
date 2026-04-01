@@ -1,0 +1,245 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0020",
+    "title": "Claudy Day: Claude.ai Triple-Vulnerability Chain Enables Silent Conversation-History Exfiltration via Anthropic Files API",
+    "discovered_at": "2026-04-01T08:00:00Z",
+    "incident_date": "2026-03-18",
+    "severity": 3,
+    "owasp_category": "ASI01: Goal Hijacking",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": ["CIS 14.6", "CIS 13.8"],
+    "cve_ids": [],
+    "coverage_status": "policy_pending",
+    "enforcement_scope": "out_of_scope",
+    "coverage_detail": "No Vectimus Cedar policy addresses this incident. The attack targets Claude.ai's consumer web application — operating entirely outside the tool-call pipeline that Vectimus hooks in supported coding agents (Claude Code, Cursor, Copilot). The exfiltration mechanism (attacker-embedded API key instructing Claude to upload conversation data to the Anthropic Files API) is an internal capability of the Claude.ai session, not an externally observable tool call interceptable via Vectimus pretool hooks. Architecturally impossible to address through Cedar policy enforcement.",
+    "existing_policy_ids": [],
+    "gap_description": "Attack targets Claude.ai web app. Vectimus enforces at the tool-call boundary of coding agents — Claude.ai web sessions are outside this scope.",
+    "sources": [
+      {
+        "url": "https://www.oasis.security/blog/claude-ai-prompt-injection-data-exfiltration-vulnerability",
+        "title": "Claude.ai Prompt Injection Vulnerability | Oasis Security",
+        "r2_key": "sources/VTMS-2026-0020/oasis-claudy-day-disclosure.txt"
+      },
+      {
+        "url": "https://www.darkreading.com/vulnerabilities-threats/claudy-day-trio-flaws-claude-users-data-theft",
+        "title": "'Claudy Day' Trio of Flaws Exposes Claude Users to Data Theft | Dark Reading",
+        "r2_key": "sources/VTMS-2026-0020/darkreading-claudy-day.txt"
+      },
+      {
+        "url": "https://www.techradar.com/pro/security/three-high-risk-ai-vulnerabilities-discovered-in-claude-ai-end-to-end-attack-chain-exfiltrates-sensitive-info-without-user-knowing",
+        "title": "Three high-risk AI vulnerabilities discovered in Claude.ai | TechRadar",
+        "r2_key": "sources/VTMS-2026-0020/techradar-claudy-day.txt"
+      }
+    ],
+    "tools_involved": ["Claude.ai", "Anthropic Files API"],
+    "summary": "Oasis Security disclosed three chained vulnerabilities in the Claude.ai web application on March 18-20, 2026, collectively dubbed 'Claudy Day.' Flaw 1: Certain HTML tags embedded in the claude.ai/new?q= URL parameter are invisible in the user-facing text box but transmitted in full to the model, allowing attackers to inject arbitrary instructions hidden from the victim. Flaw 2: Claude's code-execution sandbox blocks most outbound connections but permits traffic to api.anthropic.com; by embedding an attacker-controlled Anthropic API key in the hidden prompt, researchers instructed Claude to locate sensitive conversation data, write it to a file, and upload it silently via the Files API — no integrations or MCP servers required. Flaw 3: An open redirect on claude.com (claude.com/redirect/<target>) combined with Google Ads hostname validation allowed attackers to serve search ads showing a trusted claude.com URL that silently redirected victims to the injection URL. The chain works on a bare Claude.ai session: no MCP servers, no enterprise integrations. Anthropic patched the prompt injection flaw; remaining issues are under remediation.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece"
+  },
+  {
+    "vtms_id": "VTMS-2026-0021",
+    "title": "Google Vertex AI 'Double Agent': Excessive Default P4SA Service-Agent Permissions Enable Credential Theft and Full GCS Bucket Read Access Across Customer Projects",
+    "discovered_at": "2026-04-01T08:00:00Z",
+    "incident_date": "2026-03-31",
+    "severity": 4,
+    "owasp_category": "ASI03: Identity and Privilege Abuse",
+    "nist_ai_rmf": "GV-1.2",
+    "cis_controls": ["CIS 5.4", "CIS 6.8", "CIS 3.3"],
+    "cve_ids": [],
+    "coverage_status": "policy_pending",
+    "enforcement_scope": "out_of_scope",
+    "coverage_detail": "No Vectimus Cedar policy addresses this incident. The vulnerability is in Google Cloud's IAM layer and Vertex AI ADK deployment infrastructure — a cloud control-plane privilege-escalation issue that occurs after an agent is deployed, entirely outside the tool-call boundary Vectimus monitors in coding agents. Vectimus does not hook Vertex AI ADK agent runtimes or GCP metadata service calls. Architecturally out of scope for Cedar policy enforcement.",
+    "existing_policy_ids": [],
+    "gap_description": "Privilege escalation occurs within Google Cloud's deployed agent runtime environment, outside Vectimus's supported agent tools (Claude Code, Cursor, Copilot) and tool-call enforcement boundary.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/03/vertex-ai-vulnerability-exposes-google.html",
+        "title": "Vertex AI Vulnerability Exposes Google Cloud Data and Private Artifacts | The Hacker News",
+        "r2_key": "sources/VTMS-2026-0021/hackernews-vertex-double-agent.txt"
+      },
+      {
+        "url": "https://unit42.paloaltonetworks.com/double-agents-vertex-ai/",
+        "title": "Double Agents: Exposing Security Blind Spots in GCP Vertex AI | Unit 42",
+        "r2_key": "sources/VTMS-2026-0021/unit42-double-agents-vertex.txt"
+      },
+      {
+        "url": "https://www.darkreading.com/cyber-risk/googles-vertex-ai-over-privilege-problem",
+        "title": "Google's Vertex AI Has an Over-Privileged Problem | Dark Reading",
+        "r2_key": "sources/VTMS-2026-0021/darkreading-vertex-overprivilege.txt"
+      }
+    ],
+    "tools_involved": ["Google Vertex AI ADK", "Google Cloud Agent Engine", "GCP IAM"],
+    "summary": "Palo Alto Networks Unit 42 researcher Ofir Shaty disclosed on March 31, 2026 that the Per-Project, Per-Product Service Agent (P4SA) automatically provisioned by Vertex AI ADK carries excessive default permissions. Attack vector 1 (Double Agent via ADK): An attacker packages a malicious agent as a serialized Python pickle file and deploys it to Vertex AI Agent Engine. During invocation, the GCP metadata service exposes the service agent's credentials, GCP project ID, and machine scopes. Stolen credentials grant unrestricted read access to all Google Cloud Storage buckets in the project and to restricted Artifact Registry repositories containing proprietary Google container images. Attack vector 2 (Ray on Vertex AI shell escalation): Users holding only the 'Vertex AI Viewer' role (read-only) can click 'Head node interactive shell' in the GCP Console to obtain a root shell on Ray cluster head nodes, then query the metadata service to retrieve the Custom Code Service Agent token — granting full control over GCS buckets, BigQuery, and Pub/Sub. Google responded that behaviour is 'working as intended,' updated documentation, and recommended customers implement Bring Your Own Service Account (BYOSA) with least privilege. No CVE assigned, no patch issued.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece"
+  },
+  {
+    "vtms_id": "VTMS-2026-0022",
+    "title": "CrewAI Quad-CVE Disclosure: Chained Sandbox Escape, SSRF, RCE, and Arbitrary File Read Enable Full Host Compromise When Code Interpreter Is Enabled",
+    "discovered_at": "2026-04-01T08:00:00Z",
+    "incident_date": "2026-03-15",
+    "severity": 4,
+    "owasp_category": "ASI05: Unsafe Code Execution",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": ["CIS 7.3", "CIS 16.12", "CIS 2.6"],
+    "cve_ids": ["CVE-2026-2275", "CVE-2026-2286", "CVE-2026-2287", "CVE-2026-2285"],
+    "coverage_status": "policy_pending",
+    "enforcement_scope": "out_of_scope",
+    "coverage_detail": "No Vectimus Cedar policy addresses this incident. CrewAI is a standalone multi-agent orchestration framework that Vectimus does not hook via pretool interceptors. The four CVEs affect CrewAI's own Code Interpreter sandbox at the framework runtime level — not tool calls made through a Vectimus-supported coding agent (Claude Code, Cursor, Copilot). Sandbox escape and file-read vulnerabilities occur within CrewAI's internal execution environment, architecturally outside the external tool-call boundary Cedar policies govern.",
+    "existing_policy_ids": [],
+    "gap_description": "CVEs are in CrewAI's internal Code Interpreter runtime; no Vectimus-supported coding agent sits in the execution path. Architecturally out of scope.",
+    "sources": [
+      {
+        "url": "https://www.securityweek.com/crewai-vulnerabilities-expose-devices-to-hacking/",
+        "title": "CrewAI Vulnerabilities Expose Devices to Hacking | SecurityWeek",
+        "r2_key": "sources/VTMS-2026-0022/securityweek-crewai-cves.txt"
+      },
+      {
+        "url": "https://www.vistanetinc.com/vu221883-crewai-contains-multiple-vulnerabilities-including-ssrf-rce-and-local-file-read/",
+        "title": "VU#221883: CrewAI contains multiple vulnerabilities including SSRF, RCE and local file read | Vista Net",
+        "r2_key": "sources/VTMS-2026-0022/certcc-vu221883-crewai.txt"
+      },
+      {
+        "url": "https://blog.rankiteo.com/cre1774967753-crewai-vulnerability-march-2026/",
+        "title": "CrewAI Vulnerabilities Expose Devices to Hacking | Rankiteo",
+        "r2_key": "sources/VTMS-2026-0022/rankiteo-crewai-march-2026.txt"
+      }
+    ],
+    "tools_involved": ["CrewAI", "CrewAI Code Interpreter", "Docker"],
+    "summary": "Cyata researcher Yarden Porat disclosed four chained CVEs in CrewAI's Code Interpreter tool in March 2026. CVE-2026-2275 (Insecure SandboxPython Fallback): when CrewAI cannot reach Docker it falls back to SandboxPython, enabling arbitrary C function calls via ctypes and full RCE; triggered when allow_code_execution=True. CVE-2026-2286 (SSRF): RAG search tools do not validate URLs provided at runtime, enabling internal-network and cloud metadata service access. CVE-2026-2287 (RCE): Docker availability is not re-verified at runtime, allowing fallback to insecure sandbox settings and full RCE. CVE-2026-2285 (Arbitrary File Read): the JSON loader tool reads files without path validation, exposing any local file. The four flaws are chainable via direct or indirect prompt injection against any CrewAI agent using the Code Interpreter. No complete patch is available; vendors plan to add ctypes to BLOCKED_MODULES and evaluate fail-closed configuration in future releases. Research found that Grok 2 on CrewAI rejected only 2 of 13 adversarial prompts (15.4% refusal rate), and the overall refusal rate across tested LLMs was 41.5% — meaning more than half of malicious prompts succeeded.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece"
+  },
+  {
+    "vtms_id": "VTMS-2026-0023",
+    "title": "AWS Bedrock AgentCore Sandbox Bypass via DNS: Covert Bidirectional C2 Channel Established Despite 'No Network Access' Configuration; AWS Declines to Patch",
+    "discovered_at": "2026-04-01T08:00:00Z",
+    "incident_date": "2026-03-16",
+    "severity": 3,
+    "owasp_category": "ASI05: Unsafe Code Execution",
+    "nist_ai_rmf": "GV-6",
+    "cis_controls": ["CIS 9.2", "CIS 12.2"],
+    "cve_ids": [],
+    "coverage_status": "policy_pending",
+    "enforcement_scope": "out_of_scope",
+    "coverage_detail": "No Vectimus Cedar policy addresses this incident. AWS Bedrock AgentCore is a managed cloud code-execution service — infrastructure-layer software operating outside the tool-call boundary of any Vectimus-supported coding agent. The sandbox bypass occurs at the Firecracker microVM network layer within AWS infrastructure; Vectimus does not hook AWS Bedrock AgentCore deployments. Architecturally out of scope for Cedar policy enforcement.",
+    "existing_policy_ids": [],
+    "gap_description": "DNS sandbox bypass occurs inside AWS-managed Firecracker microVMs, outside Vectimus's supported agent tools and tool-call enforcement boundary. AWS confirmed no patch will be issued.",
+    "sources": [
+      {
+        "url": "https://www.beyondtrust.com/blog/entry/pwning-aws-agentcore-code-interpreter",
+        "title": "Bypassing AWS Bedrock AgentCore Sandbox via DNS | BeyondTrust",
+        "r2_key": "sources/VTMS-2026-0023/beyondtrust-bedrock-dns-bypass.txt"
+      },
+      {
+        "url": "https://thehackernews.com/2026/03/ai-flaws-in-amazon-bedrock-langsmith.html",
+        "title": "AI Flaws in Amazon Bedrock, LangSmith, and SGLang Enable Data Exfiltration and RCE | The Hacker News",
+        "r2_key": "sources/VTMS-2026-0023/hackernews-bedrock-langsmith-sglang.txt"
+      },
+      {
+        "url": "https://www.csoonline.com/article/4146202/aws-bedrocks-isolated-sandbox-comes-with-a-dns-escape-hatch.html",
+        "title": "AWS Bedrock's 'isolated' sandbox comes with a DNS escape hatch | CSO Online",
+        "r2_key": "sources/VTMS-2026-0023/csoonline-bedrock-dns-escape.txt"
+      }
+    ],
+    "tools_involved": ["AWS Bedrock AgentCore", "AWS Code Interpreter", "Firecracker microVM"],
+    "summary": "BeyondTrust Phantom Labs disclosed on March 16, 2026 that AWS Bedrock AgentCore Code Interpreter's Sandbox mode — advertised as providing complete network isolation — permits outbound DNS A and AAAA record queries to egress freely. Researchers engineered a fully functional bidirectional DNS C2 channel: commands are delivered to the sandboxed interpreter via DNS A record responses where each IP address octet encodes ASCII characters of base64-encoded command chunks, enabling arbitrary code execution and data exfiltration despite the 'no network access' configuration. Attack vectors enabling exploitation include prompt injection (direct or indirect), supply chain compromise of the 270+ third-party Python dependencies bundled in the interpreter, and AI-generated code containing exfiltration logic. AWS was notified via HackerOne (Report #3323153) on September 1, 2025, deployed a fix on November 1, 2025, then rolled it back; on December 23, 2025 AWS communicated no permanent fix would be issued, instead updating documentation to acknowledge DNS is permitted in Sandbox mode. No CVE assigned. AWS awarded BeyondTrust a $100 gear shop gift card.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece"
+  },
+  {
+    "vtms_id": "VTMS-2026-0024",
+    "title": "SGLang Triple Unpatched RCE: Pickle Deserialization in LLM Serving Framework Scores CVSS 9.8 Across Three CVEs; No Fixes Available",
+    "discovered_at": "2026-04-01T08:00:00Z",
+    "incident_date": "2026-03-17",
+    "severity": 4,
+    "owasp_category": "ASI05: Unsafe Code Execution",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": ["CIS 7.3", "CIS 16.12"],
+    "cve_ids": ["CVE-2026-3059", "CVE-2026-3060", "CVE-2026-3989"],
+    "coverage_status": "policy_pending",
+    "enforcement_scope": "out_of_scope",
+    "coverage_detail": "No Vectimus Cedar policy addresses this incident. SGLang is an LLM model serving and structured generation framework — infrastructure-layer software that operates outside the tool-call boundary of Vectimus-supported coding agents (Claude Code, Cursor, Copilot). The pickle deserialization vulnerabilities are in SGLang's own ZeroMQ broker and crash-dump utilities; Vectimus does not hook SGLang's serving pipeline. Architecturally out of scope for Cedar policy enforcement.",
+    "existing_policy_ids": [],
+    "gap_description": "Pickle deserialization RCE is in SGLang's LLM serving infrastructure; no Vectimus-supported coding agent is in the execution path. Architecturally out of scope.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/03/ai-flaws-in-amazon-bedrock-langsmith.html",
+        "title": "AI Flaws in Amazon Bedrock, LangSmith, and SGLang Enable Data Exfiltration and RCE | The Hacker News",
+        "r2_key": "sources/VTMS-2026-0024/hackernews-sglang-cves.txt"
+      }
+    ],
+    "tools_involved": ["SGLang", "ZeroMQ", "Python pickle"],
+    "summary": "Orca Security researcher Igor Stepansky and CERT/CC disclosed three unauthenticated RCE vulnerabilities in SGLang, a widely-used LLM structured generation serving framework, in March 2026. CVE-2026-3059 (CVSS 9.8): SGLang's ZeroMQ broker deserializes untrusted data via pickle.loads() without authentication when the multimodal generation system is enabled; unauthenticated network access to the broker endpoint yields full code execution. CVE-2026-3060 (CVSS 9.8): identical pickle.loads() pattern in the encoder parallel disaggregation module. CVE-2026-3989 (CVSS 7.8): insecure pickle.load() without validation in replay_request_dump.py, exploitable by supplying a malicious pickle file to the crash dump replay utility. All three CVEs remain unpatched as of public disclosure. Any attacker with network access to an exposed SGLang endpoint can achieve full code execution on the host system.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece"
+  },
+  {
+    "vtms_id": "VTMS-2026-0025",
+    "title": "LangSmith Bearer Token Theft via Unvalidated baseUrl Parameter Enables Full Account Takeover Across Cloud and Self-Hosted Deployments (CVE-2026-25750)",
+    "discovered_at": "2026-04-01T08:00:00Z",
+    "incident_date": "2026-03-17",
+    "severity": 3,
+    "owasp_category": "ASI03: Identity and Privilege Abuse",
+    "nist_ai_rmf": "GV-6",
+    "cis_controls": ["CIS 3.12", "CIS 14.6"],
+    "cve_ids": ["CVE-2026-25750"],
+    "coverage_status": "policy_pending",
+    "enforcement_scope": "out_of_scope",
+    "coverage_detail": "No Vectimus Cedar policy addresses this incident. LangSmith is an AI observability and monitoring platform — not a developer coding agent supported by Vectimus hook integrations (Claude Code, Cursor, Copilot). The vulnerability is in LangSmith's own URL parameter handling within its web application; Vectimus does not intercept LangSmith URL requests or session management operations. Architecturally out of scope for Cedar policy enforcement.",
+    "existing_policy_ids": [],
+    "gap_description": "Token theft occurs via LangSmith's web application URL handling, architecturally outside the tool-call boundary Vectimus governs.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/03/ai-flaws-in-amazon-bedrock-langsmith.html",
+        "title": "AI Flaws in Amazon Bedrock, LangSmith, and SGLang Enable Data Exfiltration and RCE | The Hacker News",
+        "r2_key": "sources/VTMS-2026-0025/hackernews-langsmith-cve.txt"
+      }
+    ],
+    "tools_involved": ["LangSmith", "LangChain"],
+    "summary": "Miggo Security researchers Liad Eliyahu and Eliana Vuijsje disclosed CVE-2026-25750 (CVSS 8.5) in LangSmith, the LangChain observability and evaluation platform widely used by AI engineering teams, as part of a coordinated March 2026 advisory. The vulnerability stems from an unvalidated baseUrl URL parameter in LangSmith's web interface: an attacker crafts a specially formed link that, when visited by a victim, redirects the browser to an attacker-controlled endpoint while the LangSmith client sends along the victim's bearer token, user ID, and workspace ID. Successful exploitation enables full account takeover on both LangSmith cloud and self-hosted deployments, granting the attacker access to all stored traces, evaluation runs, prompt templates, and agent execution logs. The vulnerability was patched in LangSmith version 0.12.71 (released December 2025); CVE publicly disclosed March 2026.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece"
+  },
+  {
+    "vtms_id": "VTMS-2026-0026",
+    "title": "PerplexedComet: Zero-Click Indirect Prompt Injection via Meeting Invites Hijacks Perplexity Comet AI Browser to Exfiltrate Local Files and Compromise 1Password",
+    "discovered_at": "2026-04-01T08:00:00Z",
+    "incident_date": "2026-03-11",
+    "severity": 3,
+    "owasp_category": "ASI01: Goal Hijacking",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": ["CIS 14.6", "CIS 13.8"],
+    "cve_ids": [],
+    "coverage_status": "policy_pending",
+    "enforcement_scope": "out_of_scope",
+    "coverage_detail": "No Vectimus Cedar policy addresses this incident. Perplexity Comet is an AI browser product — not a developer coding agent supported by Vectimus hook integrations (Claude Code, Cursor, Copilot). The zero-click indirect prompt injection attack vector (calendar meeting invite content processed by the browser's AI assistant) occurs upstream of any tool-call boundary Vectimus can monitor. Architecturally out of scope for Cedar policy enforcement.",
+    "existing_policy_ids": [],
+    "gap_description": "Attack targets the Perplexity Comet AI browser; Vectimus-supported coding agents are not in the execution path. Architecturally out of scope.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/03/researchers-trick-perplexitys-comet-ai.html",
+        "title": "Researchers Trick Perplexity's Comet AI Browser Into Phishing Scam in Under Four Minutes | The Hacker News",
+        "r2_key": "sources/VTMS-2026-0026/hackernews-perplexedcomet.txt"
+      }
+    ],
+    "tools_involved": ["Perplexity Comet", "1Password", "Gmail"],
+    "summary": "Zenity Labs and Guardio Labs disclosed multiple vulnerabilities in Perplexity's Comet AI browser in March 2026. Zenity Labs' 'PerplexedComet' research demonstrated two zero-click indirect prompt injection attacks: malicious calendar meeting invites seed injected instructions that, when the Comet browser processes the invitation, cause it to exfiltrate local files or hijack the victim's 1Password account — without any user interaction beyond receiving the invite. Separately, Trail of Bits demonstrated four additional prompt injection techniques for extracting Gmail data from victims' accounts via Comet's AI assistant. Guardio Labs researcher Shaked Chen demonstrated a GAN-based adversarial training attack exploiting 'agentic blabbering' — the browser's verbose reasoning output — as a training signal to iteratively refine phishing pages that defeat Comet's guardrails in under four minutes. All reported issues have been addressed by Perplexity.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece"
+  }
+]
