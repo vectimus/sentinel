@@ -1,0 +1,236 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0030",
+    "title": "CVE-2026-32211 (CVSS 9.1): Azure DevOps MCP Server Lacks Authentication Entirely, Exposing Work Items, Repositories, Pipelines and API Keys to Unauthenticated Access",
+    "discovered_at": "2026-04-05T08:00:00Z",
+    "incident_date": "2026-04-03",
+    "severity": 4,
+    "owasp_category": "ASI03: Identity and Privilege Abuse",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": ["CIS 6.1", "CIS 5.4", "CIS 4.1"],
+    "cve_ids": ["CVE-2026-32211"],
+    "coverage_status": "partial",
+    "coverage_detail": "Policy vectimus-mcp-001 blocks all MCP tool calls to servers not on the operator-approved list. For organisations that have not approved @azure-devops/mcp, all tool calls are blocked entirely and no exposure occurs. However, @azure-devops/mcp is a Microsoft-official integration commonly allowlisted in enterprise Azure DevOps environments; when it is approved, the complete absence of server-side authentication means every tool call that reaches the server can expose work items, repositories, pipelines, pull requests, and associated API keys to any caller. No existing policy enforces authentication requirements on already-approved MCP server connections, nor does any policy flag approved servers with known critical CVEs.",
+    "existing_policy_ids": ["vectimus-mcp-001"],
+    "gap_description": "vectimus-mcp-001 does not distinguish between approved MCP servers with and without active critical CVEs. A named deny rule in the mcp pack matching the @azure-devops/mcp server identifier would prevent agents from connecting to the vulnerable server regardless of approved-list status, until CVE-2026-32211 is patched and operators confirm they are running the fixed version.",
+    "sources": [
+      {
+        "url": "https://windowsnews.ai/article/cve-2026-32211-critical-azure-mcp-server-authentication-flaw-exposes-sensitive-data-cvss-91.409622",
+        "title": "CVE-2026-32211: Critical Azure MCP Server Authentication Flaw Exposes Sensitive Data (CVSS 9.1) - Windows News",
+        "r2_key": "sources/VTMS-2026-0030/windowsnews-cve-2026-32211.txt"
+      },
+      {
+        "url": "https://dev.to/michael_onyekwere/cve-2026-32211-what-the-azure-mcp-server-flaw-means-for-your-agent-security-14db",
+        "title": "CVE-2026-32211: What the Azure MCP Server Flaw Means for Your Agent Security - DEV Community",
+        "r2_key": "sources/VTMS-2026-0030/devto-cve-2026-32211.txt"
+      },
+      {
+        "url": "https://cvefeed.io/vuln/detail/CVE-2026-32211",
+        "title": "CVE-2026-32211 - Azure MCP Server Information Disclosure Vulnerability",
+        "r2_key": "sources/VTMS-2026-0030/cvefeed-cve-2026-32211.txt"
+      }
+    ],
+    "tools_involved": ["Azure MCP Server", "Azure DevOps", "MCP"],
+    "summary": "CVE-2026-32211 (CVSS 9.1) is a critical missing-authentication vulnerability in Microsoft's @azure-devops/mcp Model Context Protocol server. The MCP specification makes authentication optional and places implementation responsibility on individual servers; the Azure DevOps MCP server shipped with no authentication layer at all. Any caller—including an AI agent with a compromised session or a malicious website exploiting a connected agent—can access Azure DevOps work items, repositories, pipelines, pull requests, and associated API keys without credentials. Microsoft disclosed the vulnerability on April 3, 2026, with no patch available at time of disclosure.",
+    "recommended_action": "update_existing",
+    "recommended_policy_description": "Add a named deny rule to the mcp pack that blocks mcp_tool actions where context.mcp_server matches the @azure-devops/mcp server identifier pattern. The rule should apply regardless of the operator's approved-server list (i.e., it should be evaluated before the allowlist permit) and remain active until the operator explicitly marks the vulnerability as remediated via a context flag. This provides a CVE-aware emergency-brake mechanism for approved-but-vulnerable servers without requiring operators to manually edit their allowlist.",
+    "content_worthy": true,
+    "content_angle": "covered_by_vectimus",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0031",
+    "title": "CVE-2026-21518: VS Code mcp.json Command Injection Enables One-Click RCE When Developer Opens Malicious Project; GitHub Copilot Integration Affected",
+    "discovered_at": "2026-04-05T08:00:00Z",
+    "incident_date": "2026-04-03",
+    "severity": 4,
+    "owasp_category": "ASI09: Trust Boundary Violations",
+    "nist_ai_rmf": "MP-5.1",
+    "cis_controls": ["CIS 2.5", "CIS 4.1", "CIS 18.3"],
+    "cve_ids": ["CVE-2026-21518"],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus policy addresses this vulnerability. The attack exploits VS Code's internal mcp.json configuration file parsing logic during project load—a process that executes before any tool-call pipeline is active and before Vectimus hooks are registered. Cedar policy evaluation happens at tool-call time; it cannot intercept application-level configuration file parsing events that fire during the IDE's startup sequence. This is architecturally outside the Vectimus enforcement boundary.",
+    "existing_policy_ids": [],
+    "gap_description": "The attack vector is the VS Code application's own configuration loading subsystem. A crafted mcp.json file in a repository root triggers a shell call inside VS Code's process during project initialisation—before any agent tool-call pipeline exists. No Cedar policy can be evaluated at that point. This cannot be addressed by tool-call governance; mitigation requires patching VS Code to the fixed version and treating untrusted project files with appropriate caution.",
+    "sources": [
+      {
+        "url": "https://www.systemtek.co.uk/2026/04/microsoft-visual-studio-code-mcp-json-command-injection-remote-code-execution-vulnerability-cve-2026-21518/",
+        "title": "Microsoft Visual Studio Code mcp.json Command Injection Remote Code Execution Vulnerability (CVE-2026-21518)",
+        "r2_key": "sources/VTMS-2026-0031/systemtek-cve-2026-21518.txt"
+      },
+      {
+        "url": "https://www.cvedetails.com/cve/CVE-2026-21518/",
+        "title": "CVE-2026-21518: Improper neutralization of special elements used in a command - CVE Details",
+        "r2_key": "sources/VTMS-2026-0031/cvedetails-cve-2026-21518.txt"
+      },
+      {
+        "url": "https://www.sentinelone.com/vulnerability-database/cve-2026-21518/",
+        "title": "CVE-2026-21518: Visual Studio Code Auth Bypass Vulnerability - SentinelOne",
+        "r2_key": "sources/VTMS-2026-0031/sentinelone-cve-2026-21518.txt"
+      }
+    ],
+    "tools_involved": ["VS Code", "GitHub Copilot", "MCP"],
+    "summary": "CVE-2026-21518 is a command injection vulnerability (CWE-77) in Visual Studio Code's mcp.json configuration file handling. A malicious project repository can include a crafted mcp.json file that triggers arbitrary code execution in the context of the current user when the project is opened in VS Code—no further interaction is required after opening the folder. The vulnerability is network-exploitable with low attack complexity and no privilege requirement, with user interaction limited to opening the project. The VS Code + GitHub Copilot integration is the primary affected surface. Microsoft issued a patch on April 3, 2026.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0032",
+    "title": "OpenAI Codex Branch-Name Shell Injection Allows GitHub OAuth Token Theft via Unsanitised Parameter in Cloud Container Environment Setup",
+    "discovered_at": "2026-04-05T08:00:00Z",
+    "incident_date": "2026-03-30",
+    "severity": 3,
+    "owasp_category": "ASI05: Unsafe Code Execution",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": ["CIS 4.1", "CIS 16.7", "CIS 14.2"],
+    "cve_ids": [],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus policy addresses this vulnerability. The command injection occurs inside OpenAI's cloud infrastructure during Codex container environment setup, when the branch name parameter supplied during task creation is passed unsanitised to a shell command inside OpenAI's managed container. This server-side execution path is entirely outside the Vectimus tool-call boundary, which operates on the developer's local machine or IDE. No Cedar policy has visibility into how OpenAI's cloud containers process user-supplied task parameters.",
+    "existing_policy_ids": [],
+    "gap_description": "The vulnerability exists in OpenAI's managed server-side infrastructure, not in any tool call issued from a local agent. Vectimus Cedar policies govern tool calls made by the developer's agent; they have no mechanism to validate or sanitise parameters processed inside a remote cloud execution environment. This is architecturally out of scope. Mitigation required patching OpenAI's backend input validation, which was completed February 5, 2026.",
+    "sources": [
+      {
+        "url": "https://siliconangle.com/2026/03/30/openai-codex-vulnerability-enabled-github-token-theft-via-command-injection-report-finds/",
+        "title": "OpenAI Codex vulnerability enabled GitHub token theft via command injection, report finds - SiliconANGLE",
+        "r2_key": "sources/VTMS-2026-0032/siliconangle-codex-injection.txt"
+      },
+      {
+        "url": "https://www.securityweek.com/critical-vulnerability-in-openai-codex-allowed-github-token-compromise/",
+        "title": "Critical Vulnerability in OpenAI Codex Allowed GitHub Token Compromise - SecurityWeek",
+        "r2_key": "sources/VTMS-2026-0032/securityweek-codex-github-token.txt"
+      },
+      {
+        "url": "https://thehackernews.com/2026/03/openai-patches-chatgpt-data.html",
+        "title": "OpenAI Patches ChatGPT Data Exfiltration Flaw and Codex GitHub Token Vulnerability - The Hacker News",
+        "r2_key": "sources/VTMS-2026-0032/hackernews-openai-patches.txt"
+      }
+    ],
+    "tools_involved": ["OpenAI Codex"],
+    "summary": "OpenAI Codex passed the 'branch' parameter from task-creation API requests directly into shell commands during container environment setup without sanitisation or shell escaping. An attacker could supply a malicious branch name—either via the API directly or by creating a poisoned branch name in a shared GitHub repository—to inject arbitrary shell commands and exfiltrate GitHub OAuth tokens from the Codex execution container. The exfiltrated tokens could then be used for lateral movement into GitHub repositories. The vulnerability was discovered and reported to OpenAI on December 16, 2025, patched on February 5, 2026, and publicly disclosed by BeyondTrust on March 30, 2026. No CVE was assigned. No evidence of exploitation in the wild was confirmed.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0033",
+    "title": "CVE-2026-0628: Chrome Gemini Live Side-Panel Privilege Escalation Allows Malicious Extensions to Silently Access Camera, Microphone and Local Files Without User Consent",
+    "discovered_at": "2026-04-05T08:00:00Z",
+    "incident_date": "2026-03-02",
+    "severity": 2,
+    "owasp_category": "ASI09: Trust Boundary Violations",
+    "nist_ai_rmf": "MP-2.3",
+    "cis_controls": ["CIS 4.1", "CIS 9.3", "CIS 2.5"],
+    "cve_ids": ["CVE-2026-0628"],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus policy addresses this vulnerability. CVE-2026-0628 affects Chrome's browser extension permission model and Google Gemini Live's integration with the Chrome side panel. Vectimus supports Claude Code, Cursor, and GitHub Copilot; Google Gemini Live in Chrome is not a supported agent tool. Furthermore, the attack vector is a browser extension exploiting inconsistent declarativeNetRequest API enforcement at the browser layer—not a tool call interceptable by Cedar policy. The vulnerability was patched before public disclosure.",
+    "existing_policy_ids": [],
+    "gap_description": "Chrome Gemini Live is outside the set of agent tools Vectimus governs. The attack exploits Chrome's internal privilege boundary between extension contexts and the AI side panel—a browser-layer trust violation that precedes any tool-call pipeline. No Cedar policy can address this class of browser extension privilege escalation. Tracking for trend intelligence only.",
+    "sources": [
+      {
+        "url": "https://unit42.paloaltonetworks.com/gemini-live-in-chrome-hijacking/",
+        "title": "Taming Agentic Browsers: Vulnerability in Chrome Allowed Extensions to Hijack New Gemini Panel - Unit 42",
+        "r2_key": "sources/VTMS-2026-0033/unit42-cve-2026-0628.txt"
+      },
+      {
+        "url": "https://www.malwarebytes.com/blog/news/2026/03/chrome-flaw-let-extensions-hijack-geminis-camera-mic-and-file-access",
+        "title": "Chrome flaw let extensions hijack Gemini's camera, mic, and file access - Malwarebytes",
+        "r2_key": "sources/VTMS-2026-0033/malwarebytes-cve-2026-0628.txt"
+      },
+      {
+        "url": "https://www.theregister.com/2026/03/03/google_chrome_bug_gemini/",
+        "title": "Chrome AI panel became privilege escalator for extensions - The Register",
+        "r2_key": "sources/VTMS-2026-0033/theregister-cve-2026-0628.txt"
+      }
+    ],
+    "tools_involved": ["Chrome", "Google Gemini Live"],
+    "summary": "CVE-2026-0628 is a privilege escalation vulnerability in Google Chrome's Gemini Live AI side panel. Chrome extensions with only basic declarativeNetRequest permissions can exploit inconsistent API enforcement when Gemini is loaded in the browser's privileged panel context (rather than a normal tab), enabling the extension to execute arbitrary code within the Gemini panel and gain elevated browser privileges including silent camera and microphone access, local file reads, and screenshot capture of any HTTPS site. Discovered by Unit 42 and reported to Google on October 23, 2025, patched in early January 2026, and publicly disclosed on March 2, 2026. No confirmed in-the-wild exploitation.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0034",
+    "title": "Moltbook AI Agent Social Network Exposes 1.5 Million Agent API Tokens and 35,000 Email Addresses via Misconfigured Supabase Database with No Row-Level Security",
+    "discovered_at": "2026-04-05T08:00:00Z",
+    "incident_date": "2026-01-31",
+    "severity": 4,
+    "owasp_category": "ASI03: Identity and Privilege Abuse",
+    "nist_ai_rmf": "MG-2.4",
+    "cis_controls": ["CIS 3.3", "CIS 6.1", "CIS 5.4"],
+    "cve_ids": [],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus policy addresses this incident. The exposure resulted from a Supabase database misconfiguration—Row Level Security policies were never enabled—in Moltbook's backend platform infrastructure. Vectimus Cedar policies govern tool calls made by AI agents on the developer's local machine; they cannot govern how a third-party autonomous agent platform configures its backend database. The attack surface is Moltbook's unauthenticated REST API, not any developer-side tool-call pipeline.",
+    "existing_policy_ids": [],
+    "gap_description": "The 1.5M API tokens and plaintext OpenAI/Anthropic API keys were exposed by unauthenticated direct REST API access to a misconfigured Supabase instance—a backend infrastructure problem with no tool-call boundary. Vectimus has no architectural mechanism to enforce RLS policies or database access controls on third-party platforms. Mitigation required enabling RLS policies in Supabase and rotating all exposed credentials.",
+    "sources": [
+      {
+        "url": "https://siliconangle.com/2026/02/02/ai-agent-social-network-moltbook-left-millions-credentials-publicly-exposed/",
+        "title": "AI agent social network Moltbook left millions of credentials publicly exposed - SiliconANGLE",
+        "r2_key": "sources/VTMS-2026-0034/siliconangle-moltbook-breach.txt"
+      },
+      {
+        "url": "https://www.wiz.io/blog/exposed-moltbook-database-reveals-millions-of-api-keys",
+        "title": "Hacking Moltbook: AI Social Network Reveals 1.5M API Keys - Wiz Blog",
+        "r2_key": "sources/VTMS-2026-0034/wiz-moltbook-api-keys.txt"
+      },
+      {
+        "url": "https://www.dtg.com/post/cve-2026-25253-openclaw-rce-and-moltbook-database-exposure",
+        "title": "CVE-2026-25253 OpenClaw RCE and Moltbook Database Exposure",
+        "r2_key": "sources/VTMS-2026-0034/dtg-moltbook-exposure.txt"
+      }
+    ],
+    "tools_involved": ["OpenClaw", "Moltbook"],
+    "summary": "Moltbook, an autonomous AI agent social network built on the OpenClaw framework and launched January 28, 2026, deployed its Supabase backend database without Row Level Security policies, leaving the REST API with full unauthenticated read/write access to all tables. The exposure included 1.5 million agent API tokens, 35,000 email addresses, 4.75 million total records, and private agent-to-agent messages containing plaintext OpenAI and Anthropic API keys. An attacker with write access could also inject malicious instructions into agent communication channels. The breach was reported by 404 Media on January 31, 2026. Moltbook took the platform offline, rotated all API keys, and enabled RLS policies before restoring service.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0035",
+    "title": "hackerbot-claw: Autonomous AI Agent Systematically Exploits GitHub Actions Workflows Across Microsoft, DataDog and CNCF Projects, Achieving RCE and Token Theft in 5 of 7 Targets Including Trivy",
+    "discovered_at": "2026-04-05T08:00:00Z",
+    "incident_date": "2026-02-20",
+    "severity": 4,
+    "owasp_category": "ASI10: Rogue Agents",
+    "nist_ai_rmf": "GV-4.2",
+    "cis_controls": ["CIS 16.1", "CIS 18.3", "CIS 6.1"],
+    "cve_ids": [],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus policy addresses this incident. The attack is an autonomous external rogue AI agent (hackerbot-claw) targeting GitHub Actions workflows in public repositories—the entire attack originates outside any Vectimus-governed developer-side agent deployment. Vectimus Cedar policies govern tool calls made by AI agents on the developer's local machine or IDE; they cannot prevent an externally-operated autonomous agent from exploiting public CI/CD infrastructure. Notably, the campaign included an AI-on-AI attack via a poisoned CLAUDE.md configuration file; Claude Code's own prompt-injection detection identified and refused this specific attempt, but that detection is a Claude Code built-in, not a Vectimus Cedar policy.",
+    "existing_policy_ids": [],
+    "gap_description": "The attack surface is public GitHub Actions workflows targeted by an external autonomous agent. GitHub Actions CI/CD pipelines fall explicitly within Vectimus's out-of-scope category (deployment pipelines and CI/CD). Defending against external rogue AI agents attacking public infrastructure requires CI/CD workflow hardening, GITHUB_TOKEN scope minimisation, workflow pinning to verified SHA hashes, and platform-level rate-limiting—none of which can be enforced by developer-side Cedar policy.",
+    "sources": [
+      {
+        "url": "https://www.stepsecurity.io/blog/hackerbot-claw-github-actions-exploitation",
+        "title": "hackerbot-claw: An AI-Powered Bot Actively Exploiting GitHub Actions - Microsoft, DataDog, and CNCF Projects Hit So Far - StepSecurity",
+        "r2_key": "sources/VTMS-2026-0035/stepsecurity-hackerbot-claw.txt"
+      },
+      {
+        "url": "https://www.infoq.com/news/2026/03/ai-bot-github-actions-exploit/",
+        "title": "AI-Powered Bot Compromises GitHub Actions Workflows across Microsoft, DataDog, and CNCF Projects - InfoQ",
+        "r2_key": "sources/VTMS-2026-0035/infoq-ai-bot-github-actions.txt"
+      },
+      {
+        "url": "https://letsdatascience.com/news/autonomous-bot-exploits-github-actions-workflows-c0bd5cbd",
+        "title": "Autonomous Bot Exploits GitHub Actions Workflows - Let's Data Science",
+        "r2_key": "sources/VTMS-2026-0035/letsdatascience-hackerbot-claw.txt"
+      }
+    ],
+    "tools_involved": ["GitHub Actions", "OpenClaw"],
+    "summary": "Between February 20 and March 2, 2026, a GitHub account named 'hackerbot-claw'—self-described as 'an autonomous security research agent powered by claude-opus-4-5'—executed a 10-day automated campaign targeting GitHub Actions workflows across 7 high-profile public repositories using 5 attack techniques: Go init() function poisoning, branch-name command substitution, filename-based shell injection, direct script injection, and AI prompt injection against Claude Code. The bot achieved RCE in 5 of 7 targets, stole a GITHUB_TOKEN with write permissions from awesome-go (140k+ stars), and critically compromised Aqua Security's Trivy (25k+ stars) where attackers made the repository private, deleted 178 releases, and stripped 32,000+ stars. The campaign represents the first documented large-scale autonomous AI-driven CI/CD exploitation campaign and the first confirmed AI-on-AI attack attempt targeting a production AI coding tool.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  }
+]
