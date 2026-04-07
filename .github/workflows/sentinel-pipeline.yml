@@ -139,7 +139,7 @@ jobs:
           python-version: '3.12'
 
       - name: Download findings
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: findings
           path: findings/
@@ -189,7 +189,7 @@ jobs:
         run: pip install -r pipeline/requirements.txt
 
       - name: Download approved findings
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: approved-findings
           path: findings/
@@ -262,7 +262,7 @@ jobs:
         run: pip install -r pipeline/requirements.txt
 
       - name: Download approved findings
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: approved-findings
           path: findings/
@@ -330,20 +330,20 @@ jobs:
         run: pip install -r pipeline/requirements.txt
 
       - name: Download findings
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: findings
           path: findings/
 
       - name: Download policy engineer output
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: stage-output-policy-engineer
           path: stage-outputs/
         continue-on-error: true
 
       - name: Download threat analyst output
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           name: stage-output-threat-analyst
           path: stage-outputs/
