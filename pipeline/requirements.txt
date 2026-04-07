@@ -4,7 +4,7 @@ claude-agent-sdk==0.1.52
 deepeval==3.9.3
 cisco-ai-mcp-scanner==4.4.0
 deepteam==1.0.6
-arize-phoenix==13.15.0
+arize-phoenix==13.23.0
 arize-phoenix-otel==0.15.0
 openinference-instrumentation-claude-agent-sdk==0.1.0
 fastmcp==3.2.0
