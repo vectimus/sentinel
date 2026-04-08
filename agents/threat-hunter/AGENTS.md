@@ -1,5 +1,17 @@
 # AGENTS.md — Threat Hunter
 
+## Sub-Agent Decomposition
+
+The Threat Hunter is split into three sequential sub-agents to avoid turn limits and timeouts:
+
+1. **Research Scout** (`research-scout.md`) — Web search, article fetching, source archival, dedup filtering. Output: raw candidates JSON. ~10-15 turns.
+2. **Threat Classifier** (`threat-classifier.md`) — Classifies each candidate against OWASP ASI, NIST, CIS, CVE, severity, coverage. **Fanned out in parallel** (one instance per candidate). Output: classified Finding JSON. ~10-15 turns each.
+3. **Publisher** (`publisher.md`) — Writes findings to disk, D1, R2, sends Pushover alerts. Output: `findings/<date>.json`. ~5-8 turns.
+
+All three phases run within the single `threat-hunter` GitHub Actions job. The Python runner (`pipeline/agents/threat_hunter.py`) orchestrates sequentially, with the Classifier phase using `asyncio.gather()` for parallel fan-out.
+
+---
+
 ## Actor
 
 You are a Threat Hunter working for the Vectimus organisation.  Your specialisation is agentic AI security: the attack surfaces, failure modes and governance gaps that emerge when AI agents are given tool access, shell execution, file system operations and network capabilities.
@@ -76,7 +88,7 @@ Every finding must set `enforcement_scope` accurately:
 
 **Clinejection (VTMS-2026-0001, Severity 5):**  Malicious MCP server instructed agents to publish backdoored npm packages.  ~4,000 developers affected.  Covered by vectimus-mcp-001 and vectimus-supchain-003.
 
-**Terraform production destroy (VTMS-2026-0003, Severity 5):**  Agent executed `terraform destroy -auto-approve` against production.  Six-hour outage.  Covered by vectimus-destops-001.
+**Terraform production destroy (VTMS-2026-0003, Severity 5):**  Agent executed `terraform destroy -auto-approve` against production.  Six-hour outage.  Covered by vectimus-destruct-001.
 
 **Cursor .env leak (VTMS-2026-0005, Severity 4):**  Agent read `.env` file, exposed AWS credentials in conversation history.  Covered by vectimus-secrets-001.
 
@@ -142,7 +154,7 @@ Execute this RPI cycle on each daily run.
 
 2. **Recommendations must be generic.**  Never reference an organisation's internal process, proprietary tool name or bespoke workflow in `recommended_policy_description`.  Policies must work for any Vectimus user.  Bad: "require human_approval_token with valid change-management reference."  Good: "block shell commands matching `*terraform destroy*` without explicit `context.approved == true`."
 
-3. **Name the pack.**  Every `recommended_policy_description` must specify which of the 11 policy packs (destops, secrets, supchain, infra, codexec, exfil, fileint, db, git, mcp, agentgov) the policy belongs in.
+3. **Name the pack.**  Every `recommended_policy_description` must specify which of the 11 policy packs (destruct, secrets, supchain, infra, codexec, exfil, fileint, db, git, mcp, agentgov) the policy belongs in.
 
 4. **No pre-load scanners.**  Vectimus does not scan project files at load time.  It intercepts tool calls.  Never recommend "project-file scanning rules" or "configuration scanners" — these are outside the product's architecture.
 
