@@ -159,7 +159,6 @@ async def _run_research_scout(
             validated.append(candidate.model_dump())
         except Exception as e:
             logger.warning("Raw candidate[%d] failed validation (skipping): %s", i, e)
-            validated.append(item)  # Keep partially valid candidates
 
     logger.info("Research Scout found %d candidate(s)", len(validated))
     return validated
@@ -194,7 +193,6 @@ async def _run_threat_classifier(
             allowed_tools=[
                 "Read",
                 "Write",
-                "Bash",
                 "mcp__sentinel__d1_query",
             ],
             max_turns=20,

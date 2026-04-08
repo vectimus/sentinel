@@ -151,6 +151,5 @@ Cross-field constraints (validated downstream):
 
 ## Tools
 
-- `Read` / `Write` — file system operations
-- `Bash` — shell commands (e.g. listing vectimus policies)
+- `Read` / `Write` — file system operations (use Read to inspect vectimus policy files)
 - `mcp__sentinel__d1_query` — read-only queries against D1 (for checking existing coverage)
