@@ -31,7 +31,7 @@ You receive:
 ## Mission
 
 1. Run 5-8 targeted web searches. Start broad, then narrow based on results. **Focus on incidents from the last 30 days.** Do not report incidents older than 90 days unless they are newly disclosed or newly assigned a CVE.
-2. For each relevant result, fetch full article text and archive to R2 (`sources/raw/`).
+2. For each relevant result, fetch full article text and archive to R2 under `sources/unclassified/<date>/` (a staging prefix — the Publisher re-archives under `sources/<VTMS-ID>/` after classification assigns identifiers).
 3. Filter for relevance: must involve an AI agent, coding tool, MCP server or agentic framework. Exclude: general software vulnerabilities without agent context, hallucination stories without tool execution, opinion pieces without incident data.
 4. Deduplicate against the existing incidents list provided in your input. Match on tool + event + approximate date. Skip duplicates.
 
@@ -47,7 +47,7 @@ Write your output as a JSON array to the file path specified in your instruction
 {
   "working_title": "Short descriptive title of the incident",
   "source_urls": ["https://..."],
-  "r2_keys": ["sources/raw/..."],
+  "r2_keys": ["sources/unclassified/<date>/..."],
   "raw_summary": "2-3 sentence factual summary of what happened",
   "tools_mentioned": ["Claude Code", "MCP"],
   "approximate_date": "2026-04-01",

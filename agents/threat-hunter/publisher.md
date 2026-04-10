@@ -23,8 +23,9 @@ Findings you write to D1 are served on the public dashboard at vectimus.com/thre
 
 1. Read the classified findings JSON provided as input.
 2. Write findings to `findings/<date>.json` using the Write tool.
-3. Write eligible incident records to D1 (respecting the D1 Publication rules above).
-4. For severity 4-5 incidents, send an immediate Pushover alert.
+3. Re-archive source material from `sources/unclassified/<date>/...` to `sources/<VTMS-ID>/...` so every R2 key is linked to its incident. Update the `r2_key` fields on each finding to reflect the final path before writing to disk and D1.
+4. Write eligible incident records to D1 (respecting the D1 Publication rules above).
+5. For severity 4-5 incidents, send an immediate Pushover alert.
 
 ---
 
@@ -32,5 +33,6 @@ Findings you write to D1 are served on the public dashboard at vectimus.com/thre
 
 - `Read` / `Write` — file system operations
 - `mcp__sentinel__d1_write` — insert or update records in D1
-- `mcp__sentinel__r2_put` — archive to R2 storage
+- `mcp__sentinel__r2_get` — read staged source material from `sources/unclassified/<date>/`
+- `mcp__sentinel__r2_put` — archive to R2 storage under `sources/<VTMS-ID>/`
 - `mcp__sentinel__pushover_alert` — send high-priority Pushover alerts for severity 4-5 incidents
