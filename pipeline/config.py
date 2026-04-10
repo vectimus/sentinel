@@ -37,6 +37,9 @@ class Config:
 
     # Agent AGENTS.md paths
     threat_hunter_spec: str = "agents/threat-hunter/AGENTS.md"
+    threat_hunter_research_spec: str = "agents/threat-hunter/research-scout.md"
+    threat_hunter_classifier_spec: str = "agents/threat-hunter/threat-classifier.md"
+    threat_hunter_publisher_spec: str = "agents/threat-hunter/publisher.md"
     security_engineer_spec: str = "agents/security-engineer/AGENTS.md"
     threat_analyst_spec: str = "agents/threat-analyst/AGENTS.md"
 
