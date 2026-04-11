@@ -1,0 +1,162 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0043",
+    "title": "CVE-2026-23744: MCPJam Inspector Unauthenticated RCE via HTTP /install Endpoint Exposed on 0.0.0.0",
+    "discovered_at": "2026-04-11T00:00:00Z",
+    "incident_date": "2026-01-16",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GV-6",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 12.1",
+      "CIS 16.1"
+    ],
+    "cve_ids": [
+      "CVE-2026-23744"
+    ],
+    "coverage_status": "partial",
+    "coverage_detail": "vectimus-mcp-001 provides downstream mitigation: if a malicious MCP server is force-installed via this CVE, any subsequent agent attempt to call tools on that server will be blocked because it is not on the approved allowlist. DEPLOY-002 addresses the same class of 0.0.0.0 misconfiguration \u2014 blocking agent tool calls to MCP server gateways not bound to localhost \u2014 and is architecturally aligned with the misconfiguration exploited here, though its scope is MCP server gateways that an agent connects to, not MCPJam Inspector's own HTTP management interface. The initial attack vector \u2014 an unauthenticated HTTP POST sent directly to MCPJam Inspector's /api/mcp/connect endpoint \u2014 occurs entirely outside the Vectimus tool-call boundary and cannot be intercepted by Cedar policies.",
+    "existing_policy_ids": [
+      "vectimus-mcp-001",
+      "DEPLOY-002"
+    ],
+    "gap_description": "The initial attack targets MCPJam Inspector's HTTP control plane directly, without involving any AI agent tool call. Vectimus has no enforcement hook at this layer. Mitigation must be applied at the infrastructure level: upgrade MCPJam Inspector to >= 1.4.3 (listener restricted to 127.0.0.1, authentication required) and enforce host-based firewall rules to block inbound connections to MCP management ports from the local network. Downstream, vectimus-mcp-001 constrains what an agent can do with any server installed by this exploit, but does not prevent the installation itself.",
+    "sources": [
+      {
+        "url": "https://www.cve.news/cve-2026-23744/",
+        "title": "CVE-2026-23744 \u2014 CVE News",
+        "r2_key": "sources/VTMS-2026-0043/cve-2026-23744-mcpjam-inspector-rce.txt"
+      },
+      {
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-23744",
+        "title": "NVD \u2014 CVE-2026-23744",
+        "r2_key": null
+      },
+      {
+        "url": "https://vulnerablemcp.info/vuln/cve-2026-23744-mcpjam-inspector-rce.html",
+        "title": "VulnerableMCP \u2014 CVE-2026-23744 MCPJam Inspector RCE",
+        "r2_key": null
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-232v-j27c-5pp6",
+        "title": "GitHub Advisory GHSA-232v-j27c-5pp6",
+        "r2_key": null
+      },
+      {
+        "url": "https://github.com/boroeurnprach/CVE-2026-23744-PoC",
+        "title": "CVE-2026-23744 Public PoC \u2014 GitHub",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "MCPJam Inspector",
+      "MCP"
+    ],
+    "summary": "MCPJam Inspector <= 1.4.2 binds its HTTP management endpoint /api/mcp/connect to 0.0.0.0 without any authentication (CWE-306, CVSS 9.8). Any attacker on the same local network can send a crafted HTTP POST to force installation of an arbitrary MCP server on the developer's machine, achieving unauthenticated remote code execution with no user interaction required. A public PoC and Nuclei template are available, making exploitation trivial at scale. The attack targets MCPJam Inspector's control plane directly \u2014 entirely bypassing AI agent tool-call boundaries \u2014 so Vectimus Cedar policies cannot block it at the point of exploitation. However, vectimus-mcp-001 limits downstream blast radius: if a malicious server is installed via this exploit, the agent's subsequent tool calls to that server will be denied because it is not on the approved allowlist. DEPLOY-002 addresses the root misconfiguration class (0.0.0.0 binding) for MCP server gateways but not for MCPJam Inspector's own management interface. Patched in MCPJam Inspector 1.4.3, which restricts the listener to 127.0.0.1 and adds authentication.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "partial_coverage",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0049",
+    "title": "AWS Bedrock AgentCore Wildcard IAM Execution Roles Enable Cross-Agent Memory Poisoning, ECR Image Theft, and Full Lateral Movement",
+    "discovered_at": "2026-04-11T00:00:00Z",
+    "incident_date": "2026-04-08",
+    "severity": 4,
+    "owasp_category": "ASI03: Identity and Privilege Abuse",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 3.3",
+      "CIS 5.4",
+      "CIS 6.8"
+    ],
+    "cve_ids": [
+      "CVE-2026-4269"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No Vectimus Cedar policy addresses wildcard IAM execution-role provisioning by cloud AI agent toolkits or the cross-agent lateral movement that those roles enable. Review of all 11 policy packs (destruct, secrets, supchain, infra, codexec, exfil, fileint, db, git, mcp, agentgov) confirms no rules exist that could intercept or deny IAM role creation with wildcard resource policies, nor cross-agent Bedrock API calls (memory reads/writes, ECR pulls, agent invocations) made at cloud runtime. The existing AWS CLI safety policy (vectimus-infra-009) blocks destructive resource-deletion verbs but contains no rules targeting IAM role provisioning or Bedrock agent-management APIs. The attack surface is entirely within the AWS cloud runtime layer, outside the developer AI coding agent tool-call boundary that Vectimus pretool hooks monitor.",
+    "existing_policy_ids": [],
+    "gap_description": "The vulnerability originates in the AWS Bedrock AgentCore Starter Toolkit's provisioning logic, which auto-generates IAM execution roles scoped to all AgentCore resources ('Resource': '*') rather than least-privilege per-agent scopes. This provisioning occurs at cloud infrastructure setup time \u2014 not through a developer AI coding agent making a monitored tool call \u2014 and results in Bedrock cloud agents running with wildcard permissions across the entire AWS account's AgentCore estate. Subsequent exploitation (reading and poisoning other agents' memory stores, pulling proprietary ECR container images, invoking arbitrary Code Interpreters, triggering arbitrary agent execution) occurs entirely within the AWS Bedrock service layer via cloud-side API calls. No developer workstation AI coding agent (Claude Code, Cursor, Copilot) is in the exploitation path. AWS's remediation was documentation guidance only, labelling the generated roles as 'for development/testing'; no toolkit code patch has been issued. A separately disclosed code injection CVE (CVE-2026-4269) in the same toolkit, disclosed approximately three weeks prior, compounds the risk by providing an initial foothold to leverage the wildcard permissions. Because both the root cause (toolkit IAM provisioning design) and the exploitation path (cloud-runtime inter-agent API calls) are entirely outside Vectimus's tool-call enforcement boundary, no Cedar policy can prevent or detect this incident type.",
+    "sources": [
+      {
+        "url": "https://unit42.paloaltonetworks.com/exploit-of-aws-agentcore-iam-god-mode/",
+        "title": "AWS Bedrock AgentCore 'Agent God Mode': IAM Privilege Escalation Research (Unit 42, Palo Alto Networks)",
+        "r2_key": "sources/VTMS-2026-0049/aws-agentcore-agent-god-mode-iam-privilege-escalation.txt"
+      },
+      {
+        "url": "https://sonraisecurity.com/blog/aws-agentcore-privilege-escalation-bedrock-scp-fix/",
+        "title": "AWS AgentCore Privilege Escalation: Bedrock SCP Fix (Sonrai Security)",
+        "r2_key": "sources/VTMS-2026-0049/aws-agentcore-agent-god-mode-iam-privilege-escalation.txt"
+      }
+    ],
+    "tools_involved": [
+      "AWS Bedrock AgentCore",
+      "AWS IAM",
+      "Amazon Bedrock",
+      "Amazon ECR"
+    ],
+    "summary": "Unit 42 research published April 8, 2026 reveals that the AWS Bedrock AgentCore Starter Toolkit auto-generates IAM execution roles with wildcard resource permissions ('Resource': '*') across all AgentCore resources, rather than least-privilege scoping per agent. Any attacker who compromises a single agent in the account can leverage these roles to: (1) read and inject poisoned data into all other agents' memory stores, enabling downstream goal hijacking; (2) pull proprietary container images from any ECR repository in the account; (3) invoke arbitrary Code Interpreters; and (4) trigger execution of any other Bedrock agent \u2014 achieving full lateral movement across the entire AI agent estate. AWS responded with documentation guidance only, labelling the auto-generated roles as intended for 'development/testing'; no code patch has been released. A related code injection CVE (CVE-2026-4269) in the same toolkit was separately disclosed approximately three weeks prior and could serve as the initial foothold for exploiting the wildcard IAM permissions. The attack surface is entirely within the AWS Bedrock cloud runtime: neither the IAM role provisioning (a toolkit design flaw) nor the exploitation path (cloud-side inter-agent API calls) occurs through a developer AI coding agent tool call on a workstation, placing this incident outside Vectimus's Cedar enforcement boundary.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0050",
+    "title": "CVE-2026-25536: MCP TypeScript SDK Race Condition Leaks Tool Responses Across Client Boundaries in Multi-Tenant Deployments",
+    "discovered_at": "2026-04-11T00:00:00Z",
+    "incident_date": "2026-02-04",
+    "severity": 3,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GOVERN-6.2",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 15.1",
+      "CIS 16.1"
+    ],
+    "cve_ids": [
+      "CVE-2026-25536"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy covers this vulnerability. The race condition (CWE-362) manifests inside the MCP TypeScript SDK server's StreamableHTTPServerTransport layer when routing concurrent client responses \u2014 a server-side SDK internal process that occurs entirely outside the tool-call boundary at which Cedar policies are evaluated. As documented in mcp_tools.cedar, Vectimus intercepts the agent's request to call an MCP tool before it is sent; it does not observe what happens on the MCP server. The cross-client data leakage therefore occurs after policy evaluation has completed, in SDK internals Vectimus cannot inspect. A supchain version-pinning rule analogous to SUPPLY-001 could block new installations of affected SDK versions (1.10.0\u20131.25.3) at shell_command or package_operation time, but this would not remediate already-deployed instances and would not prevent the runtime race condition in running servers. Because the attack vector is classified as out of scope, no new Cedar policy is recommended.",
+    "existing_policy_ids": [],
+    "gap_description": null,
+    "sources": [
+      {
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-25536",
+        "title": "NVD: CVE-2026-25536 Detail",
+        "r2_key": "sources/VTMS-2026-0050/cve-2026-25536-mcp-typescript-sdk-cross-client-data-leak.txt"
+      },
+      {
+        "url": "https://vulnerablemcp.info/vuln/cve-2026-25536-sdk-cross-client-data-leak.html",
+        "title": "VulnerableMCP: CVE-2026-25536 \u2014 MCP SDK Cross-Client Data Leak",
+        "r2_key": null
+      },
+      {
+        "url": "https://cvefeed.io/vuln/detail/CVE-2026-25536",
+        "title": "CVEFeed: CVE-2026-25536",
+        "r2_key": null
+      },
+      {
+        "url": "https://dev.to/kai_security_ai/the-mcp-sdk-is-now-its-own-attack-surface-2o4",
+        "title": "The MCP SDK Is Now Its Own Attack Surface (dev.to)",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "MCP TypeScript SDK",
+      "Model Context Protocol",
+      "StreamableHTTPServerTransport"
+    ],
+    "summary": "A race condition (CWE-362) in the official MCP TypeScript SDK (@modelcontextprotocol/sdk, versions 1.10.0\u20131.25.3) causes cross-client response data leakage in multi-tenant deployments that share a single McpServer instance using StreamableHTTPServerTransport \u2014 a common stateless deployment pattern. Under concurrent load, one client may silently receive tool outputs, API results, or agent context intended for a different client, exposing sensitive data across user boundaries with no attacker action required beyond normal usage. The vulnerability is fixed in @modelcontextprotocol/sdk v1.26.0. This is the third confirmed CVE in an official MCP SDK implementation in 2026, following CVE findings covered in VTMS-2026-0027 (Go SDK) and VTMS-2026-0033 (Ruby SDK), indicating systemic security debt across the MCP SDK supply chain. The root cause is a server-side SDK internal race in response routing, which is fully outside Vectimus's tool-call enforcement boundary.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  }
+]
