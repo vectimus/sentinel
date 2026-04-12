@@ -2,7 +2,7 @@ boto3==1.42.84
 cedarpy==4.8.0
 claude-agent-sdk==0.1.56
 deepeval==3.9.5
-cisco-ai-mcp-scanner==4.4.0
+cisco-ai-mcp-scanner==4.5.0
 deepteam==1.0.6
 arize-phoenix==13.23.0
 arize-phoenix-otel==0.15.0
