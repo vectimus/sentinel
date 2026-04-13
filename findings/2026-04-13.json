@@ -1,0 +1,65 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0055",
+    "title": "ChainLeak: Chainlit AI Framework Arbitrary File Read (CVE-2026-22218) and SSRF (CVE-2026-22219) Enable Cloud Credential Theft and Full Account Compromise",
+    "discovered_at": "2026-04-13T00:00:00Z",
+    "incident_date": "2026-01-20",
+    "severity": 3,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GV-6.2",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 16.1",
+      "CIS 18.3"
+    ],
+    "cve_ids": [
+      "CVE-2026-22218",
+      "CVE-2026-22219"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses these vulnerabilities. CVE-2026-22218 exploits an unvalidated path parameter in Chainlit's /project/element HTTP endpoint to read arbitrary server files including /proc/self/environ; CVE-2026-22219 exploits unsanitised SQLAlchemy data layer connection URLs to perform SSRF against cloud instance metadata services. Both exploit vectors are delivered via external HTTP requests to a running Chainlit server \u2014 a web application layer entirely outside the tool-call boundary at which Vectimus Cedar policies are evaluated. A supply chain version-pinning rule analogous to SUPPLY-001 in the supchain pack could block new agent-driven installations of affected Chainlit versions (< 2.9.4) at shell_command or package_operation time, but this would not remediate already-deployed instances and would not prevent the HTTP-layer credential-theft exploitation in running servers. Because the primary attack vector operates outside Vectimus's enforcement boundary, no new Cedar policy is recommended.",
+    "existing_policy_ids": [],
+    "gap_description": null,
+    "sources": [
+      {
+        "url": "https://www.kodemsecurity.com/resources/cve-2026-22218-cve-2026-22219-arbitrary-file-read-ssrf-in-chainlit",
+        "title": "CVE-2026-22218 & CVE-2026-22219: Arbitrary File Read and SSRF in Chainlit \u2014 Kodem Security",
+        "r2_key": "sources/VTMS-2026-0055/chainlit-cve-2026-22218-22219.txt"
+      },
+      {
+        "url": "https://thehackernews.com/2026/01/chainlit-ai-framework-flaws-enable-data.html",
+        "title": "Chainlit AI Framework Flaws Enable Data Theft \u2014 The Hacker News",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.bleepingcomputer.com/news/security/chainlit-ai-framework-bugs-let-hackers-breach-cloud-environments/",
+        "title": "Chainlit AI Framework Bugs Let Hackers Breach Cloud Environments \u2014 BleepingComputer",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.zafran.io/resources/chainleak-critical-ai-framework-vulnerabilities-expose-data-enable-cloud-takeover",
+        "title": "ChainLeak: Critical AI Framework Vulnerabilities Expose Data, Enable Cloud Takeover \u2014 Zafran",
+        "r2_key": null
+      },
+      {
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-22218",
+        "title": "NVD \u2014 CVE-2026-22218",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.scworld.com/brief/chainlit-vulnerabilities-expose-enterprises-to-data-leaks-and-takeovers",
+        "title": "Chainlit Vulnerabilities Expose Enterprises to Data Leaks and Takeovers \u2014 SC World",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Chainlit"
+    ],
+    "summary": "Zafran Labs disclosed two vulnerabilities in Chainlit, the widely-used open-source Python framework for building conversational AI applications, in January 2026. CVE-2026-22218 (CVSS 7.1, CWE-22) is a path traversal flaw in the /project/element HTTP endpoint: the unvalidated 'path' request parameter allows an attacker to read arbitrary server files, most critically /proc/self/environ, to harvest API keys, cloud credentials and other runtime secrets. CVE-2026-22219 (CVSS 8.3, CWE-918) is a server-side request forgery vulnerability in the SQLAlchemy data layer that accepts attacker-controlled 'url' values, enabling abuse of cloud instance metadata services (e.g. AWS IMDSv1) to harvest IAM tokens directly. When chained, the two CVEs can yield full cloud account compromise: CVE-2026-22218 extracts static credentials while CVE-2026-22219 harvests short-lived IAM tokens from the metadata endpoint. Both vulnerabilities were patched in Chainlit 2.9.4, released January 22, 2026, two days after disclosure. The attack vectors are external HTTP requests directed at the Chainlit web server \u2014 the exploitation path operates entirely at the HTTP application layer, outside Vectimus's tool-call enforcement boundary. A supply chain version-pinning rule (analogous to SUPPLY-001 for langchain-core) could block agent-driven installation of vulnerable Chainlit versions, but cannot prevent exploitation of already-deployed instances, making this incident architecturally out of scope for Cedar policy.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  }
+]
