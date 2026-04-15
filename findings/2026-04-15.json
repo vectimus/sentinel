@@ -1,0 +1,168 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0066",
+    "title": "CVE-2026-4810: Google ADK Unauthenticated RCE via Code Injection and Missing Authentication (CVSS 9.3)",
+    "discovered_at": "2026-04-15T00:00:00Z",
+    "incident_date": "2026-04-13",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 2.7",
+      "CIS 18.3"
+    ],
+    "cve_ids": [
+      "CVE-2026-4810"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses this vulnerability. The attack vector \u2014 unauthenticated remote code execution against a running Google ADK server instance exploiting missing authentication and a code injection path in the framework runtime \u2014 operates entirely outside the Vectimus tool-call enforcement boundary. Vectimus integrates with Claude Code, Cursor, and GitHub Copilot via pretool hooks; Google ADK is not a supported agent integration. The vulnerability resides within the ADK framework's own server-side authentication and code execution internals, which Vectimus has no visibility into at hook time. No Cedar policy from any of the 11 packs (destruct, secrets, supchain, infra, codexec, exfil, fileint, db, git, mcp, agentgov) can intercept an external unauthenticated network attacker exploiting a server-side RCE before any tool call is issued.",
+    "existing_policy_ids": [],
+    "gap_description": "The root cause is a server-side framework vulnerability (missing authentication + code injection in Google ADK versions 1.7.0\u20131.28.0 and 2.0.0a1). The attack surface is the ADK server's HTTP/network interface, not any tool call issued by a monitored agent. Vectimus Cedar policies fire at tool-call time for supported agent integrations; they cannot prevent an external unauthenticated attacker from exploiting the ADK server runtime. Remediation requires upgrading to ADK 1.28.1 or 2.0.0a2 at the deployment level. This falls under 'Agent framework internals' in the Vectimus enforcement boundary definition.",
+    "sources": [
+      {
+        "url": "https://vulnerability.circl.lu/vuln/ghsa-rg7c-g689-fr3x",
+        "title": "GHSA-RG7C-G689-FR3X: Google ADK Code Injection and Missing Authentication (CIRCL)",
+        "r2_key": "sources/VTMS-2026-0066/cve-2026-4810-google-adk-rce.md"
+      },
+      {
+        "url": "https://www.tenable.com/cve/CVE-2026-4810",
+        "title": "CVE-2026-4810 \u2014 Tenable",
+        "r2_key": null
+      },
+      {
+        "url": "https://github.com/advisories/ghsa-rg7c-g689-fr3x",
+        "title": "GHSA-RG7C-G689-FR3X \u2014 GitHub Advisory",
+        "r2_key": null
+      },
+      {
+        "url": "https://nvd.nist.gov/vuln/detail/cve-2026-4810",
+        "title": "CVE-2026-4810 \u2014 NVD",
+        "r2_key": null
+      },
+      {
+        "url": "https://github.com/google/adk-python",
+        "title": "google/adk-python \u2014 GitHub",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Google ADK",
+      "Google Agent Development Kit",
+      "Cloud Run",
+      "GKE"
+    ],
+    "summary": "CVE-2026-4810 (CVSS 9.3 Critical, GHSA-RG7C-G689-FR3X) is a combined Code Injection and Missing Authentication vulnerability disclosed on 2026-04-13 in Google's Agent Development Kit (ADK) for Python, affecting versions 1.7.0 through 1.28.0 and the 2.0.0a1 alpha across OSS, Cloud Run, and GKE deployments. An unauthenticated remote attacker can exploit the code injection path \u2014 made trivially reachable by absent authentication controls \u2014 to execute arbitrary code on any server hosting an ADK instance. Google patched both flaws in ADK 1.28.1 and 2.0.0a2; affected deployments must redeploy upgraded instances. From a Vectimus perspective, this vulnerability is entirely out of enforcement scope: the attack targets the ADK framework server's own authentication and code execution internals via a network-level unauthenticated request, not any tool call issued by a Vectimus-monitored agent (Claude Code, Cursor, or GitHub Copilot). No Cedar pretool policy can intercept this class of attack. Mitigation is purely a deployment-level concern: upgrade the ADK runtime to a patched version.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0067",
+    "title": "CVE-2026-40217: LiteLLM RCE via Bytecode Rewriting at /guardrails/test_custom_code Endpoint",
+    "discovered_at": "2026-04-15T00:00:00Z",
+    "incident_date": "2026-04-10",
+    "severity": 4,
+    "owasp_category": "ASI05: Unsafe Code Execution",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 16.1",
+      "CIS 18.3"
+    ],
+    "cve_ids": [
+      "CVE-2026-40217"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses this vulnerability. The attack targets the LiteLLM server's /guardrails/test_custom_code REST endpoint directly \u2014 a gateway/control-plane attack vector that is entirely outside Vectimus's tool-call enforcement boundary. LiteLLM acts as the LLM proxy/routing layer for AI agent stacks; an RCE against the proxy server process cannot be prevented by Cedar policies that operate at the agent tool-call boundary.",
+    "existing_policy_ids": [],
+    "gap_description": "CVE-2026-40217 (CVSS 8.8, CWE-420) is a server-side RCE in the LiteLLM proxy application. Any low-privilege authenticated user can submit a crafted payload to /guardrails/test_custom_code and exploit an unprotected bytecode rewriting mechanism to execute arbitrary code on the LiteLLM host. LiteLLM functions as the LLM gateway/control-plane in many AI agent deployments; compromising it gives an attacker full control over model routing, credentials, and all traffic flowing through the proxy. Because the attack surface is the running LiteLLM server process (not an agent tool call), Vectimus Cedar hooks have no enforcement point on this attack path. Remediation requires: (1) patching LiteLLM to a build after 2026-04-08, (2) restricting network access to the /guardrails/test_custom_code endpoint, (3) enforcing strong authentication and least-privilege on the LiteLLM API, and (4) reviewing audit logs for unexpected calls to the /guardrails/ endpoint family.",
+    "sources": [
+      {
+        "url": "https://www.thehackerwire.com/litellm-rce-via-bytecode-rewriting-cve-2026-40217/",
+        "title": "LiteLLM RCE via Bytecode Rewriting \u2014 CVE-2026-40217 (The Hacker Wire)",
+        "r2_key": "sources/VTMS-2026-0067/cve-2026-40217-litellm-bytecode-rce.md"
+      },
+      {
+        "url": "https://vulnerability.circl.lu/vuln/cve-2026-40217",
+        "title": "CVE-2026-40217 \u2014 CIRCL Vulnerability Database",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.x41-dsec.de/lab/advisories/x41-2026-001-litellm/",
+        "title": "X41 D-SEC Advisory x41-2026-001: LiteLLM Bytecode RCE",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "LiteLLM"
+    ],
+    "summary": "CVE-2026-40217 (CVSS 8.8) is a remote code execution vulnerability in LiteLLM through build date 2026-04-08, disclosed by X41 D-SEC GmbH on 10 April 2026. A low-privilege authenticated attacker can send a crafted payload to the /guardrails/test_custom_code REST endpoint, exploiting an unprotected bytecode rewriting mechanism (CWE-420) to execute arbitrary code on the LiteLLM server. A working proof-of-concept exists and CISA assesses the technical impact as total. LiteLLM is widely deployed as an LLM proxy/gateway in AI agent infrastructure \u2014 acting as the routing and control plane between agents and model providers \u2014 making this a high-value target that could expose API credentials, model traffic, and downstream systems to a full compromise. This finding is distinct from VTMS-2026-0017 (malicious LiteLLM PyPI package); the attack surface here is the running server process, specifically its custom guardrail code-execution endpoint.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0069",
+    "title": "Lazarus Group Axios npm Supply Chain Compromise Exposes OpenAI macOS Code-Signing Certificates via GitHub Actions CI/CD",
+    "discovered_at": "2026-04-15T00:00:00Z",
+    "incident_date": "2026-04-13",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GV-6",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 16.1",
+      "CIS 18.3"
+    ],
+    "cve_ids": [],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy can intercept npm package resolution executed by a GitHub Actions CI/CD runner. Adjacent policies exist at the AI agent tool-call boundary \u2014 vectimus-fileint-001 would block an AI agent from writing to .github/workflows/* (preventing introduction of a misconfigured floating-tag workflow), and vectimus-supchain-010 would block unverified npm installs during an AI agent session \u2014 but neither operates in the CI/CD execution environment where the actual compromise occurred. The attack vector is therefore outside Vectimus's enforcement boundary and cannot be addressed by a new Cedar policy.",
+    "existing_policy_ids": [],
+    "gap_description": "The WAVESHAPER.V2 backdoor embedded in axios v1.14.1 was fetched and executed by the GitHub Actions runner autonomously, not by an AI agent tool call. Vectimus Cedar policies intercept at the agent tool-call boundary only; they have no hook into CI/CD pipeline execution. The misconfigured floating version tag is a CI/CD hygiene issue (pinning, SLSA provenance, dependency review actions) that must be addressed at the pipeline level \u2014 outside Vectimus's enforcement scope. No Cedar policy addition can remediate this class of incident.",
+    "sources": [
+      {
+        "url": "https://openai.com/index/axios-developer-tool-compromise/",
+        "title": "Axios Developer Tool Compromise \u2014 OpenAI",
+        "r2_key": "sources/VTMS-2026-0069/openai-axios-macos-certificate-compromise.md"
+      },
+      {
+        "url": "https://thehackernews.com/2026/04/openai-revokes-macos-app-certificate.html",
+        "title": "OpenAI Revokes macOS App Certificate \u2014 The Hacker News",
+        "r2_key": null
+      },
+      {
+        "url": "https://creati.ai/ai-news/2026-04-12/openai-security-breach-axios-http-supply-chain-attack/",
+        "title": "OpenAI Security Breach: Axios HTTP Supply Chain Attack \u2014 Creati AI",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.axios.com/2026/04/11/openai-axios-mac-cyberattack",
+        "title": "OpenAI Confirms macOS Cyberattack via Axios \u2014 Axios",
+        "r2_key": null
+      },
+      {
+        "url": "https://techbriefly.com/2026/04/13/openai-confirms-axios-npm-supply-chain-attack-linked-to/",
+        "title": "OpenAI Confirms Axios npm Supply Chain Attack Linked to Lazarus Group \u2014 TechBriefly",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "ChatGPT Desktop",
+      "Codex",
+      "Codex CLI",
+      "Atlas",
+      "GitHub Actions"
+    ],
+    "summary": "On March 31 2026, Lazarus Group (UNC1069) embedded the WAVESHAPER.V2 backdoor in axios npm v1.14.1 via a poisoned transitive dependency ('plain-crypto-js'). OpenAI's GitHub Actions workflow for macOS application signing used a floating version tag rather than a pinned commit hash, causing it to automatically pull the compromised package on its next run. The workflow held access to code-signing certificates and Apple notarization material covering ChatGPT Desktop, Codex, Codex CLI, and Atlas. OpenAI disclosed on April 13 2026; no confirmed certificate exfiltration was found, but the certificate was treated as compromised, revoked, and rotated, with a forced user-update deadline of May 8 2026. The root cause \u2014 an unpinned dependency in a CI/CD signing workflow \u2014 is entirely within the GitHub Actions execution environment and outside Vectimus's tool-call enforcement boundary.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  }
+]
