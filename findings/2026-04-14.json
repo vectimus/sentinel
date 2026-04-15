@@ -1,0 +1,153 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0059",
+    "title": "CVE-2026-40217: LiteLLM RCE via Bytecode Rewriting at Guardrails API Endpoint",
+    "discovered_at": "2026-04-14T00:00:00Z",
+    "incident_date": "2026-04-10",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 2.7",
+      "CIS 16.1",
+      "CIS 18.1",
+      "CIS 18.3"
+    ],
+    "cve_ids": [
+      "CVE-2026-40217"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses vulnerable LiteLLM versions. The closest analogous control is SUPPLY-001, which blocks agent-initiated installation of vulnerable langchain-core versions via pip/package_operation interception. The same pattern could be applied to LiteLLM to block agent-driven deployment of versions through 2026-04-08. However, the primary attack vector \u2014 a direct HTTP request to a running LiteLLM server's /guardrails/test_custom_code endpoint \u2014 is not mediated by an agent tool call and falls outside Vectimus's enforcement boundary entirely.",
+    "existing_policy_ids": [],
+    "gap_description": "The root cause of CVE-2026-40217 is a server-side bytecode rewriting flaw in LiteLLM's /guardrails/test_custom_code HTTP endpoint. An external attacker with low-privilege authentication exploits this directly over the network \u2014 no AI agent tool call is involved. Vectimus operates at the agent's tool-call boundary and cannot intercept incoming HTTP requests destined for the LiteLLM proxy. The partial in-scope vector is an AI agent running 'pip install litellm==<vulnerable>' as part of setting up or updating a deployment; a supply chain version-blocking rule in the supchain pack (analogous to SUPPLY-001) could prevent agent-driven installation of vulnerable releases, but cannot protect an already-running LiteLLM server from being exploited by an external attacker. Because the root cause is outside the tool-call boundary, no new Cedar policy is recommended.",
+    "sources": [
+      {
+        "url": "https://vulnerability.circl.lu/vuln/cve-2026-40217",
+        "title": "CVE-2026-40217 \u2014 CIRCL Vulnerability Database",
+        "r2_key": "sources/VTMS-2026-0059/cve-2026-40217-litellm-bytecode-rce.txt"
+      },
+      {
+        "url": "https://www.thehackerwire.com/litellm-rce-via-bytecode-rewriting-cve-2026-40217/",
+        "title": "LiteLLM RCE via Bytecode Rewriting CVE-2026-40217 \u2014 The Hacker Wire",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.x41-dsec.de/lab/advisories/x41-2026-001-litellm/",
+        "title": "X41 D-Sec Advisory x41-2026-001-litellm \u2014 LiteLLM Bytecode RCE",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "LiteLLM"
+    ],
+    "summary": "CVE-2026-40217 (CVSS 8.8 High, CWE-420 Unprotected Alternate Channel) is a remote code execution vulnerability in LiteLLM (BerriAI) through version 2026-04-08. Discovered by X41 D-Sec and published 10 April 2026, the flaw allows a low-privilege authenticated attacker to trigger arbitrary code execution on the LiteLLM server by sending a crafted request to the /guardrails/test_custom_code URI, which performs unsafe bytecode rewriting. No user interaction is required. LiteLLM is widely deployed as an LLM proxy and routing gateway in agentic AI pipelines \u2014 a compromised LiteLLM instance can intercept and manipulate LLM responses delivered to dependent AI agents, inject adversarial instructions into agent context windows, or serve as a pivot point into internal network infrastructure. From a Vectimus enforcement standpoint the primary attack vector (direct HTTP exploitation of the LiteLLM server) falls outside the tool-call boundary; Vectimus cannot intercept requests arriving at the LiteLLM gateway from external parties. A thin partial vector exists \u2014 an AI agent instructed to install a vulnerable LiteLLM version would trigger a blockable package_operation or shell_command \u2014 but no existing policy covers LiteLLM version pinning and the dominant risk cannot be addressed at the tool-call layer. Organisations using LiteLLM as an agent backend should patch immediately to a version released after 2026-04-08.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0062",
+    "title": "CVE-2026-3357: IBM Langflow Desktop RCE via Insecure Deserialization in FAISS Component",
+    "discovered_at": "2026-04-14T00:00:00Z",
+    "incident_date": "2026-04-08",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 2.7",
+      "CIS 16.1"
+    ],
+    "cve_ids": [
+      "CVE-2026-3357"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses IBM Langflow Desktop. The closest existing coverage is SUPPLY-001 (supply_chain_version.cedar), which blocks installation of vulnerable langchain-core versions via package_operation and shell_command intercepts. A structurally identical policy for IBM Langflow Desktop 1.6.0\u20131.8.2 does not yet exist in the supchain pack. The actual exploitation vector \u2014 a network attacker sending a malicious serialized FAISS payload to a running Langflow Desktop instance \u2014 occurs within the AI framework's internal deserialization pipeline and is outside Vectimus's tool-call enforcement boundary. Vectimus can partially mitigate by blocking agents from installing vulnerable versions, but cannot prevent exploitation of already-installed instances.",
+    "existing_policy_ids": [],
+    "gap_description": "A new supchain-pack policy analogous to SUPPLY-001 could block package_operation and shell_command tool calls that install IBM Langflow Desktop versions 1.6.0 through 1.8.2 (e.g. patterns like `*langflow==1.6.*`, `*langflow==1.7.*`, `*langflow==1.8.0*`, `*langflow==1.8.1*`, `*langflow==1.8.2*`). This would prevent AI agents from introducing the vulnerable component into a project. It would not, however, block network-based exploitation of instances already running those versions, as that attack path operates entirely within the framework's internals outside the tool-call boundary. A full remediation requires upgrading Langflow Desktop to a patched release; Vectimus can enforce the minimum version floor only at install time.",
+    "sources": [
+      {
+        "url": "https://www.sentinelone.com/vulnerability-database/cve-2026-3357/",
+        "title": "CVE-2026-3357 \u2014 SentinelOne Vulnerability Database",
+        "r2_key": "sources/VTMS-2026-0062/cve-2026-3357-ibm-langflow-desktop-rce.txt"
+      },
+      {
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-3357",
+        "title": "CVE-2026-3357 Detail \u2014 NVD",
+        "r2_key": "sources/VTMS-2026-0062/cve-2026-3357-ibm-langflow-desktop-rce.txt"
+      },
+      {
+        "url": "https://www.thehackerwire.com/ibm-langflow-desktop-rce-via-insecure-deserialization/",
+        "title": "IBM Langflow Desktop RCE via Insecure Deserialization \u2014 The Hacker Wire",
+        "r2_key": "sources/VTMS-2026-0062/cve-2026-3357-ibm-langflow-desktop-rce.txt"
+      }
+    ],
+    "tools_involved": [
+      "IBM Langflow Desktop",
+      "Langflow"
+    ],
+    "summary": "CVE-2026-3357 (CVSS 8.8) is a remote code execution vulnerability in IBM Langflow Desktop versions 1.6.0\u20131.8.2. The FAISS (Facebook AI Similarity Search) component deserializes attacker-supplied data without validation, allowing an authenticated low-privilege network attacker to execute arbitrary code with application-process privileges. Non-hardened default configurations are automatically exploitable over the network. This is a supply chain CVE embedded in a third-party AI similarity-search component bundled with the Langflow AI agent platform. It is distinct from VTMS-2026-0013 (CVE-2026-33017), which covers unauthenticated RCE via exec() in open-source Langflow. The exploitation path operates within IBM Langflow Desktop's internal deserialization pipeline, outside Vectimus's tool-call enforcement boundary. Vectimus can partially mitigate by blocking agents from installing vulnerable versions at package-install time, but cannot intercept the network-level deserialization exploit against already-running instances.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0065",
+    "title": "GrafanaGhost: Indirect Prompt Injection on Grafana AI Assistant Exfiltrates Enterprise Metrics and Customer Records (CVE-2026-27876)",
+    "discovered_at": "2026-04-14T00:00:00Z",
+    "incident_date": "2026-04-07",
+    "severity": 4,
+    "owasp_category": "ASI01: Goal Hijacking",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 3.3",
+      "CIS 9.3",
+      "CIS 13.6"
+    ],
+    "cve_ids": [
+      "CVE-2026-27876",
+      "CVE-2026-27880"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses this incident. Grafana's AI assistant is not a supported agent tool (Vectimus hooks are integrated only with Claude Code, Cursor, and GitHub Copilot), so no Cedar policy evaluation occurs anywhere in Grafana's execution path. Even setting aside the unsupported agent, the root attack vector \u2014 indirect prompt injection processed within the LLM's reasoning layer before any tool call occurs \u2014 falls under Vectimus Enforcement Boundary #3 (LLM input/output manipulation). The downstream exfiltration action is the consequence of goal hijacking at the context layer, not a discrete tool call that Cedar could intercept in a supported environment. No policy in any of the 11 policy packs (destruct, secrets, supchain, infra, codexec, exfil, fileint, db, git, mcp, agentgov) covers Grafana-native AI component behaviour.",
+    "existing_policy_ids": [],
+    "gap_description": "GrafanaGhost is entirely outside Vectimus's enforcement boundary for two independent reasons. First, Grafana's AI assistant is not a supported agent tool \u2014 Vectimus hooks integrate only with Claude Code, Cursor, and GitHub Copilot, so no Cedar evaluation occurs within Grafana's execution path. Second, the primary attack vector is indirect prompt injection: malicious instructions embedded in attacker-controlled external web content are ingested and processed within the AI's reasoning context before any observable tool call is made, placing the root cause squarely within the LLM input/output manipulation exclusion (Enforcement Boundary #3). The subsequent data exfiltration is a consequence of goal hijacking at the reasoning layer, not an independently detectable outbound tool call in a supported environment. Remediation requires Grafana-native controls: sanitisation and trust-isolation of externally fetched content before it enters LLM context, output filtering, hardening of guardrails against the 'intent'-keyword bypass technique, prompt injection detection at the AI component level, and network-layer egress filtering to prevent unauthorised outbound data transfers.",
+    "sources": [
+      {
+        "url": "https://www.securityweek.com/grafanaghost-attackers-can-abuse-grafana-to-leak-enterprise-data/",
+        "title": "GrafanaGhost: Attackers Can Abuse Grafana to Leak Enterprise Data",
+        "r2_key": "sources/VTMS-2026-0065/grafanaghost-prompt-injection-data-exfiltration.txt"
+      },
+      {
+        "url": "https://www.darkreading.com/application-security/grafana-patches-ai-bug-leaked-user-data",
+        "title": "Grafana Patches AI Bug That Leaked User Data",
+        "r2_key": null
+      },
+      {
+        "url": "https://grafana.com/blog/grafana-security-release-critical-and-high-severity-security-fixes-for-cve-2026-27876-and-cve-2026-27880/",
+        "title": "Grafana Security Release: Critical and High Severity Fixes for CVE-2026-27876 and CVE-2026-27880",
+        "r2_key": null
+      },
+      {
+        "url": "https://abit.ee/en/cybersecurity/vulnerabilities/grafanaghost-grafana-vulnerability-prompt-injection-data-exfiltration-ai-security-cve-2026-27876-cyb-en",
+        "title": "GrafanaGhost: Grafana Vulnerability, Prompt Injection, Data Exfiltration (CVE-2026-27876)",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Grafana",
+      "Grafana AI Assistant"
+    ],
+    "summary": "On 7 April 2026, Noma Security disclosed 'GrafanaGhost' (CVE-2026-27876, CVSS 9.1; CVE-2026-27880, CVSS 7.5), an indirect prompt injection vulnerability in Grafana's AI assistant. An attacker embeds hidden instructions in an attacker-controlled web page; when the AI component fetches that external content during normal dashboard-building activity, the injected instructions are processed as authoritative, redirecting the AI's goal to silently exfiltrate financial metrics, infrastructure telemetry, and customer records to the attacker. The attack bypasses Grafana's own guardrails by exploiting the keyword 'intent' to circumvent image-markdown injection defences. Grafana released patches across multiple product versions. No in-wild exploitation was confirmed at time of disclosure. This incident is a concrete example of indirect prompt injection (ASI01: Goal Hijacking) against an AI assistant that processes externally sourced, attacker-controlled content \u2014 a pattern with broad applicability to any AI component that fetches or renders untrusted external data.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  }
+]
