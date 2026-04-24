@@ -1,0 +1,118 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0088",
+    "title": "Vercel Infrastructure Breach via Compromised Context.ai Third-Party AI Tool \u2014 ShinyHunters Claims $2M Ransom, Customer Env Vars Exposed",
+    "discovered_at": "2026-04-20T00:00:00Z",
+    "incident_date": "2026-04-19",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GV-6",
+    "cis_controls": [
+      "CIS 5.5",
+      "CIS 6.5",
+      "CIS 15.1",
+      "CIS 16.1"
+    ],
+    "cve_ids": [],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses this incident. The attack vector \u2014 endpoint malware infecting a third-party AI vendor's employee, stealing Google Workspace credentials, and abusing an OAuth federation integration \u2014 operates entirely outside the AI agent tool-call boundary where Vectimus enforces. No policy in the secrets, supchain, infra, or agentgov packs intercepts OAuth identity federation or endpoint credential theft at a third-party vendor.",
+    "existing_policy_ids": [],
+    "gap_description": "The root cause is a traditional supply chain credential compromise: Lumma Stealer malware on a Context.ai employee endpoint harvested Google Workspace credentials and API keys, which were then used to traverse a Google Workspace OAuth integration into Vercel's infrastructure. Vectimus Cedar evaluates policies only at AI agent tool-call time (shell_command, file_read, file_write, web_fetch, mcp_tool_call, git_operation, message_send). The attack chain contains no AI agent tool calls \u2014 it is entirely a human endpoint compromise \u2192 stolen identity \u2192 OAuth federation abuse sequence at the cloud infrastructure layer. This gap cannot be closed by any Cedar policy; it requires vendor security vetting, OAuth permission scoping (principle of least privilege on third-party integrations), mandatory MFA for service accounts, and endpoint security controls at the third-party vendor. No new Vectimus policy is appropriate.",
+    "sources": [
+      {
+        "url": "https://vercel.com/kb/bulletin/vercel-april-2026-security-incident",
+        "title": "Vercel April 2026 Security Incident Bulletin",
+        "r2_key": "sources/VTMS-2026-0088/vercel-context-ai-breach.txt"
+      },
+      {
+        "url": "https://thehackernews.com/2026/04/vercel-breach-tied-to-context-ai-hack.html",
+        "title": "Vercel Breach Tied to Context.ai Hack \u2014 The Hacker News",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.coindesk.com/tech/2026/04/20/hack-at-vercel-sends-crypto-developers-scrambling-to-lock-down-api-keys",
+        "title": "Hack at Vercel Sends Crypto Developers Scrambling to Lock Down API Keys \u2014 CoinDesk",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.technadu.com/vercel-data-breach-linked-to-context-ai-hack-reportedly-exposes-information/626560/",
+        "title": "Vercel Data Breach Linked to Context.ai Hack \u2014 Technadu",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.newsbytesapp.com/news/science/cloud-development-platform-vercel-breached-hacker-demanding-2m-ransom/story",
+        "title": "Vercel Breached, Hacker Demanding $2M Ransom \u2014 NewsBytesApp",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Context.ai",
+      "Vercel",
+      "Google Workspace OAuth"
+    ],
+    "summary": "On 19 April 2026, Vercel disclosed that attackers breached its infrastructure by pivoting through a compromised employee account at Context.ai, a third-party AI analytics tool with a Google Workspace OAuth integration into Vercel environments. A Context.ai employee had been infected with Lumma Stealer malware in February 2026 after downloading malicious files disguised as Roblox exploits; the malware harvested Google Workspace credentials and API keys. Attackers \u2014 linked to ShinyHunters \u2014 used these credentials to access Vercel systems, exposing non-sensitive customer environment variables and claiming 580 employee records. A $2M ransom was demanded and a global supply chain attack threatened. Vercel engaged Mandiant and law enforcement and urged all customers to rotate credentials. The attack chain is entirely outside the Vectimus tool-call boundary: no AI coding agent tool calls were involved. The breach illustrates how AI analytics vendors with broad OAuth access to developer infrastructure represent a high-value, under-scrutinised supply chain target.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0090",
+    "title": "FastGPT CVE-2026-40351 / CVE-2026-40352: NoSQL Injection Enables Unauthenticated Admin Takeover of AI Agent Building Platform",
+    "discovered_at": "2026-04-20T00:00:00Z",
+    "incident_date": "2026-04-17",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 6.2",
+      "CIS 16.7"
+    ],
+    "cve_ids": [
+      "CVE-2026-40351",
+      "CVE-2026-40352"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy covers server-side NoSQL injection in AI platform authentication endpoints. The attack (injecting MongoDB query operators such as {\"$ne\": \"\"} into the FastGPT login or password-change HTTP endpoint) occurs entirely at the application server layer via a direct HTTP request. Vectimus evaluates Cedar policies at agent tool-call time via pretool hooks; it has no visibility into FastGPT's inbound HTTP traffic. The supply chain pack (SUPPLY-001) only blocks pinned installations of known-vulnerable Python packages during agent shell or package commands \u2014 it does not cover web application authentication flaws in platforms agents are built on. The database safety pack (vectimus-db-001 through vectimus-db-007) covers ORM destructive-flag abuse, not injection into authentication layers. No policy in any of the 11 packs addresses this attack vector, and none can: the exploit fires on the FastGPT server before any AI agent tool call is involved.",
+    "existing_policy_ids": [],
+    "gap_description": "The root cause \u2014 missing runtime type validation on MongoDB query input in FastGPT's authentication and password-change API endpoints \u2014 exists entirely within the FastGPT server application. The exploit is a conventional server-side NoSQL injection (CWE-943) delivered over HTTP with no agent tool call in the path. Vectimus's enforcement boundary is the tool-call layer inside AI coding agents (Claude Code, Cursor, Copilot); it cannot intercept or inspect inbound HTTP requests to a separately deployed web platform. Mitigation requires upgrading FastGPT to v4.14.9.5 or later, enforcing strict type-checking on all query input parameters at the application level, and restricting FastGPT admin interfaces to trusted network segments.",
+    "sources": [
+      {
+        "url": "https://github.com/labring/FastGPT/security/advisories/GHSA-x8mx-2mr7-h9xg",
+        "title": "FastGPT Security Advisory GHSA-x8mx-2mr7-h9xg: NoSQL Injection in Authentication and Password Change Endpoints",
+        "r2_key": "sources/VTMS-2026-0090/fastgpt-cve-2026-40351-40352.txt"
+      },
+      {
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-40351",
+        "title": "NVD: CVE-2026-40351 \u2014 FastGPT Unauthenticated MongoDB Operator Injection (CVSS 9.8)",
+        "r2_key": null
+      },
+      {
+        "url": "https://cve.threatint.eu/CVE/CVE-2026-40351",
+        "title": "ThreatINT CVE Detail: CVE-2026-40351",
+        "r2_key": null
+      },
+      {
+        "url": "https://cve.threatint.eu/CVE/CVE-2026-40352",
+        "title": "ThreatINT CVE Detail: CVE-2026-40352",
+        "r2_key": null
+      },
+      {
+        "url": "https://github.com/labring/FastGPT/releases/tag/v4.14.9.5",
+        "title": "FastGPT v4.14.9.5 Release Notes \u2014 Patches CVE-2026-40351 and CVE-2026-40352",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "FastGPT"
+    ],
+    "summary": "Two NoSQL injection vulnerabilities published 17 April 2026 affect FastGPT (labring/FastGPT), an open-source AI agent building platform. CVE-2026-40351 (CVSS 9.8, Critical) allows an unauthenticated attacker to bypass password-based login entirely by injecting a MongoDB query operator (e.g. {\"$ne\": \"\"}) into the password field, granting root administrator access with no credentials. CVE-2026-40352 (CVSS 8.8, High) allows any authenticated low-privilege user to hijack any other account by injecting MongoDB operators into the old-password field of the password-change endpoint, bypassing the ownership check. An attacker who exploits CVE-2026-40351 gains full administrative control over the FastGPT instance and all AI agents deployed on it. Both vulnerabilities stem from missing runtime type validation on user-supplied JSON fields before they are passed to MongoDB. Fixed in FastGPT v4.14.9.5 (GHSA-x8mx-2mr7-h9xg). The attack vector is direct HTTP to the FastGPT server; no AI agent tool call is involved and the incident is entirely outside Vectimus's tool-call enforcement boundary.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  }
+]
