@@ -1,0 +1,185 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0104",
+    "title": "CanisterSprawl: Self-Propagating npm Worm Targets Namastex AI Agent Packages to Steal LLM Tokens and Cloud Credentials",
+    "discovered_at": "2026-04-23T00:00:00Z",
+    "incident_date": "2026-04-21",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GV-1",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 12.2",
+      "CIS 16.1"
+    ],
+    "cve_ids": [],
+    "coverage_status": "partial",
+    "coverage_detail": "vectimus-supchain-010 blocks npm install for packages not verified against a hash allowlist, which prevents installation of any poisoned Namastex package not already on the allowlist\u2014stopping the worm before its postinstall hook fires. vectimus-supchain-001 blocks npm publish tool calls routed through an AI agent, disrupting the self-propagation step. vectimus-secrets-002 blocks direct agent file reads of ~/.npmrc, ~/.ssh/* and ~/.aws/* targeted by the credential-harvesting stage. vectimus-secrets-005 blocks shell-level environment variable enumeration (env, printenv, export -p) that the worm may use to harvest LLM platform tokens and CI/CD secrets. However, npm postinstall hooks execute as OS-level subprocesses of the npm process\u2014not through an AI agent's tool-call interface\u2014so once an npm install is permitted (e.g., for a package already allowlisted before it was trojanised), the postinstall payload runs entirely outside Vectimus's enforcement boundary. Network exfiltration to the ICP canister endpoint likewise occurs within that subprocess and is not interceptable via Cedar policy.",
+    "existing_policy_ids": [
+      "vectimus-supchain-010",
+      "vectimus-supchain-001",
+      "vectimus-secrets-002",
+      "vectimus-secrets-005"
+    ],
+    "gap_description": "npm postinstall hook execution is outside Vectimus's tool-call boundary. Once an npm install is permitted\u2014whether by allowlist match or human approval\u2014the postinstall script runs as a direct OS subprocess of npm without traversing any Vectimus hook. Credential harvesting and ICP canister exfiltration performed inside that subprocess are therefore not Cedar-enforceable. A secondary gap is the absence of a web_fetch or shell_command policy blocking outbound connections to ICP canister endpoints, though that gap is also out of scope for the same reason (exfiltration occurs in a subprocess, not an agent tool call).",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/04/self-propagating-supply-chain-worm.html",
+        "title": "Self-Propagating Supply Chain Worm Hits Namastex AI Agent Packages \u2014 The Hacker News",
+        "r2_key": "sources/VTMS-2026-0104/namastex-npm-canistersprawl-thehackernews.html"
+      },
+      {
+        "url": "https://socket.dev/blog/namastex-npm-packages-compromised-canisterworm",
+        "title": "Namastex npm Packages Compromised \u2014 CanisterWorm Analysis \u2014 Socket",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.bleepingcomputer.com/news/security/new-npm-supply-chain-attack-self-spreads-to-steal-auth-tokens/",
+        "title": "New npm Supply Chain Attack Self-Spreads to Steal Auth Tokens \u2014 BleepingComputer",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.theregister.com/2026/04/22/another_npm_supply_chain_attack",
+        "title": "Another npm Supply Chain Attack Targets AI Agent Tooling \u2014 The Register",
+        "r2_key": null
+      },
+      {
+        "url": "https://cybersecuritynews.com/compromised-namastex-npm-packages/",
+        "title": "Compromised Namastex npm Packages Deliver Self-Propagating Worm \u2014 CybersecurityNews",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "@automagik/genie",
+      "npm"
+    ],
+    "summary": "On April 21 2026, Socket and StepSecurity identified CanisterSprawl, a self-propagating supply-chain worm embedded in 16 npm packages published by Namastex Labs, an agentic AI company. The primary carrier\u2014@automagik/genie, an AI coding and agent-orchestration CLI\u2014delivers the payload via npm postinstall hooks that fire automatically on installation. The worm harvests npm tokens, LLM platform tokens, SSH keys, cloud credentials and CI/CD secrets, exfiltrating them to a blockchain-hosted ICP canister endpoint chosen specifically for its resistance to law enforcement takedown. It then self-propagates by injecting its payload into every package the victim npm account can publish and incrementing the version number, creating a cascading compromise across the Namastex package ecosystem. Attribution to TeamPCP is unconfirmed; a 'TeamPCP/LiteLLM method' string in the payload is suggestive but not conclusive.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0105",
+    "title": "Xinference PyPI Compromise: TeamPCP-Attributed Two-Stage Credential Stealer Backdoors AI Inference Framework (680K Downloads, Versions 2.6.0\u20132.6.2)",
+    "discovered_at": "2026-04-23T00:00:00Z",
+    "incident_date": "2026-04-22",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GV-1",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 12.2",
+      "CIS 16.1"
+    ],
+    "cve_ids": [],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus policy blocks pip installation of the known-malicious xinference versions 2.6.0, 2.6.1, or 2.6.2. The closest existing pattern is SUPPLY-001, which applies a version-blocklist to langchain-core vulnerable releases, but it does not extend to xinference. Policy vectimus-supchain-002 blocks pip installs from non-standard indexes only, and is not triggered by standard PyPI index installs. Policy vectimus-supchain-010 applies an allowlist to npm installs only and has no coverage of pip. Vectimus can intercept a pip install shell_command or package_operation for these specific versions if a version-blocklist rule were added, but cannot prevent payload execution if xinference was installed before Vectimus was deployed or via a non-agent process (e.g. CI/CD, manual install). The runtime Stage 1 subprocess spawn on import and Stage 2 curl-based exfiltration both execute outside the tool-call boundary and are not enforceable by Cedar policies.",
+    "existing_policy_ids": [],
+    "gap_description": "A version-blocklist rule in the supchain pack \u2014 mirroring the SUPPLY-001 pattern used for langchain-core \u2014 could block pip install of xinference==2.6.0, xinference==2.6.1, and xinference==2.6.2 at the tool-call boundary when an agent invokes pip. However, enforcement_scope is tool_calling_only: the Stage 1 malicious payload spawns a detached subprocess on import and Stage 2 exfiltrates credentials via curl within that subprocess \u2014 both occur outside the tool-call boundary and cannot be blocked by Cedar policies regardless of what install-time rules are in place. A version-blocklist policy would therefore provide partial install-time mitigation only, not end-to-end prevention of credential theft from already-installed instances.",
+    "sources": [
+      {
+        "url": "https://research.jfrog.com/post/xinference-compromise/",
+        "title": "Xinference PyPI Compromise \u2014 JFrog Security Research",
+        "r2_key": "sources/VTMS-2026-0105/xinference-pypi-teampcp-jfrog.html"
+      },
+      {
+        "url": "https://www.stepsecurity.io/blog/teampcp-injects-two-stage-credential-stealer-into-xinference-pypi-package",
+        "title": "TeamPCP Injects Two-Stage Credential Stealer into Xinference PyPI Package \u2014 StepSecurity",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.mend.io/blog/malicious-xinference-pypi-teampcp-part-4/",
+        "title": "Malicious Xinference PyPI \u2014 TeamPCP Part 4 \u2014 Mend.io",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.ox.security/blog/xinference-allegedly-hacked-by-teampcp-malicious-package-in-pypi/",
+        "title": "Xinference Allegedly Hacked by TeamPCP \u2014 OX Security",
+        "r2_key": null
+      },
+      {
+        "url": "https://gbhackers.com/xinference-pypi-breach-exposes-developers/",
+        "title": "Xinference PyPI Breach Exposes Developers \u2014 GBHackers",
+        "r2_key": null
+      },
+      {
+        "url": "https://x.com/JFrogSecurity/status/2046891904919277986",
+        "title": "JFrog Security on X \u2014 Xinference PyPI disclosure thread",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "xinference",
+      "PyPI",
+      "pip",
+      "curl"
+    ],
+    "summary": "On April 22 2026, JFrog Security Research and Mend.io identified malicious versions 2.6.0, 2.6.1 and 2.6.2 of the xinference PyPI package \u2014 an open-source distributed AI model inference framework by Xorbits with over 680,000 downloads and 9,300 GitHub stars. The malware implements a two-stage payload: Stage 1 is embedded as a base64-encoded blob in xinference/__init__.py and spawns a detached subprocess on package import; Stage 2 is a credential harvester (self-identifying as 'hacked by teampcp') that compresses stolen secrets into love.tar.gz and exfiltrates them to a C2 domain via curl. Stolen material includes SSH keys, AWS/GCP/Azure credentials, Kubernetes service account tokens, Docker registry tokens, database passwords, and .npmrc/.pypirc tokens. Attribution is disputed: the TeamPCP threat actor denied authorship via Twitter, asserting a copycat reused their payload signature. Malicious versions were yanked by PyPI maintainers following disclosure. This incident follows the earlier TeamPCP-linked supply chain attacks on LiteLLM (VTMS-2026-0017) and Telnyx (VTMS-2026-0026), extending the series to a fifth confirmed (or attributed) package targeting AI development toolchains. Enforcement scope is tool_calling_only: Vectimus Cedar policies could block a pip install invocation for the specific malicious versions if a version-blocklist rule were added to the supchain pack, but the runtime payload execution \u2014 subprocess spawn on import and curl-based credential exfiltration \u2014 fires outside the tool-call boundary and is not enforceable by Cedar.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0106",
+    "title": "CVE-2026-5760 (CVSS 9.8): SGLang RCE via Unsandboxed Jinja2 Template Injection in Malicious GGUF Model Files",
+    "discovered_at": "2026-04-23T00:00:00Z",
+    "incident_date": "2026-04-20",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "MS-2",
+    "cis_controls": [
+      "CIS 2.5",
+      "CIS 2.7",
+      "CIS 16.1"
+    ],
+    "cve_ids": [
+      "CVE-2026-5760"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses this attack vector. The RCE fires inside SGLang's serving process (serving_rerank.py) when the Jinja2 environment \u2014 instantiated without ImmutableSandboxedEnvironment \u2014 evaluates an attacker-controlled template payload embedded in a GGUF model file's tokenizer.chat_template field. This execution path is entirely within the SGLang serving framework, outside any Vectimus pretool hook. The existing supply-chain policies (vectimus-supchain-001 through vectimus-supchain-010, SUPPLY-001) govern npm and pip package operations; they do not cover GGUF model file downloads. vectimus-codexec-001 blocks curl|sh remote execution patterns but does not address Jinja2 SSTI within a serving framework's internal renderer. Because enforcement_scope is out_of_scope, no Cedar policy can reach the exploitation point.",
+    "existing_policy_ids": [],
+    "gap_description": "The root exploitation occurs in SGLang's internal Jinja2 template renderer \u2014 a serving-framework process with no Vectimus pretool hook. SGLang is not a supported hooked agent (Vectimus integrates with Claude Code, Cursor and GitHub Copilot only). Even if a Vectimus-hooked agent were directed to download the malicious GGUF file via a shell_command or web_fetch, blocking that download would not remediate the underlying framework vulnerability; the model could equally be downloaded manually or via CI/CD pipelines outside the hook path. Proper remediation requires the SGLang project to replace jinja2.Environment() with ImmutableSandboxedEnvironment in getjinjaenv() \u2014 a framework code change entirely outside Cedar policy scope.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/04/sglang-cve-2026-5760-cvss-98-enables.html",
+        "title": "SGLang CVE-2026-5760 CVSS 9.8 Enables RCE via Malicious GGUF Models \u2014 The Hacker News",
+        "r2_key": null
+      },
+      {
+        "url": "https://kb.cert.org/vuls/id/915947",
+        "title": "CERT/CC VU#915947: SGLang Jinja2 Unsandboxed Template Injection Remote Code Execution",
+        "r2_key": "sources/VTMS-2026-0106/sglang-cve-2026-5760-certcc.html"
+      },
+      {
+        "url": "https://vulert.com/blog/sglang-cve-2026-5760-rce/",
+        "title": "SGLang CVE-2026-5760 RCE Deep Dive \u2014 Vulert",
+        "r2_key": null
+      },
+      {
+        "url": "https://cybersecuritynews.com/hackers-weaponize-gguf-models/",
+        "title": "Hackers Weaponize GGUF Models to Deliver RCE Payloads \u2014 CybersecurityNews",
+        "r2_key": null
+      },
+      {
+        "url": "https://gbhackers.com/malicious-gguf-models-could-trigger-rce/",
+        "title": "Malicious GGUF Models Could Trigger RCE in SGLang Inference Servers \u2014 GBHackers",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "SGLang",
+      "HuggingFace",
+      "GGUF"
+    ],
+    "summary": "CVE-2026-5760 (CVSS 9.8, no patch) is a critical remote code execution vulnerability in SGLang, an open-source LLM serving framework widely deployed in high-throughput AI agent inference pipelines. The flaw resides in serving_rerank.py, which calls jinja2.Environment() without sandboxing (getjinjaenv() should use ImmutableSandboxedEnvironment). An attacker crafts a GGUF model file with a Jinja2 Server-Side Template Injection payload embedded in the tokenizer.chat_template field. When a victim downloads and loads the model then calls the /v1/rerank endpoint with the Qwen3 reranker trigger phrase, the payload executes arbitrary Python code inside the SGLang service process with its full privileges. Discovered by Stuart Beck via coordinated disclosure; SGLang maintainers did not respond and no patch has been issued. The incident represents an emerging supply chain attack pattern where weaponised model artefacts (GGUF files distributed via HuggingFace) become the delivery vehicle for server-side RCE, bypassing traditional software package security controls and targeting the AI inference layer directly.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  }
+]
