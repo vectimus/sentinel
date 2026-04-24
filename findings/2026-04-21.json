@@ -1,0 +1,57 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0093",
+    "title": "Google Antigravity: Prompt Injection via find_by_name Parameter Achieves RCE and Secure Mode Bypass",
+    "discovered_at": "2026-04-21T00:00:00Z",
+    "incident_date": "2026-04-20",
+    "severity": 3,
+    "owasp_category": "ASI01: Goal Hijacking",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 16.1",
+      "CIS 16.7",
+      "CIS 18.3"
+    ],
+    "cve_ids": [],
+    "coverage_status": "partial",
+    "coverage_detail": "Policies vectimus-codexec-001 (codexec pack) and vectimus-destops-001 through vectimus-destops-002 (destruct pack) will block the RCE payload at the shell_command boundary if the command injected via the fd -X flag matches a known destructive or download-execute pattern (e.g. curl|sh, rm -rf /, mkfs). No existing policy inspects shell_command calls for fd -X (exec-batch) or find -exec/-execdir as a distinct argument-injection vector, leaving novel or custom payloads unguarded.",
+    "existing_policy_ids": [
+      "vectimus-codexec-001",
+      "vectimus-destops-001",
+      "vectimus-destops-002"
+    ],
+    "gap_description": "No Cedar policy guards against the fd -X (exec-batch) or find -exec/-execdir pattern as a generic argument-injection vector in shell_command calls. A malicious payload that does not match existing blocked command signatures \u2014 for example, a custom exfiltration script invoked as 'fd . -X ./exfil.sh' \u2014 passes through the destruct and codexec packs unchallenged. Additionally, the prompt-injection root cause (adversarial instructions embedded in open-source files or web content ingested by the agent) lies within the LLM reasoning layer, outside the tool-call boundary, and cannot be prevented by Cedar policies alone.",
+    "sources": [
+      {
+        "url": "https://www.pillar.security/blog/prompt-injection-leads-to-rce-and-sandbox-escape-in-antigravity",
+        "title": "Prompt Injection Leads to RCE and Sandbox Escape in Antigravity (Pillar Security)",
+        "r2_key": "sources/VTMS-2026-0093/antigravity-prompt-injection-rce-pillar-cyberscoop.txt"
+      },
+      {
+        "url": "https://cyberscoop.com/google-antigravity-pillar-security-agent-sandbox-escape-remote-code-execution/",
+        "title": "Google Antigravity agent sandbox escape and remote code execution (CyberScoop)",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.lumia.security/blog/the-space-race-looking-for-security-issues-in-googles-antigravity",
+        "title": "The Space Race: Looking for Security Issues in Google's Antigravity (Lumia Security)",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.csoonline.com/article/4159889/rce-by-design-mcp-architectural-choice-haunts-ai-agent-ecosystem.html",
+        "title": "RCE by Design: MCP Architectural Choice Haunts AI Agent Ecosystem (CSO Online)",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Antigravity",
+      "fd"
+    ],
+    "summary": "Pillar Security researcher Dan Lisichkin disclosed on 20 April 2026 that Google's Antigravity agentic IDE is vulnerable to prompt injection delivered via malicious content embedded in open-source files or web pages the agent ingests. By injecting the fd utility's -X (exec-batch) flag into the Pattern parameter of Antigravity's native find_by_name tool, an attacker can execute arbitrary shell commands on the developer's machine. Because find_by_name is classified as a native system tool in Antigravity, it is dispatched before Secure Mode evaluations, completely bypassing Antigravity's most restrictive security configuration. The vulnerability was reported 6 January 2026, silently patched by Google on 28 February 2026, and a bug bounty was awarded 26 March 2026 prior to coordinated public disclosure. No CVE has been assigned. The technique \u2014 injecting shell execution flags into the pattern/argument parameter of a file-search tool \u2014 represents a reusable attack primitive applicable to any agentic IDE that wraps fd or similar utilities in a native tool without sanitising parameters.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "tool_calling_only"
+  }
+]
