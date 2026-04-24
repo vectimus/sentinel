@@ -1,0 +1,123 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0107",
+    "title": "CVE-2026-41679 (CVSS 9.8): Paperclip AI Orchestration Platform Unauthenticated RCE via Six-Step Authorization Bypass Chain",
+    "discovered_at": "2026-04-24T00:00:00Z",
+    "incident_date": "2026-04-09",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GV-6.2",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 2.7",
+      "CIS 16.1"
+    ],
+    "cve_ids": [
+      "CVE-2026-41679"
+    ],
+    "coverage_status": "partial",
+    "coverage_detail": "Policy vectimus-supchain-010 provides partial coverage: it blocks an AI agent from installing unverified versions of the paperclipai or @paperclipai/server npm packages via shell_command or package_operation tool calls, preventing an agent from introducing the vulnerable package into a project. However, the primary exploit chain \u2014 an external attacker chaining six unauthenticated HTTP API calls against a running Paperclip server (open self-registration, CLI challenge self-approval flaw, missing import endpoint auth check, and unsandboxed bash execution) \u2014 targets the agent orchestration platform's HTTP control plane directly and is outside Vectimus's tool-call enforcement boundary. Vectimus cannot intercept HTTP requests from an external attacker to a deployed Paperclip server instance.",
+    "existing_policy_ids": [
+      "vectimus-supchain-010"
+    ],
+    "gap_description": "The six-step RCE exploit chain operates entirely within the Paperclip server's HTTP/API surface \u2014 an unauthenticated network-layer attack that predates any agent tool call. Vectimus hooks fire only at tool-call time within a developer's agent session; they cannot intercept external attacker HTTP traffic to a running orchestration server. Additionally, vectimus-supchain-010 only blocks agent-initiated npm install tool calls; installations performed manually by developers, in CI/CD pipelines, or before Vectimus was deployed are not covered. The secondary cross-tenant token minting flaw (GHSA-47wq-cj9q-wpmp) is similarly a server-side authentication defect outside the tool-call boundary.",
+    "sources": [
+      {
+        "url": "https://thecybrdef.com/cve-2026-41679-paperclip-ai-rce-vulnerability/",
+        "title": "CVE-2026-41679: Paperclip AI RCE Vulnerability",
+        "r2_key": "sources/VTMS-2026-0107/paperclip-ai-cve-2026-41679-thecybrdef.txt"
+      },
+      {
+        "url": "https://securityonline.info/paperclip-ai-vulnerability-rce-cross-tenant-takeover/",
+        "title": "Paperclip AI Vulnerability: RCE and Cross-Tenant Takeover",
+        "r2_key": "sources/VTMS-2026-0107/paperclip-ai-cve-2026-41679-securityonline.txt"
+      },
+      {
+        "url": "https://www.thehackerwire.com/paperclip-rce-unauthenticated-remote-code-execution-via-six-api-calls/",
+        "title": "Paperclip RCE: Unauthenticated Remote Code Execution via Six API Calls",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.thehackerwire.com/paperclip-server-rce-via-agent-privilege-escalation/",
+        "title": "Paperclip Server RCE via Agent Privilege Escalation",
+        "r2_key": null
+      },
+      {
+        "url": "https://dbugs.ptsecurity.com/vulnerability/PT-2026-34622",
+        "title": "PT-2026-34622: Paperclip AI Agent Orchestration Platform RCE",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Paperclip AI",
+      "paperclipai npm"
+    ],
+    "summary": "CVE-2026-41679 (CVSS 9.8) is a critical unauthenticated RCE vulnerability in Paperclip, an open-source AI agent orchestration platform distributed as an npm package. An unauthenticated attacker chains four authorization failures \u2014 open self-registration, a CLI challenge self-approval flaw, a missing import endpoint auth check, and unsandboxed bash command execution \u2014 into a six-API-call sequence taking approximately 30 seconds to achieve full filesystem access, complete database read/write, and cross-tenant data exposure across all @paperclipai/server and paperclipai versions below 2026.416.0. A post-patch cross-tenant token minting flaw (GHSA-47wq-cj9q-wpmp) was additionally disclosed. The exploit chain is a server-side HTTP attack against the agent orchestration platform's control plane, which is outside Vectimus's tool-call enforcement boundary. Vectimus's supply chain policy vectimus-supchain-010 partially mitigates risk by blocking agent-initiated npm installs of unverified package versions, but cannot intercept an external attacker's HTTP requests to a deployed Paperclip server.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0108",
+    "title": "TeamPCP Xinference PyPI Compromise: Trojanised AI Inference Framework Versions Steal Cloud Credentials, SSH Keys and Crypto Wallets from LLM Infrastructure",
+    "discovered_at": "2026-04-24T00:00:00Z",
+    "incident_date": "2026-04-22",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 2.7",
+      "CIS 16.1"
+    ],
+    "cve_ids": [],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus policy blocks pip installation of the compromised xinference versions (2.6.0, 2.6.1, 2.6.2). Policy vectimus-supchain-002 only blocks pip installs from non-standard indexes, which does not apply here because PyPI is the standard index. Policy vectimus-supchain-010 provides npm hash-allowlist verification but has no pip equivalent. Policy SUPPLY-001 demonstrates the version-denylist pattern for langchain-core (CVE-2025-68664) but covers a different package. A new supchain policy is required to block agent-initiated installation of the known-compromised xinference 2.6.x versions.",
+    "existing_policy_ids": [],
+    "gap_description": "No pip hash-verification or version-denylist policy exists for the compromised xinference 2.6.x range. When an AI agent (Claude Code, Cursor, GitHub Copilot) executes `pip install xinference` or explicitly pins versions 2.6.0\u20132.6.2 via a shell_command or package_operation, Vectimus has no rule to intercept the request. The npm hash-allowlist pattern (vectimus-supchain-010) and the version-denylist pattern (SUPPLY-001) both demonstrate viable approaches; neither has been applied to pip/PyPI for this package.",
+    "sources": [
+      {
+        "url": "https://research.jfrog.com/post/xinference-compromise/",
+        "title": "Xinference PyPI Compromise \u2014 JFrog Security Research",
+        "r2_key": "sources/VTMS-2026-0108/xinference-pypi-teampcp-jfrog.txt"
+      },
+      {
+        "url": "https://www.mend.io/blog/malicious-xinference-pypi-teampcp-part-4/",
+        "title": "Malicious Xinference PyPI \u2014 TeamPCP Part 4 (Mend.io)",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.ox.security/blog/xinference-allegedly-hacked-by-teampcp-malicious-package-in-pypi/",
+        "title": "Xinference Allegedly Hacked by TeamPCP \u2014 Malicious Package in PyPI (OX Security)",
+        "r2_key": null
+      },
+      {
+        "url": "https://gbhackers.com/xinference-pypi-breach-exposes-developers/",
+        "title": "Xinference PyPI Breach Exposes Developers (GBHackers)",
+        "r2_key": null
+      },
+      {
+        "url": "https://cyberpress.org/xinference-pypi-package-compromised/",
+        "title": "Xinference PyPI Package Compromised (CyberPress)",
+        "r2_key": null
+      },
+      {
+        "url": "https://blog.gitguardian.com/three-supply-chain-campaigns-hit-npm-pypi-and-docker-hub-in-48-hours/",
+        "title": "Three Supply Chain Campaigns Hit npm, PyPI and Docker Hub in 48 Hours (GitGuardian)",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Xinference",
+      "PyPI"
+    ],
+    "summary": "Three consecutive releases of the Xinference AI inference framework on PyPI (versions 2.6.0, 2.6.1, 2.6.2) were found to contain a credential-stealing payload attributed to the TeamPCP threat actor. A base64-encoded implant injected into xinference/__init__.py executed on import, harvesting AWS credentials, Google Cloud configs, Kubernetes tokens, SSH keys, environment variables and crypto wallets before exfiltrating them to a C2 server at whereisitat[.]lucyatemysuperbox[.]space. Xinference has over 600,000 total downloads and is widely used to self-host LLMs and embedding models, making it a high-value target in AI developer supply chains. An AI agent setting up or updating an LLM inference stack is a plausible direct installation vector. Vectimus currently lacks a pip equivalent of the npm hash-allowlist policy (vectimus-supchain-010), and no version-denylist rule covers xinference 2.6.x analogous to SUPPLY-001's coverage of langchain-core CVE-2025-68664. Maintainers yanked the three compromised versions; researchers note contested attribution with TeamPCP denying involvement via social media.",
+    "recommended_action": "new_policy",
+    "recommended_policy_description": "Add two complementary policies to the `supchain` pack. (1) An immediate version-denylist rule (modelled on SUPPLY-001 for langchain-core) that forbids `package_operation` and `shell_command` actions whose command string matches `*xinference==2.6.0*`, `*xinference==2.6.1*`, or `*xinference==2.6.2*`, with a suggested alternative to pin to the next clean release. (2) A broader pip hash-allowlist policy (modelled on `vectimus-supchain-010` for npm) that blocks any `package_operation` or `shell_command` pip install where `context.pip_package_verified` is not set to true by the Vectimus supply-chain checker, requiring operator-maintained hash registration in `.vectimus/supply-allowlist.toml` before an AI agent may install a Python package. Policy (1) delivers immediate protection for this campaign; policy (2) closes the structural gap that allowed TeamPCP-style PyPI compromises to go undetected at the tool-call boundary.",
+    "content_worthy": true,
+    "content_angle": "new_policy_needed",
+    "enforcement_scope": "full"
+  }
+]
