@@ -1,0 +1,164 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0040",
+    "title": "RoguePilot: GitHub Copilot GITHUB_TOKEN Exfiltration via Passive Prompt Injection in Hidden HTML Comments in GitHub Issues",
+    "discovered_at": "2026-03-28T08:00:00Z",
+    "incident_date": "2026-02-16",
+    "severity": 3,
+    "owasp_category": "ASI01: Goal Hijacking",
+    "nist_ai_rmf": "GV-1.1",
+    "cis_controls": [
+      "CIS 3.3",
+      "CIS 16.12"
+    ],
+    "cve_ids": [],
+    "coverage_status": "partial",
+    "coverage_detail": "vectimus-secrets-001 would block the pivotal file_read step of the RoguePilot chain: Copilot following a symlink to /workspaces/.codespaces/shared/user-secrets-envs.json, which contains the privileged GITHUB_TOKEN. If Vectimus hooks are active in the GitHub Codespaces environment, the credential file read would be denied before the token is obtained. The subsequent exfiltration step \u2014 Copilot dynamically constructing a JSON $schema URL to an attacker-controlled server \u2014 is not currently covered by a specific exfil policy for schema-URL-based exfiltration in agent contexts. The root cause (ASI01 prompt injection via hidden HTML comments) is outside Cedar's reasoning boundary and cannot be prevented by policy.",
+    "existing_policy_ids": [
+      "vectimus-secrets-001"
+    ],
+    "gap_description": "No existing exfil policy explicitly covers the $schema URL exfiltration pattern: agent reads a credential file then resolves a JSON schema from an attacker-controlled URL derived from file content. This indirect exfiltration path bypasses direct-credential-read detection since the token is obtained as a side-effect of a symlink traversal followed by JSON schema resolution, not a direct file dump to an external destination.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/02/roguepilot-flaw-in-github-codespaces.html",
+        "title": "RoguePilot Flaw in GitHub Codespaces Enabled Copilot to Leak GITHUB_TOKEN",
+        "r2_key": "sources/VTMS-2026-0040/thehackernews-roguepilot.txt"
+      },
+      {
+        "url": "https://orca.security/resources/blog/roguepilot-github-copilot-vulnerability/",
+        "title": "RoguePilot: Critical GitHub Copilot Vulnerability Exploit",
+        "r2_key": "sources/VTMS-2026-0040/orca-security-roguepilot.txt"
+      }
+    ],
+    "tools_involved": [
+      "GitHub Copilot",
+      "GitHub Codespaces"
+    ],
+    "summary": "RoguePilot, disclosed by Orca Security researcher Roi Nisimi on February 16, 2026, is a passive prompt injection attack against GitHub Copilot operating in agent mode within GitHub Codespaces. An attacker embeds malicious instructions inside a GitHub Issue using HTML comment tags (<!-- -->), invisible to human reviewers but fully legible to Copilot. When a developer opens a Codespace from the compromised issue, Copilot silently follows the injected instructions: (1) checks out a crafted pull request containing a symbolic link to /workspaces/.codespaces/shared/user-secrets-envs.json; (2) reads the GITHUB_TOKEN from the file; (3) exfiltrates the token by loading a JSON $schema URL pointing to an attacker-controlled server, granting full access to the victim repository. The attack required no special privileges, no code execution by the victim, and no social engineering beyond creating a malicious GitHub Issue. Microsoft patched the vulnerability following responsible disclosure by Orca Security. No CVE was assigned.",
+    "recommended_action": "update_existing",
+    "recommended_policy_description": "Update the vectimus-exfil pack to detect and block web_fetch requests where the destination URL is dynamically derived from agent-processed file content (e.g. JSON schema resolution from an untrusted source) and the domain is external and not on the approved allowlist. Extend vectimus-secrets-001 to cover Codespaces-specific credential file paths (e.g. paths matching */.codespaces/shared/*). Belongs in the `exfil` and `secrets` packs.",
+    "content_worthy": true,
+    "content_angle": "covered_by_vectimus",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0041",
+    "title": "PleaseFix/PerplexedBrowser: Zero-Click Agent Compromise via Indirect Prompt Injection in Perplexity Comet Agentic Browser Enables Local File Exfiltration and Credential Theft",
+    "discovered_at": "2026-03-28T08:00:00Z",
+    "incident_date": "2026-03-04",
+    "severity": 3,
+    "owasp_category": "ASI01: Goal Hijacking",
+    "nist_ai_rmf": "MP-2.3",
+    "cis_controls": [
+      "CIS 13.1",
+      "CIS 16.1"
+    ],
+    "cve_ids": [],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus policy covers Perplexity Comet or any other agentic browser product. Vectimus currently has native hook integrations only for Claude Code, Cursor, and GitHub Copilot. The PleaseFix attack vector \u2014 indirect prompt injection delivered via routine content channels (calendar invites, authenticated web content) within a user session \u2014 operates inside the agentic browser's own tool-execution pipeline. Even if an agentic browser were to integrate Cedar hooks, the indirect prompt injection root cause (ASI01) would remain architecturally outside the tool-call boundary: Cedar evaluates actions, not the adversarial reasoning that produces them.",
+    "existing_policy_ids": [],
+    "gap_description": "Perplexity Comet is outside Vectimus's supported agent tool set. This class of vulnerability \u2014 indirect prompt injection in standalone agentic browser products enabling zero-click local file access and credential theft via manipulated password manager workflows \u2014 requires Cedar hook integration native to the agentic browser runtime, which Vectimus does not currently provide.",
+    "sources": [
+      {
+        "url": "https://www.helpnetsecurity.com/2026/03/04/agentic-browser-vulnerability-perplexedbrowser/",
+        "title": "The vulnerability that turns your AI agent against you (PerplexedBrowser/PleaseFix)",
+        "r2_key": "sources/VTMS-2026-0041/helpnetsecurity-pleasefix.txt"
+      }
+    ],
+    "tools_involved": [
+      "Perplexity Comet"
+    ],
+    "summary": "Zenity Labs disclosed PleaseFix on March 4, 2026, a family of critical vulnerabilities affecting Perplexity Comet and other agentic browsers. The first exploit enables zero-click agent compromise via indirect prompt injection through content channels such as calendar invites, granting access to the local file system and enabling data exfiltration while the agent continues returning expected results to the user. The second exploit abuses agent-authorised password manager workflows to steal credentials or achieve full account takeover without directly exploiting the password manager. Perplexity addressed the issues before publication following responsible disclosure by Zenity Labs. No CVE was assigned. No confirmed exploitation in the wild. The research represents an evolution of ClickFix social engineering adapted for fully autonomous agents.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0042",
+    "title": "LangChain/LangGraph Triple CVE Disclosure: Path Traversal (CVE-2026-34070), SQL Injection (CVE-2025-67644), and Serialization Injection (CVE-2025-68664 'LangGrinch') Expose Enterprise Agent Secrets at Scale",
+    "discovered_at": "2026-03-28T08:00:00Z",
+    "incident_date": "2026-03-27",
+    "severity": 4,
+    "owasp_category": "ASI09: Trust Boundary Violations",
+    "nist_ai_rmf": "GV-6.2",
+    "cis_controls": [
+      "CIS 7.3",
+      "CIS 16.1"
+    ],
+    "cve_ids": [
+      "CVE-2026-34070",
+      "CVE-2025-67644",
+      "CVE-2025-68664"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "None of the three vulnerabilities manifest as observable tool calls at the Cedar policy boundary. CVE-2026-34070 (CVSS 7.5) is a path traversal in LangChain's internal load_prompt function (langchain_core/prompts/loading.py) triggered by a crafted prompt template \u2014 an internal framework code path, not an externally visible file_read tool call. CVE-2025-67644 (CVSS 7.3) is SQL injection in LangGraph's SQLite checkpoint implementation triggered via metadata filter keys \u2014 internal database code operating below the tool-call layer. CVE-2025-68664 (CVSS 9.3, 'LangGrinch') is a serialization deserialization injection in langchain-core helpers that leaks all environment variables when prompt injection steers the agent to produce crafted structured outputs \u2014 occurs entirely within the LLM-framework interaction layer. All three require framework-level patching (langchain-core >=1.2.22, langgraph-checkpoint-sqlite >=3.0.1). Vectimus does not currently have native hook integration with LangChain or LangGraph agent runtimes.",
+    "existing_policy_ids": [],
+    "gap_description": "All three vulnerabilities reside in LangChain/LangGraph framework internals and are architecturally inaccessible to Cedar policy enforcement. CVE-2026-34070: path traversal in load_prompt. CVE-2025-67644: SQL injection in SQLite checkpoint. CVE-2025-68664: serialization helper deserialization allowing full environment variable exfiltration \u2014 cloud credentials, DB connection strings, and LLM API keys for all configured providers. The combined weekly download footprint exceeds 84 million packages. Remediation requires patching at the framework level only.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/03/langchain-langgraph-flaws-expose-files.html",
+        "title": "LangChain, LangGraph Flaws Expose Files, Secrets, Databases in Widely Used AI Frameworks",
+        "r2_key": "sources/VTMS-2026-0042/thehackernews-langchain-langgraph.txt"
+      },
+      {
+        "url": "https://vulert.com/blog/langchain-langgraph-vulnerabilities-expose-files/",
+        "title": "LangChain and LangGraph Vulnerabilities Expose Files, Secrets, and Databases in Popular AI Frameworks",
+        "r2_key": "sources/VTMS-2026-0042/vulert-langchain-langgraph.txt"
+      },
+      {
+        "url": "https://cyata.ai/blog/langgrinch-langchain-core-cve-2025-68664/",
+        "title": "LangGrinch: LangChain Core Serialization Injection CVE-2025-68664",
+        "r2_key": "sources/VTMS-2026-0042/cyata-langgrinch.txt"
+      }
+    ],
+    "tools_involved": [
+      "LangChain",
+      "LangGraph"
+    ],
+    "summary": "On March 27, 2026, Cyera security researcher Vladimir Tokarev publicly disclosed three vulnerabilities across LangChain and LangGraph exposing enterprise agent deployments to arbitrary file reads, SQL injection, and full environment secret exfiltration. CVE-2026-34070 (CVSS 7.5) is a path traversal in LangChain's load_prompt API allowing arbitrary file access via crafted prompt templates. CVE-2025-67644 (CVSS 7.3) is SQL injection in LangGraph's SQLite checkpoint implementation enabling arbitrary query execution via metadata filter keys. CVE-2025-68664 (CVSS 9.3, 'LangGrinch') is a serialization deserialization injection in langchain-core's built-in helpers exploitable via prompt injection to exfiltrate all environment variables including cloud provider credentials, database connection strings, and LLM API keys. Combined weekly downloads exceed 84 million. Patches available: langchain-core >=1.2.22, langgraph-checkpoint-sqlite >=3.0.1.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0043",
+    "title": "CVE-2026-0628: Malicious Chrome Extensions Exploit Gemini Live Panel WebView Policy Bypass for AI Agent Hijacking, Data Exfiltration, and Cross-Session Memory Persistence",
+    "discovered_at": "2026-03-28T08:00:00Z",
+    "incident_date": "2026-01-07",
+    "severity": 3,
+    "owasp_category": "ASI01: Goal Hijacking",
+    "nist_ai_rmf": "MP-2.3",
+    "cis_controls": [
+      "CIS 4.3",
+      "CIS 9.3"
+    ],
+    "cve_ids": [
+      "CVE-2026-0628"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus policy covers Google Chrome's Gemini Live panel or any other browser-embedded AI agent. Vectimus currently supports Claude Code, Cursor, and GitHub Copilot via native hook integrations. The CVE-2026-0628 attack surface \u2014 a malicious Chrome extension exploiting insufficient policy enforcement in the WebView tag to seize control of the Gemini agentic panel \u2014 operates entirely within the Chrome browser process, upstream of any tool-call boundary that Cedar could monitor. Patched by Google in January 2026 (Chrome >=143.0.7499.192). No confirmed exploitation in the wild prior to patching.",
+    "existing_policy_ids": [],
+    "gap_description": "CVE-2026-0628 affects Chrome's Gemini Live panel, which is not a Vectimus-supported agent tool. The vulnerability allows a malicious extension with basic permissions to seize control of the Gemini AI panel, instruct it to exfiltrate browsing session data, and persist instructions in agent memory across browser sessions (secondary ASI06: Memory Poisoning classification). The attack surface (WebView tag policy enforcement in Chromium) is a browser-layer vulnerability entirely outside Cedar's enforcement boundary.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/03/new-chrome-vulnerability-let-malicious.html",
+        "title": "New Chrome Vulnerability Let Malicious Extensions Escalate Privileges via Gemini Panel",
+        "r2_key": "sources/VTMS-2026-0043/thehackernews-chrome-gemini.txt"
+      }
+    ],
+    "tools_involved": [
+      "Google Chrome",
+      "Gemini"
+    ],
+    "summary": "CVE-2026-0628 (CVSS 8.8), disclosed publicly in March 2026 by Palo Alto Networks Unit 42 researcher Gal Weizman, describes insufficient policy enforcement in the WebView tag in Google Chrome that allowed malicious Chrome extensions with basic permissions to seize control of Chrome's Gemini Live AI panel. A compromised extension could instruct the hijacked agent to exfiltrate sensitive data from the active browsing session and store instructions in the agent's memory for persistence across browser sessions \u2014 a cross-session memory poisoning capability. The vulnerability was discovered on November 23, 2025, and patched by Google in January 2026 (Chrome version 143.0.7499.192). The finding highlights an emerging attack surface as AI agentic capabilities are baked directly into web browsers, where existing extension permission models were not designed for the privileged access AI agents require.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  }
+]
