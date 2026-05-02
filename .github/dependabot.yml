@@ -12,6 +12,12 @@ updates:
       patch-updates:
         update-types:
           - "patch"
+    ignore:
+      # cisco-ai-mcp-scanner >=4.5.0 pins litellm==1.83.0, which conflicts
+      # with guardrails-ai 0.10.0 (litellm<1.82.6). Re-evaluate when either
+      # package relaxes its litellm pin.
+      - dependency-name: "cisco-ai-mcp-scanner"
+        versions: [">=4.5.0"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
