@@ -10,6 +10,5 @@ openinference-instrumentation-claude-agent-sdk==0.1.1
 fastmcp==3.2.4
 httpx==0.28.1
 nemoguardrails==0.21.0
-guardrails-ai==0.10.0
 pydantic==2.12.5
 PyGithub==2.9.1

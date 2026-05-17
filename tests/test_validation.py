@@ -1,4 +1,4 @@
-"""Tests for pipeline.validation — Guardrails AI output validators."""
+"""Tests for pipeline.validation — output validators."""
 
 import json
 
