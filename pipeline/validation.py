@@ -1,8 +1,8 @@
-"""Guardrails AI output validation for the Sentinel pipeline.
+"""Output validation for the Sentinel pipeline.
 
 Provides validation functions that the orchestrator calls on agent outputs.
-Uses Guardrails AI validators for structural checks and Pydantic models
-for schema conformance.
+Custom validators perform structural checks; Pydantic models enforce schema
+conformance on findings.
 """
 
 from __future__ import annotations
@@ -10,25 +10,50 @@ from __future__ import annotations
 import json
 import logging
 import re
+from dataclasses import dataclass
 from typing import Any
 
-from guardrails.validators import (
-    FailResult,
-    PassResult,
-    ValidationResult,
-    Validator,
-    register_validator,
-)
 from pydantic import ValidationError
 
-from guardrails import Guard, OnFailAction
 from pipeline.schemas.finding import Finding
 
 logger = logging.getLogger(__name__)
 
+
 # ---------------------------------------------------------------------------
-# Custom validators
+# Minimal validator framework
+#
+# Previously these classes wrapped `guardrails-ai`. That package was removed
+# from PyPI, so we provide the small surface we actually used: a Validator
+# base with a `validate(value)` method that returns Pass/FailResult.
 # ---------------------------------------------------------------------------
+
+
+@dataclass
+class ValidationResult:
+    error_message: str | None = None
+
+
+@dataclass
+class PassResult(ValidationResult):
+    error_message: str | None = None
+
+
+@dataclass
+class FailResult(ValidationResult):
+    error_message: str = ""
+
+
+class Validator:
+    def validate(self, value: Any, metadata: dict | None = None) -> ValidationResult:
+        raise NotImplementedError
+
+
+def _run(validator: Validator, value: Any) -> None:
+    result = validator.validate(value)
+    if isinstance(result, FailResult):
+        raise ValueError(result.error_message)
+
 
 AI_BUZZWORDS = [
     "cutting-edge",
@@ -65,7 +90,6 @@ REQUIRED_FRONTMATTER_FIELDS = [
 ]
 
 
-@register_validator(name="sentinel/valid-finding-json", data_type="string")
 class ValidFindingJson(Validator):
     """Validate that a JSON string is a valid array of Finding objects."""
 
@@ -94,11 +118,9 @@ class ValidFindingJson(Validator):
         return PassResult()
 
 
-@register_validator(name="sentinel/valid-cedar-policy", data_type="string")
 class ValidCedarPolicy(Validator):
     """Validate Cedar policy syntax and required annotations."""
 
-    # Required annotation patterns in Cedar policy comments
     VTMS_ID_PATTERN = re.compile(r"VTMS-\d{4}-\d{4}")
     OWASP_PATTERN = re.compile(r"OWASP:\s*ASI\d{2}")
     POLICY_STATEMENT_PATTERN = re.compile(r"\b(forbid|permit)\s*\(")
@@ -110,19 +132,15 @@ class ValidCedarPolicy(Validator):
 
         errors: list[str] = []
 
-        # Check for required VTMS ID annotation
         if not self.VTMS_ID_PATTERN.search(value):
             errors.append("Missing VTMS incident ID annotation (e.g. VTMS-2026-0042)")
 
-        # Check for required OWASP category annotation
         if not self.OWASP_PATTERN.search(value):
             errors.append("Missing OWASP category annotation (e.g. OWASP: ASI01)")
 
-        # Check for at least one policy statement (forbid or permit)
         if not self.POLICY_STATEMENT_PATTERN.search(value):
             errors.append("No forbid or permit statement found")
 
-        # Check that policy statements end with semicolons
         if self.POLICY_STATEMENT_PATTERN.search(value) and not self.SEMICOLON_CLOSE_PATTERN.search(
             value
         ):
@@ -137,12 +155,10 @@ class ValidCedarPolicy(Validator):
         return PassResult()
 
 
-@register_validator(name="sentinel/valid-blog-post", data_type="string")
 class ValidBlogPost(Validator):
     """Validate blog post against template and humaniser rules."""
 
-    EM_DASH = "\u2014"
-    # Oxford comma: comma before "and" or "or" preceded by a comma-separated list
+    EM_DASH = "—"
     OXFORD_COMMA_PATTERN = re.compile(r",\s+(and|or)\s+", re.IGNORECASE)
 
     def validate(self, value: Any, metadata: dict | None = None) -> ValidationResult:
@@ -151,13 +167,9 @@ class ValidBlogPost(Validator):
 
         errors: list[str] = []
 
-        # --- Template conformance ---
-
-        # Check frontmatter
         if not value.startswith("---"):
             errors.append("Missing frontmatter (must start with ---)")
         else:
-            # Extract frontmatter block
             parts = value.split("---", 2)
             if len(parts) < 3:
                 errors.append("Malformed frontmatter (missing closing ---)")
@@ -167,14 +179,10 @@ class ValidBlogPost(Validator):
                     if f"{field}:" not in frontmatter:
                         errors.append(f"Missing required frontmatter field: {field}")
 
-        # Check required sections
         for section in REQUIRED_BLOG_SECTIONS:
             if section not in value:
                 errors.append(f"Missing required section: {section}")
 
-        # --- Humaniser rules ---
-
-        # No em dashes
         if self.EM_DASH in value:
             count = value.count(self.EM_DASH)
             errors.append(
@@ -182,14 +190,11 @@ class ValidBlogPost(Validator):
                 "Use commas, full stops or restructure sentences instead."
             )
 
-        # No AI buzzwords (case-insensitive check)
         value_lower = value.lower()
         found_buzzwords = [bw for bw in AI_BUZZWORDS if bw in value_lower]
         if found_buzzwords:
             errors.append(f"Contains AI buzzwords: {', '.join(found_buzzwords)}")
 
-        # No Oxford commas (heuristic: comma before "and"/"or" in list context)
-        # Only flag outside of frontmatter
         content_body = value.split("---", 2)[-1] if "---" in value else value
         oxford_matches = self.OXFORD_COMMA_PATTERN.findall(content_body)
         if oxford_matches:
@@ -213,20 +218,14 @@ class ValidBlogPost(Validator):
 
 
 def validate_findings(findings_json: str) -> list[dict]:
-    """Validate and optionally auto-correct findings JSON.
+    """Validate findings JSON and return clean dicts.
 
-    Uses Guardrails AI to validate against the Finding schema.
-    Falls back to Pydantic validation if Guardrails AI passes.
-    Returns validated findings list.
-    Raises ValidationError if unfixable.
+    Raises ValueError on structural validation failure.
+    Logs (but does not raise) per-finding Pydantic errors; partially valid
+    findings are returned as raw dicts so downstream agents still get input.
     """
-    guard = Guard().use(ValidFindingJson(on_fail=OnFailAction.EXCEPTION))
+    _run(ValidFindingJson(), findings_json)
 
-    # Run the Guardrails AI validation
-    guard.validate(findings_json)
-
-    # If we get here, the JSON is structurally valid.
-    # Parse through Pydantic for full schema validation and return clean dicts.
     data = json.loads(findings_json)
     validated: list[dict] = []
     errors: list[str] = []
@@ -238,8 +237,6 @@ def validate_findings(findings_json: str) -> list[dict]:
         except ValidationError as e:
             errors.append(f"Finding[{i}] ({item.get('vtms_id', 'unknown')}): {e}")
             logger.warning("Finding[%d] failed Pydantic validation: %s", i, e)
-            # Include partially valid findings (raw dict) so downstream agents
-            # still get something to work with
             validated.append(item)
 
     if errors:
@@ -253,25 +250,12 @@ def validate_findings(findings_json: str) -> list[dict]:
 
 
 def validate_cedar_policy(policy_text: str) -> str:
-    """Validate Cedar policy syntax.
-
-    Checks for required annotations (VTMS ID, OWASP category).
-    Returns validated policy text.
-    Raises guardrails.ValidationError if validation fails.
-    """
-    guard = Guard().use(ValidCedarPolicy(on_fail=OnFailAction.EXCEPTION))
-    guard.validate(policy_text)
+    """Validate Cedar policy syntax. Raises ValueError on failure."""
+    _run(ValidCedarPolicy(), policy_text)
     return policy_text
 
 
 def validate_blog_post(markdown: str) -> str:
-    """Validate blog post against template and humaniser rules.
-
-    Checks: frontmatter present, required sections exist,
-    no em dashes, no Oxford commas, no AI buzzwords.
-    Returns validated markdown.
-    Raises guardrails.ValidationError if validation fails.
-    """
-    guard = Guard().use(ValidBlogPost(on_fail=OnFailAction.EXCEPTION))
-    guard.validate(markdown)
+    """Validate blog post template and humaniser rules. Raises ValueError on failure."""
+    _run(ValidBlogPost(), markdown)
     return markdown

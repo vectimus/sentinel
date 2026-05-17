@@ -13,9 +13,10 @@ updates:
         update-types:
           - "patch"
     ignore:
-      # cisco-ai-mcp-scanner >=4.5.0 pins litellm==1.83.0, which conflicts
-      # with guardrails-ai 0.10.0 (litellm<1.82.6). Re-evaluate when either
-      # package relaxes its litellm pin.
+      # cisco-ai-mcp-scanner 4.5.0 broke the daily pipeline (see #67). The
+      # original litellm conflict driver (guardrails-ai) has since been
+      # removed from this project. Unpin only after verifying 4.5.0+ runs
+      # the daily workflow end-to-end.
       - dependency-name: "cisco-ai-mcp-scanner"
         versions: [">=4.5.0"]
 
