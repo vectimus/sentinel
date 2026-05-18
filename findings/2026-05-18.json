@@ -1,0 +1,141 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0165",
+    "title": "CVE-2026-44338: PraisonAI Legacy Flask API Hardcoded AUTH_ENABLED=False Enables Unauthenticated AI Workflow Execution",
+    "discovered_at": "2026-05-18T00:00:00Z",
+    "incident_date": "2026-05-11",
+    "severity": 4,
+    "owasp_category": "ASI03: Identity and Privilege Abuse",
+    "nist_ai_rmf": "GV-6",
+    "cis_controls": [
+      "CIS 4.1",
+      "CIS 16.2",
+      "CIS 16.7"
+    ],
+    "cve_ids": [
+      "CVE-2026-44338"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy covers this incident. The attack vector \u2014 unauthenticated HTTP requests sent directly to the PraisonAI Flask API server \u2014 operates entirely outside Vectimus's tool-call enforcement boundary. Vectimus evaluates Cedar policies at tool-call time via pretool hooks and cannot intercept or enforce authentication on a third-party framework's HTTP control plane. Because the compromise path bypasses the tool-call layer entirely, no policy from any of the 11 Vectimus packs can prevent or detect this exploitation.",
+    "existing_policy_ids": [],
+    "gap_description": "The root vulnerability (hardcoded AUTH_ENABLED=False and AUTH_TOKEN=None in PraisonAI api_server.py) resides in the framework's HTTP deployment layer. This is a gateway/control-plane attack: an external actor calls the Flask API directly, triggering agent workflows before any Vectimus pretool hook fires. Vectimus has no authority over the HTTP authentication layer of the agent runtime and therefore cannot mitigate this vulnerability class via Cedar policy.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/05/praisonai-cve-2026-44338-auth-bypass.html",
+        "title": "PraisonAI CVE-2026-44338 Auth Bypass \u2014 The Hacker News",
+        "r2_key": "sources/VTMS-2026-0165/praisonai-cve-2026-44338-thehackernews.txt"
+      },
+      {
+        "url": "https://www.sysdig.com/blog/cve-2026-44338-praisonai-authentication-bypass-in-under-4-hours-and-the-growing-trend-of-rapid-exploitation",
+        "title": "CVE-2026-44338: PraisonAI Authentication Bypass in Under 4 Hours \u2014 Sysdig",
+        "r2_key": "sources/VTMS-2026-0165/praisonai-cve-2026-44338-sysdig.txt"
+      },
+      {
+        "url": "https://www.securityweek.com/hackers-targeted-praisonai-vulnerability-hours-after-disclosure/",
+        "title": "Hackers Targeted PraisonAI Vulnerability Hours After Disclosure \u2014 SecurityWeek",
+        "r2_key": "sources/VTMS-2026-0165/praisonai-cve-2026-44338-securityweek.txt"
+      },
+      {
+        "url": "https://www.csoonline.com/article/4171215/praisonai-vulnerability-gets-scanned-within-4-hours-of-disclosure.html",
+        "title": "PraisonAI Vulnerability Gets Scanned Within 4 Hours of Disclosure \u2014 CSO Online",
+        "r2_key": null
+      },
+      {
+        "url": "https://cybersecuritynews.com/praisonai-vulnerability-exploited/",
+        "title": "PraisonAI Vulnerability Exploited \u2014 Cybersecurity News",
+        "r2_key": null
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-6rmh-7xcm-cpxj",
+        "title": "GHSA-6rmh-7xcm-cpxj: PraisonAI Missing Authentication \u2014 GitHub Advisory",
+        "r2_key": null
+      },
+      {
+        "url": "https://security.snyk.io/vuln/SNYK-PYTHON-PRAISONAI-16635978",
+        "title": "SNYK-PYTHON-PRAISONAI-16635978 \u2014 Snyk Vulnerability Database",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "PraisonAI"
+    ],
+    "summary": "CVE-2026-44338 (CVSS 7.3, GHSA-6rmh-7xcm-cpxj) is a missing authentication vulnerability in PraisonAI versions 2.5.6 through 4.6.33, where the legacy Flask-based API server (api_server.py) hardcodes AUTH_ENABLED=False and AUTH_TOKEN=None. The GET /agents and POST /chat endpoints are fully open to unauthenticated callers, allowing any network-accessible actor to enumerate configured agents, trigger arbitrary AI workflows, drain LLM API quotas, and read workflow execution results without credentials. A scanner identified as CVE-Detector/1.0 probed the vulnerable endpoint 3 hours and 44 minutes after the advisory was published on 2026-05-11, one of the shortest confirmed time-to-exploit windows recorded for an AI framework CVE. The vulnerability was fixed in PraisonAI v4.6.34.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0166",
+    "title": "Spring AI Seven-CVE Cluster: SQL Injection, JSONPath Injection, Cross-Tenant Memory Exfiltration, PDF DoS, and Model Cache Tampering in Java AI Framework (April 2026)",
+    "discovered_at": "2026-05-18T00:00:00Z",
+    "incident_date": "2026-04-27",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "MS-2",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 7.7",
+      "CIS 16.1",
+      "CIS 18.3"
+    ],
+    "cve_ids": [
+      "CVE-2026-40967",
+      "CVE-2026-40978",
+      "CVE-2026-40966",
+      "CVE-2026-40980",
+      "CVE-2026-40979",
+      "CVE-2026-22730",
+      "CVE-2026-22729"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses Spring AI framework CVEs. The nearest analogous policy (SUPPLY-001) blocks installation of vulnerable langchain-core Python packages at tool-call time via pip/shell interception, but Spring AI is a Java/Maven framework and its vulnerabilities are exploited within JVM application runtime \u2014 entirely outside the agent tool-call boundary that Vectimus enforces. The attack surfaces (CosmosDB vector store query processing, PgVector JSONPath parsing, VectorStoreChatMemoryAdvisor cross-tenant reads, PDF document parsing, and /tmp model cache file permissions) are all internal to the Spring AI application stack and do not pass through any pretool hook.",
+    "existing_policy_ids": [],
+    "gap_description": "Spring AI's CVEs are application-runtime vulnerabilities in a Java framework that operate entirely outside Vectimus's enforcement boundary. Vectimus intercepts tool calls made by Claude Code, Cursor, and GitHub Copilot at development time; Spring AI functions as an application-layer framework invoked at JVM runtime within deployed services. No Cedar policy can intercept SQL injection in CosmosDBVectorStore.doDelete() (CVE-2026-40978), JSONPath injection in PgVector FilterExpressionConverter (CVE-2026-40967/CVE-2026-22729), cross-tenant memory reads via VectorStoreChatMemoryAdvisor (CVE-2026-40966), PDF-triggered denial of service (CVE-2026-40980), or /tmp model cache manipulation (CVE-2026-40979) \u2014 these occur within the agent framework's internal memory, state, and data layers, which fall outside the tool-call boundary. No Cedar policy is recommended.",
+    "sources": [
+      {
+        "url": "https://www.herodevs.com/blog-posts/5-spring-ai-cves-disclosed-april-27-2026-roundup-and-eol-risk",
+        "title": "5 Spring AI CVEs Disclosed April 27, 2026 \u2014 Roundup and EOL Risk (HeroDevs)",
+        "r2_key": "sources/VTMS-2026-0166/spring-ai-5-cves-herodevs.txt"
+      },
+      {
+        "url": "https://spring.io/security/cve-2026-22730/",
+        "title": "CVE-2026-22730 \u2014 Spring Security Advisory",
+        "r2_key": "sources/VTMS-2026-0166/spring-ai-cve-2026-22730-spring-io.txt"
+      },
+      {
+        "url": "https://spring.io/security/cve-2026-40978/",
+        "title": "CVE-2026-40978 \u2014 Spring Security Advisory",
+        "r2_key": null
+      },
+      {
+        "url": "https://blog.securelayer7.net/cve-2026-22730-sql-injection-spring-ai-mariadb/",
+        "title": "CVE-2026-22730: SQL Injection in Spring AI MariaDB Vector Store (SecureLayer7)",
+        "r2_key": null
+      },
+      {
+        "url": "https://blog.securelayer7.net/cve-2026-22729-jsonpath-injection-spring-ai-pgvectorstore/",
+        "title": "CVE-2026-22729: JSONPath Injection in Spring AI PgVectorStore (SecureLayer7)",
+        "r2_key": null
+      },
+      {
+        "url": "https://securityonline.info/critical-spring-ai-vulnerabilities-sql-jsonpath-injection-cve-2026-22730/",
+        "title": "Critical Spring AI Vulnerabilities: SQL and JSONPath Injection (SecurityOnline)",
+        "r2_key": "sources/VTMS-2026-0166/spring-ai-cves-securityonline.txt"
+      }
+    ],
+    "tools_involved": [
+      "Spring AI",
+      "Spring AI MariaDB Vector Store",
+      "Spring AI PgVector Store",
+      "Spring AI CosmosDB Vector Store"
+    ],
+    "summary": "On April 27, 2026, the Spring AI project disclosed five CVEs patched in versions 1.0.6 and 1.1.5: SQL injection in CosmosDBVectorStore.doDelete() (CVE-2026-40978, CVSS 8.8), query injection in FilterExpressionConverter (CVE-2026-40967, CVSS 8.6), cross-tenant chat history exfiltration via a crafted conversationId in VectorStoreChatMemoryAdvisor (CVE-2026-40966, CVSS 5.9), PDF-triggered denial of service in the document reader (CVE-2026-40980, CVSS 6.5), and insecure /tmp model cache permissions enabling local model substitution (CVE-2026-40979, CVSS 6.1). Earlier March 2026 disclosures added SQL injection in the MariaDB vector store (CVE-2026-22730, CVSS 7.2) and JSONPath injection in PgVectorStore (CVE-2026-22729, CVSS 8.6), bringing the total to seven CVEs in the Spring AI supply chain. All seven vulnerabilities are exploited within the Spring AI framework's internal data and memory layers at JVM application runtime, placing them entirely outside the pretool-hook boundary that Vectimus enforces across Claude Code, Cursor, and GitHub Copilot.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  }
+]
