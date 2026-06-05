@@ -1,0 +1,417 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0130",
+    "title": "Gemini CLI CVSS 10.0 Workspace Auto-Trust Bypass Enables Pre-Sandbox RCE and CI/CD Supply Chain Attack (GHSA-wpqr-6v78-jr5g)",
+    "discovered_at": "2026-05-06T00:00:00Z",
+    "incident_date": "2026-04-30",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GV-6",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 16.1",
+      "CIS 18.3"
+    ],
+    "cve_ids": [
+      "GHSA-wpqr-6v78-jr5g"
+    ],
+    "coverage_status": "partial",
+    "coverage_detail": "vectimus-agentgov-002 blocks any Vectimus-governed agent from spawning Gemini CLI with the --yolo flag, which closes the secondary prompt-injection bypass vector where an orchestrating agent attempts to invoke Gemini CLI in --yolo mode. However, the primary attack surface \u2014 automatic trust and execution of .gemini/ workspace configuration files before the sandbox initialises \u2014 fires entirely before Vectimus pretool hooks are active (pre-consent execution). The CI/CD supply chain variant via the run-gemini-cli GitHub Action is also outside Vectimus's enforcement boundary because Vectimus hooks are not instrumented inside GitHub Actions runners.",
+    "existing_policy_ids": [
+      "vectimus-agentgov-002"
+    ],
+    "gap_description": "The dominant root cause \u2014 Gemini CLI silently reading and executing malicious .gemini/ workspace configuration files before the sandbox initialises \u2014 is pre-consent execution: it fires before the hook layer that Vectimus operates at becomes active. No Cedar policy evaluated at tool-call time can intercept config auto-trust that occurs during tool initialisation. The CI/CD supply chain vector via run-gemini-cli is similarly outside scope: once execution enters a GitHub Actions runner, Vectimus pretool hooks are not in the execution path. The remaining gap (workspace config auto-trust and CI/CD propagation) cannot be addressed by Cedar policy.",
+    "sources": [
+      {
+        "url": "https://www.theregister.com/2026/04/30/googles_fix_for_critical_gemini/",
+        "title": "Google's fix for critical Gemini CLI RCE",
+        "r2_key": "sources/VTMS-2026-0130/gemini-cli-cvss10-rce.txt"
+      },
+      {
+        "url": "https://novee.security/blog/google-gemini-cli-rce-vulnerability-cvss-10-critical-security-advisory/",
+        "title": "Google Gemini CLI RCE Vulnerability CVSS 10 Critical Security Advisory (Novee Security)",
+        "r2_key": "sources/VTMS-2026-0130/gemini-cli-cvss10-rce.txt"
+      },
+      {
+        "url": "https://thehackernews.com/2026/04/google-fixes-cvss-10-gemini-cli-ci-rce.html",
+        "title": "Google Fixes CVSS 10 Gemini CLI CI RCE (The Hacker News)",
+        "r2_key": "sources/VTMS-2026-0130/gemini-cli-cvss10-rce.txt"
+      },
+      {
+        "url": "https://www.securityweek.com/critical-gemini-cli-flaw-enabled-host-code-execution-supply-chain-attacks/",
+        "title": "Critical Gemini CLI Flaw Enabled Host Code Execution Supply Chain Attacks (SecurityWeek)",
+        "r2_key": "sources/VTMS-2026-0130/gemini-cli-cvss10-rce.txt"
+      },
+      {
+        "url": "https://gbhackers.com/critical-gemini-cli-flaw/",
+        "title": "Critical Gemini CLI Flaw (GBHackers)",
+        "r2_key": "sources/VTMS-2026-0130/gemini-cli-cvss10-rce.txt"
+      },
+      {
+        "url": "https://www.cyera.com/research/cyera-research-labs-discloses-command-prompt-injection-vulnerabilities-in-gemini-cli",
+        "title": "Cyera Research Labs Discloses Command Prompt Injection Vulnerabilities in Gemini CLI",
+        "r2_key": "sources/VTMS-2026-0130/gemini-cli-cvss10-rce.txt"
+      }
+    ],
+    "tools_involved": [
+      "Gemini CLI",
+      "google-github-actions/run-gemini-cli",
+      "GitHub Actions"
+    ],
+    "summary": "A CVSS 10.0 vulnerability in Google Gemini CLI (GHSA-wpqr-6v78-jr5g, CVE pending) allowed an attacker who could place content in a repository workspace \u2014 for example by submitting a pull request \u2014 to inject malicious .gemini/ configuration files that the CLI silently trusted and executed on the host before any sandbox initialised, granting access to all secrets, credentials, and source code reachable by the workflow. A second vector allowed prompt injection to bypass fine-grained tool allowlists when running in --yolo mode. The flaw also affected the run-gemini-cli GitHub Action, enabling supply-chain attacks in automated CI/CD pipelines. Google patched the issue in Gemini CLI 0.39.1 and run-gemini-cli Action 0.1.22. Independently discovered by Novee Security (Elad Meged) and Pillar Security (Dan Lisichkin), disclosed April 29-30, 2026. Confirmed distinct from VTMS-2026-0074 (Comment and Control: injected PR comment instructions), which is a different vulnerability class.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0131",
+    "title": "CVE-2026-32173: Azure SRE Agent Multi-Tenant Entra ID Misconfiguration Enables Cross-Tenant Eavesdropping on Agent Streams and Credentials",
+    "discovered_at": "2026-05-06T00:00:00Z",
+    "incident_date": "2026-04-03",
+    "severity": 4,
+    "owasp_category": "ASI09: Trust Boundary Violations",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 5.4",
+      "CIS 6.1",
+      "CIS 16.1"
+    ],
+    "cve_ids": [
+      "CVE-2026-32173"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses CVE-2026-32173. The attack exploits a WebSocket gateway authentication misconfiguration \u2014 an external attacker directly connects to the Azure SRE Agent's /agentHub SignalR endpoint using a valid cross-tenant Entra ID token. Because the app registration was incorrectly configured as multi-tenant, the hub accepts any tenant's token and broadcasts all session events without identity filtering. Vectimus pretool hooks intercept outbound tool calls made by the agent at call time; they have no visibility into inbound connections to a remote cloud service's control-plane endpoint. This attack vector resides exclusively in the gateway/authentication layer and cannot be reached by Cedar policy evaluation.",
+    "existing_policy_ids": [],
+    "gap_description": "CVE-2026-32173 is a server-side cloud infrastructure authentication vulnerability \u2014 a multi-tenant Entra ID app registration misconfiguration that causes the /agentHub SignalR hub to broadcast all events (user prompts, agent responses, internal reasoning traces, live executed commands with full arguments, and deployment credentials) to any cross-tenant principal holding a valid Entra ID token. Cedar policies operate at tool-call time on the agent client side and cannot enforce authentication policies on remote cloud service endpoints. Remediation requires correct Entra ID app registration scope (single-tenant) and per-connection identity filtering on the hub \u2014 both server-side controls that are structurally outside Vectimus's enforcement boundary. No Cedar policy can prevent or detect this attack.",
+    "sources": [
+      {
+        "url": "https://www.csoonline.com/article/4161389/azure-sre-agent-flaw-let-outsiders-silently-eavesdrop-on-enterprise-cloud-operations.html",
+        "title": "Azure SRE Agent flaw let outsiders silently eavesdrop on enterprise cloud operations (CSO Online)",
+        "r2_key": "sources/VTMS-2026-0131/azure-sre-agent-cve-2026-32173.txt"
+      },
+      {
+        "url": "https://www.sentinelone.com/vulnerability-database/cve-2026-32173/",
+        "title": "CVE-2026-32173 \u2014 SentinelOne Vulnerability Database",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.redpacketsecurity.com/cve-alert-cve-2026-32173-microsoft-azure-sre-agent-gateway-signalr-hub/",
+        "title": "CVE Alert: CVE-2026-32173 \u2014 Microsoft Azure SRE Agent Gateway SignalR Hub (Red Packet Security)",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.thehackerwire.com/azure-sre-agent-improper-authentication-leads-to-info-disclosure/",
+        "title": "Azure SRE Agent Improper Authentication Leads to Info Disclosure (The Hacker Wire)",
+        "r2_key": null
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-85hw-hqj5-m956",
+        "title": "GHSA-85hw-hqj5-m956: Azure SRE Agent /agentHub improper authentication (GitHub Advisory)",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Azure SRE Agent",
+      "Microsoft Azure"
+    ],
+    "summary": "CVE-2026-32173 (CVSS 7.5\u20138.6) is an improper authentication vulnerability in Microsoft Azure SRE Agent's /agentHub SignalR WebSocket endpoint, caused by the underlying Entra ID app registration being misconfigured as multi-tenant. Any attacker holding a valid Entra ID token from any tenant could silently connect to the hub and receive all broadcast events \u2014 including user prompts, internal agent reasoning traces, live executed commands with full arguments, and deployment credentials \u2014 with no trace left on victim systems. Enclave researcher Yanir Tsarimi demonstrated the attack with a 15-line Python PoC; Microsoft applied a server-side fix. The attack vector is entirely within the gateway/control-plane layer: the attacker connects directly to the remote Azure service endpoint, never passing through Vectimus's pretool hook boundary. This incident is out of scope for Vectimus Cedar policy enforcement.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0132",
+    "title": "CVE-2026-26268: Cursor AI Agent Git Hook Injection Enables Out-of-Sandbox RCE",
+    "discovered_at": "2026-05-06T00:00:00Z",
+    "incident_date": "2026-04-28",
+    "severity": 4,
+    "owasp_category": "ASI09: Trust Boundary Violations",
+    "nist_ai_rmf": "GV-6.2",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 4.1",
+      "CIS 8.2"
+    ],
+    "cve_ids": [
+      "CVE-2026-26268"
+    ],
+    "coverage_status": "covered",
+    "coverage_detail": "Policy vectimus-fileint-006 ('Block writes to .git directory to prevent repository corruption') forbids any file_write action where context.file_path matches */.git/*. This pattern directly covers .git/hooks/ and all subdirectories under .git, preventing the agent from planting malicious hook scripts that would fire on subsequent routine git operations outside the sandbox.",
+    "existing_policy_ids": [
+      "vectimus-fileint-006"
+    ],
+    "gap_description": null,
+    "sources": [
+      {
+        "url": "https://www.csoonline.com/article/4164250/critical-cursor-bug-could-turn-routine-git-into-rce.html",
+        "title": "Critical Cursor bug could turn routine git into RCE",
+        "r2_key": "sources/VTMS-2026-0132/cursor-cve-2026-26268-git-hook-rce.txt"
+      },
+      {
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-26268",
+        "title": "CVE-2026-26268 - NVD National Vulnerability Database",
+        "r2_key": null
+      },
+      {
+        "url": "https://github.com/cursor/cursor/security/advisories/GHSA-8pcm-8jpx-hv8r",
+        "title": "GHSA-8pcm-8jpx-hv8r: Cursor AI IDE Git Hook Sandbox Escape",
+        "r2_key": null
+      },
+      {
+        "url": "https://novee.security/blog/cursor-ide-cve-2026-26268-git-hook-arbitrary-code-execution/",
+        "title": "Cursor IDE CVE-2026-26268: Git Hook Arbitrary Code Execution - Novee Security",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.sentinelone.com/vulnerability-database/cve-2026-26268/",
+        "title": "CVE-2026-26268 - SentinelOne Vulnerability Database",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Cursor",
+      "Anysphere Cursor IDE"
+    ],
+    "summary": "CVE-2026-26268 (CVSS 8.0\u20139.9, CWE-862) is a sandbox escape vulnerability in Cursor AI IDE versions prior to 2.5. A malicious repository or embedded prompt injection causes the Cursor agent to write attacker-controlled content to Git hook files (.git/hooks/); when the developer subsequently performs any routine git operation\u2014checkout, commit, or push\u2014the injected hook fires and executes arbitrary code outside the IDE sandbox with no further user interaction. The attack chain is three steps: (1) prompt injection or malicious bare repo causes goal hijacking entirely within the LLM reasoning layer; (2) the agent issues a file_write tool call targeting .git/hooks/, which is interceptable by Vectimus; (3) the developer runs a git command and the hook executes at OS level outside any sandbox. Vectimus policy vectimus-fileint-006 blocks all agent file_write calls matching */.git/* at step 2, breaking the attack chain before the execution path can be established. Steps 1 and 3 remain outside the tool-call boundary. Fixed in Cursor 2.5; disclosed by Novee Security, Daniel Teixeira (Nvidia AI Red Team), and Philip Tsukerman; NVD-published 2026-02-13, widely reported 2026-04-28.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "covered_by_vectimus",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0134",
+    "title": "CVE-2026-5752 (CVSS 9.3): Cohere AI Terrarium Python Sandbox Escape via JavaScript Prototype Chain Traversal Enables Root Code Execution and Container Escape \u2014 No Patch Available",
+    "discovered_at": "2026-05-06T00:00:00Z",
+    "incident_date": "2026-04-14",
+    "severity": 4,
+    "owasp_category": "ASI05: Unsafe Code Execution",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 2.7",
+      "CIS 16.1",
+      "CIS 18.3"
+    ],
+    "cve_ids": [
+      "CVE-2026-5752"
+    ],
+    "coverage_status": "partial",
+    "coverage_detail": "Policy vectimus-supchain-010 (package_operations.cedar) blocks installation of any npm package that has not been verified against an approved hash allowlist. If Cohere AI Terrarium is distributed as an npm package, this policy blocks its installation in an unverified state, partially mitigating the install-time exposure for any version of the library. However, the prototype chain traversal exploit fires entirely within Terrarium's JavaScript runtime \u2014 it is an in-process attack on the sandbox's mock document object, traversing Object.prototype to reach the Function constructor, then accessing Node.js internals via globalThis and require(). This exploit does not surface as a Vectimus-interceptable tool call; Cedar enforcement cannot reach inside a running Node.js VM sandbox. No version-specific Cedar policy for Cohere AI Terrarium exists, and none is possible given the project is unmaintained and no patch will be released.",
+    "existing_policy_ids": [
+      "vectimus-supchain-010"
+    ],
+    "gap_description": "The sandbox escape mechanism \u2014 JavaScript prototype chain traversal via the plain-object mock document to the Function constructor, then access to require() and system commands as root \u2014 executes inside Terrarium's Node.js runtime process and does not cross a tool-call boundary. This places the core exploit outside Vectimus's enforcement reach; only the prior installation step (if via npm) falls within scope. Unlike SUPPLY-001, which blocks specific version ranges of a patchable dependency (langchain-core), no version-safe alternative exists for Terrarium because the project is unmaintained and no patch will ever be issued. The practical mitigation is removal of Terrarium from any agent deployment stack; the install-time interception ceiling of vectimus-supchain-010 is the maximum Cedar coverage achievable for this vulnerability.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/04/cohere-ai-terrarium-sandbox-flaw.html",
+        "title": "Cohere AI Terrarium Sandbox Flaw \u2014 The Hacker News",
+        "r2_key": "sources/VTMS-2026-0134/cohere-terrarium-cve-2026-5752.txt"
+      },
+      {
+        "url": "https://www.thehackerwire.com/terrarium-sandbox-escape-root-level-code-execution-cve-2026-5752/",
+        "title": "Terrarium Sandbox Escape: Root-Level Code Execution CVE-2026-5752 \u2014 The Hacker Wire",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.sentinelone.com/vulnerability-database/cve-2026-5752/",
+        "title": "CVE-2026-5752 \u2014 SentinelOne Vulnerability Database",
+        "r2_key": null
+      },
+      {
+        "url": "https://github.com/advisories/GHSA-cmpr-pw8g-6q6c",
+        "title": "GHSA-cmpr-pw8g-6q6c: Cohere AI Terrarium sandbox escape (GitHub Advisory)",
+        "r2_key": null
+      },
+      {
+        "url": "https://nflo.tech/knowledge-base/2026-04-14-cve-2026-5752-en/",
+        "title": "CVE-2026-5752 Knowledge Base Entry \u2014 nflo.tech",
+        "r2_key": null
+      },
+      {
+        "url": "https://forum.ksec.co.uk/t/cohere-ai-terrarium-sandbox-flaw-enables-root-code-execution-container-escape/14860",
+        "title": "Cohere AI Terrarium Sandbox Flaw Enables Root Code Execution and Container Escape \u2014 KSEC Forum",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Cohere AI Terrarium",
+      "Pyodide",
+      "Docker"
+    ],
+    "summary": "CVE-2026-5752 (CVSS 9.3) is a critical sandbox escape in Cohere AI's open-source Terrarium, a Pyodide/WebAssembly-based Python sandbox designed to execute untrusted LLM-generated code inside Docker containers. The mock document object in the sandbox is constructed as a plain JavaScript object literal, causing it to inherit from Object.prototype. An attacker traverses this prototype chain to reach the Function constructor, creates a function returning globalThis, then accesses Node.js internals \u2014 including require() \u2014 to execute arbitrary system commands as root on the underlying host and escape the Docker container. The project is no longer actively maintained, making a patch extremely unlikely. The exploit fires entirely inside Terrarium's JavaScript runtime and does not cross a Vectimus-interceptable tool-call boundary, placing the core mechanism outside Cedar's enforcement reach. The existing vectimus-supchain-010 general npm verification gate provides partial install-time mitigation if Terrarium is installed via npm. This is the second JavaScript prototype/constructor-chain sandbox escape targeting AI agent code execution infrastructure classified by VTMS in 2026 (cf. VTMS-2026-0123, CVE-2026-27597). Discovered by researcher Jeremy Brown; published April 14\u201322, 2026.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0135",
+    "title": "CVE-2026-27952 (CVSS 8.8): Agenta-AI RestrictedPython Sandbox Escape via numpy Allowlist Bypass Enables Authenticated RCE on API Server",
+    "discovered_at": "2026-05-06T00:00:00Z",
+    "incident_date": "2026-02-26",
+    "severity": 3,
+    "owasp_category": "ASI05: Unsafe Code Execution",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 16.1",
+      "CIS 16.10"
+    ],
+    "cve_ids": [
+      "CVE-2026-27952"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses this vulnerability. The attack vector \u2014 authenticated HTTP calls to Agenta-AI's server-side code evaluator \u2014 falls entirely outside the tool-call boundary where Vectimus enforces Cedar policies. SUPPLY-001 targets langchain-core package installs; vectimus-supchain-001 through vectimus-supchain-010 govern npm/pip package operations executed by AI coding agents. None of these intercept requests made to a third-party LLMOps platform's backend API. Because the root cause is out of Vectimus's enforcement scope, no Cedar policy is recommended.",
+    "existing_policy_ids": [],
+    "gap_description": "CVE-2026-27952 exploits a misconfigured RestrictedPython allowlist inside Agenta-AI's server-side code evaluator. The exploit path is: authenticated HTTP request \u2192 Agenta API endpoint \u2192 numpy.ma.core.inspect escape \u2192 sys.modules \u2192 os.system with attacker-controlled arguments. Every step occurs within Agenta's backend container; there is no AI coding agent tool call that Vectimus pretool hooks could intercept. Vectimus Cedar policies operate exclusively at the tool-call boundary (shell_command, file_write, package_operation, etc.) for supported agents (Claude Code, Cursor, GitHub Copilot). Server-side RCE in a self-hosted LLMOps platform is structurally outside that perimeter. Remediation belongs to the platform operator: upgrade to Agenta v0.48.1+ (numpy removed from allowlist) or v0.60+ (RestrictedPython replaced entirely).",
+    "sources": [
+      {
+        "url": "https://github.com/Agenta-AI/agenta/security/advisories/GHSA-pmgp-2m3v-34mq",
+        "title": "GitHub Security Advisory GHSA-pmgp-2m3v-34mq \u2014 Agenta-AI sandbox escape via numpy allowlist bypass",
+        "r2_key": "sources/VTMS-2026-0135/agenta-cve-2026-27952-sandbox-escape.txt"
+      },
+      {
+        "url": "https://www.thehackerwire.com/agenta-api-sandbox-escape-leads-to-arbitrary-code-execution-cve-2026-27952/",
+        "title": "The Hacker Wire: Agenta API sandbox escape leads to arbitrary code execution (CVE-2026-27952)",
+        "r2_key": null
+      },
+      {
+        "url": "https://cve.threatint.eu/CVE/CVE-2026-27952",
+        "title": "ThreatInt CVE record: CVE-2026-27952",
+        "r2_key": null
+      },
+      {
+        "url": "https://cymulate.com/blog/the-race-to-ship-ai-tools-left-security-behind-part-1-sandbox-escape/",
+        "title": "Cymulate: The Race to Ship AI Tools Left Security Behind \u2014 Part 1: Sandbox Escape",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Agenta-AI",
+      "Agenta-API"
+    ],
+    "summary": "CVE-2026-27952 (CVSS 8.8, CWE-94) is a Python sandbox escape in Agenta-AI's LLMOps platform affecting versions prior to 0.48.1. The custom code evaluator's RestrictedPython sandbox incorrectly allowlisted numpy as a safe package; attackers traverse numpy.ma.core.inspect to reach sys.modules and call os.system with arbitrary arguments on the API server. Any authenticated user on a self-hosted Agenta instance can achieve full container-level code execution, exposing the filesystem, environment variables, and container secrets. The vulnerability was patched in v0.48.1 (numpy removed from allowlist); v0.60+ replaced RestrictedPython entirely. The incident illustrates a structural risk in LLMOps platforms that expose code evaluation surfaces without sufficiently hardened sandboxes \u2014 a pattern observable across multiple AI development tools shipped under velocity-first pressures in 2025\u20132026.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0136",
+    "title": "Microsoft Agent Governance Toolkit Authentication Bypass: Caller-Controlled Agent Identity, Circular verify_peer Logic, and Unused Auth Primitives Across Five Language Ports",
+    "discovered_at": "2026-05-06T00:00:00Z",
+    "incident_date": "2026-04-26",
+    "severity": 3,
+    "owasp_category": "ASI03: Identity and Privilege Abuse",
+    "nist_ai_rmf": "GV-1",
+    "cis_controls": [
+      "CIS 5.1",
+      "CIS 6.1",
+      "CIS 16.2",
+      "CIS 18.1"
+    ],
+    "cve_ids": [],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses authentication bypass within third-party agent governance frameworks. The exploitable vectors \u2014 caller-controlled X-Agent-ID HTTP headers accepted as trusted identity, circular verify_peer self-signature logic that always returns true, and in-memory-only audit logs \u2014 all operate at the HTTP network layer and within the toolkit's internal runtime, entirely outside Vectimus's tool-call interception boundary. This pattern is consistent with prior out-of-scope ASI03 findings: VTMS-2026-0100 (Cloudflare Agents SDK spoofed-header IDOR) and VTMS-2026-0028 (FastMCP OAuth confused deputy). Cedar pretool hooks fire on agent-initiated tool calls; they do not intercept inbound HTTP traffic to third-party framework servers or validate the internal cryptographic logic of external runtimes.",
+    "existing_policy_ids": [],
+    "gap_description": "The authentication bypass operates entirely outside Vectimus's enforcement boundary. The X-Agent-ID HTTP header is accepted as trusted agent identity by the toolkit's HTTP server before any agent-issued tool call occurs. The circular verify_peer flaw \u2014 signing locally-chosen values with locally-held keys and verifying the resulting signature against itself \u2014 is an internal cryptographic failure in the framework runtime. The six exported authentication primitives having zero production callers is a deployment/configuration deficiency, not a tool-call-time event. In-memory-only audit logging is a framework internals concern. No Cedar policy can intercept or remediate vulnerabilities that reside within a third-party runtime's own trust establishment layer.",
+    "sources": [
+      {
+        "url": "https://www.flyingpenguin.com/authentication-bypass-in-microsoft-agent-governance-toolkit-at-573f989/",
+        "title": "Authentication Bypass in Microsoft Agent Governance Toolkit at 573f989",
+        "r2_key": "sources/VTMS-2026-0136/microsoft-agent-governance-toolkit-auth-bypass.txt"
+      },
+      {
+        "url": "https://github.com/microsoft/agent-governance-toolkit",
+        "title": "microsoft/agent-governance-toolkit \u2014 GitHub",
+        "r2_key": null
+      },
+      {
+        "url": "https://adversa.ai/blog/top-agentic-ai-security-resources-may-2026/",
+        "title": "Top Agentic AI Security Resources \u2014 May 2026 | Adversa AI",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Microsoft Agent Governance Toolkit",
+      "agentmesh",
+      "agentmesh-mcp"
+    ],
+    "summary": "Flying Penguin disclosed on April 26, 2026 that Microsoft's Agent Governance Toolkit \u2014 released April 2, 2026 as an open-source runtime security framework claiming to cover all 10 OWASP Agentic risks \u2014 ships with fundamental identity and authentication bypass vulnerabilities across its Rust, Python, TypeScript, .NET, and Go ports. Caller-controlled HTTP headers (X-Agent-ID) are accepted as trusted agent identity without any verification. The verify_peer function signs locally-chosen values with locally-held keys and then verifies its own signature, making the authentication check circular and always-true. Six authentication primitives are exported and unit-tested but have zero production callers anywhere in the codebase. Audit logging is in-memory only with no chain integrity. The .NET port silently attributes all agent actions to 'did:mcp:anonymous' when authentication is unconfigured. No CVE has been assigned and no patch was indicated at disclosure. The irony \u2014 a governance framework covering all 10 OWASP Agentic risks that itself has fundamental authentication bypass \u2014 creates severe false confidence risk for any organisation deploying it to secure agent workloads. All attack surfaces reside within the toolkit's HTTP and runtime layers, outside Vectimus's tool-call enforcement boundary.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0137",
+    "title": "NousResearch Hermes Agent v0.8.0: Four Critical Findings \u2014 Unrestricted Shell/File Execution, Container Approval Bypass, and Persistent SKILL.md Prompt Injection",
+    "discovered_at": "2026-05-06T00:00:00Z",
+    "incident_date": "2026-04-11",
+    "severity": 4,
+    "owasp_category": "ASI02: Tool Misuse",
+    "nist_ai_rmf": "GV-1",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 3.3",
+      "CIS 16.1"
+    ],
+    "cve_ids": [],
+    "coverage_status": "partial",
+    "coverage_detail": "C1 (arbitrary bash with regex-only detection): vectimus-destops-001 through -006 block recursive deletion of root/home directories, disk destruction via mkfs and dd, fork bomb execution, recursive chmod 777, block-device overwrites, and governance-bypass commands; vectimus-codexec-001 blocks curl|sh, wget|sh, and PowerShell download-execute patterns. These policies intercept the most dangerous known shell patterns at tool-call time; however, arbitrary bash commands not matching these patterns are not blocked, as Cedar cannot enumerate all possible harmful shell commands without breaking legitimate use. C2 (unrestricted file reads including /etc/passwd and SSH keys): vectimus-secrets-001 blocks .env file reads; vectimus-secrets-002 blocks reads under .ssh/ and .aws/ directories; vectimus-secrets-003 blocks reads under */secrets/* directories, credentials.json, and token.json; vectimus-secrets-004 blocks shell commands that cat private key files. SSH private keys are therefore covered. However, no existing rule blocks file_read of Unix system authentication databases such as /etc/passwd, /etc/shadow, or /etc/group \u2014 a gap confirmed by this audit. C3 (container approval bypass): Vectimus pretool hooks are registered at the agent-tool integration layer and fire on every tool call independently of Hermes's own conditional approval flow. Cedar policies continue to enforce even when the agent framework skips its internal approval checks in containerised environments. The bypass therefore does not circumvent Vectimus; it bypasses the human-review workflow that sits upstream of tool-call invocation, which is an organisation-specific process outside Cedar's enforcement boundary. C4 (persistent SKILL.md prompt injection): no existing Vectimus Cedar policy blocks file_write to agent skill or memory files. Hermes loads SKILL.md as system-prompt-level instructions in every subsequent session, making agent-written SKILL.md files a persistent prompt injection vector. The write action itself is interceptable at tool-call time; no policy currently targets it.",
+    "existing_policy_ids": [
+      "vectimus-destops-001",
+      "vectimus-destops-002",
+      "vectimus-destops-003",
+      "vectimus-destops-004",
+      "vectimus-destops-005",
+      "vectimus-destops-006",
+      "vectimus-codexec-001",
+      "vectimus-secrets-001",
+      "vectimus-secrets-002",
+      "vectimus-secrets-003",
+      "vectimus-secrets-004"
+    ],
+    "gap_description": "Two unaddressed tool-call-time gaps identified by this audit: (1) System authentication file reads \u2014 existing secrets policies cover named credential files (.env, .ssh/, .aws/, credentials.json) but no rule forbids file_read of Unix system authentication databases. A new rule in the secrets pack should forbid file_read where context.file_path matches '/etc/passwd', '/etc/shadow', or '/etc/group'. A corresponding shell_command rule should block 'cat /etc/passwd', 'cat /etc/shadow', and equivalent patterns. (2) Agent skill/memory file writes \u2014 Hermes Agent loads SKILL.md (and similar agent-skill files) as system-prompt-level instructions in all future sessions, turning any agent-written skill file into a persistent prompt injection vector. No fileint rule currently blocks writes to these files. A new rule in the fileint pack should forbid file_write where context.file_path matches '*SKILL.md', '*SKILLS.md', '*/.skills/*', or '*AGENT_SKILLS*'. This would sever the write step of the persistence chain at tool-call time, though the downstream loading of these files as system-prompt instructions is LLM input manipulation and outside Cedar's enforcement boundary. Additionally, C3 (Hermes unconditionally bypasses all approval checks in Docker, Singularity, Modal, and Daytona container environments via agent-internal conditional logic) is rooted in agent framework internals and bypasses human review workflows \u2014 both explicitly outside Cedar's enforcement scope.",
+    "sources": [
+      {
+        "url": "https://github.com/NousResearch/hermes-agent/issues/7826",
+        "title": "NousResearch/hermes-agent \u2014 Security Audit: 4 Critical Findings (Issue #7826)",
+        "r2_key": "sources/VTMS-2026-0137/hermes-agent-security-audit-critical-findings.txt"
+      },
+      {
+        "url": "https://github.com/NousResearch/hermes-agent/issues/8886",
+        "title": "NousResearch/hermes-agent \u2014 Security Issue #8886",
+        "r2_key": "sources/VTMS-2026-0137/hermes-agent-security-audit-critical-findings.txt"
+      },
+      {
+        "url": "https://github.com/NousResearch/hermes-agent/issues/496",
+        "title": "NousResearch/hermes-agent \u2014 Security Issue #496",
+        "r2_key": "sources/VTMS-2026-0137/hermes-agent-security-audit-critical-findings.txt"
+      },
+      {
+        "url": "https://adversa.ai/blog/top-agentic-ai-security-resources-may-2026/",
+        "title": "Top Agentic AI Security Resources \u2014 May 2026 | Adversa AI",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "NousResearch Hermes Agent",
+      "hermes-agent"
+    ],
+    "summary": "A public security audit of NousResearch Hermes Agent v0.8.0, disclosed April 11, 2026 via GitHub Issue #7826, identified four critical and nine high-severity findings. C1: the LLM can execute arbitrary bash commands with only regex-based detection; the regex is trivially bypassed by minor obfuscation. C2: the agent reads any file on the filesystem without access controls, including /etc/passwd and SSH private keys. C3: all agent-internal approval checks are unconditionally skipped when a containerised environment is detected (Docker, Singularity, Modal, Daytona), removing the human-in-the-loop gate for the most common deployment pattern. C4: agents can create persistent SKILL.md files that Hermes loads as system-prompt-level instructions in every subsequent session, functioning as a cross-session prompt injection vector. The default configuration is ALLOW-ALL. No CVE has been assigned and fix status is unclear. Vectimus Cedar policies partially address C1 (specific destructive and remote-execution shell patterns via destops and codexec packs) and C2 (SSH key directory reads, .env, and named credential files via secrets pack). C3 bypasses human review workflows, which are an organisation-specific process outside Cedar's enforcement boundary, though Vectimus pretool hooks still fire on tool calls in container environments. C4's file_write step is interceptable at tool-call time but is not currently targeted by any fileint rule; the downstream loading of SKILL.md as system-prompt instructions is LLM input manipulation and outside Cedar's enforcement scope.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "tool_calling_only"
+  }
+]
