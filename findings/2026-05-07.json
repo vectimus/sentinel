@@ -1,0 +1,380 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0138",
+    "title": "CVE-2026-25874: Hugging Face LeRobot Unauthenticated RCE via Pickle Deserialization in gRPC PolicyServer",
+    "discovered_at": "2026-05-07T00:00:00Z",
+    "incident_date": "2026-04-28",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "MAP-5.2",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 2.7",
+      "CIS 16.2"
+    ],
+    "cve_ids": [
+      "CVE-2026-25874"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus policy covers CVE-2026-25874 or the LeRobot gRPC PolicyServer attack surface. SUPPLY-001 (supply_chain_version.cedar) targets CVE-2025-68664 in langchain-core. The supchain pack (vectimus-supchain-001 through vectimus-supchain-010) addresses dependency confusion, malicious publish, unverified npm installs, and non-standard pip indexes \u2014 none reference LeRobot or the lerobot package. However, the exploitation pathway \u2014 an unauthenticated external attacker connecting to an exposed gRPC endpoint and delivering a crafted pickle payload \u2014 is entirely outside Vectimus's tool-call enforcement boundary, so no Cedar policy can prevent or detect the attack at tool-call time.",
+    "existing_policy_ids": [],
+    "gap_description": "The attack occurs at service runtime when an external network peer sends a malicious pickle payload to the gRPC PolicyServer; no AI agent tool call is involved in the exploit chain. While Cedar could theoretically block `pip install lerobot` for pre-patch versions (analogous to SUPPLY-001 for langchain-core), no patched version exists at disclosure time (v0.6.0 fix is planned, not released), and blocking installation would offer no protection against already-deployed instances. The root vulnerability \u2014 pickle.loads() on attacker-controlled gRPC input with no auth and no TLS \u2014 is a service-level flaw exploitable entirely outside the agent tool-call boundary. This incident is out of scope for Cedar enforcement.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/04/critical-cve-2026-25874-leaves-hugging.html",
+        "title": "Critical CVE-2026-25874 Leaves Hugging Face LeRobot Open to Unauthenticated RCE \u2014 The Hacker News",
+        "r2_key": "sources/VTMS-2026-0138/lerobot-cve-2026-25874-rce.md"
+      },
+      {
+        "url": "https://www.resecurity.com/blog/article/cve-2026-25874-hugging-face-lerobot-unauthenticated-rce-via-pickle-deserialization",
+        "title": "CVE-2026-25874: Hugging Face LeRobot Unauthenticated RCE via Pickle Deserialization \u2014 Resecurity",
+        "r2_key": null
+      },
+      {
+        "url": "https://chocapikk.com/posts/2026/lerobot-pickle-rce/",
+        "title": "LeRobot Pickle RCE: Technical Deep-Dive \u2014 chocapikk",
+        "r2_key": null
+      },
+      {
+        "url": "https://labs.cloudsecurityalliance.org/research/csa-research-note-lerobot-cve-2026-25874-unauth-rce-20260429/",
+        "title": "CSA Research Note: LeRobot CVE-2026-25874 Unauthenticated RCE \u2014 Cloud Security Alliance Labs",
+        "r2_key": null
+      },
+      {
+        "url": "https://cybersecuritynews.com/hugging-face-lerobot-vulnerability/",
+        "title": "Hugging Face LeRobot Vulnerability Enables Remote Code Execution \u2014 Cybersecurity News",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Hugging Face LeRobot",
+      "gRPC PolicyServer"
+    ],
+    "summary": "CVE-2026-25874 (CVSS 9.3) is an unpatched unsafe deserialization flaw in Hugging Face LeRobot's async inference PolicyServer component. The server calls pickle.loads() on attacker-controlled data in two gRPC RPC handlers \u2014 SendPolicyInstructions and SendObservations \u2014 while binding with add_insecure_port (no TLS, no authentication). Any unauthenticated attacker who can reach the exposed gRPC port can craft a pickle payload that achieves arbitrary code execution on the host. The severity is compounded by the fact that the PolicyServer directly governs actuator commands on physical robotic hardware, meaning successful exploitation can manifest as physical movement or hardware damage beyond the digital compromise. Disclosed April 28, 2026; no patch is available \u2014 a fix is planned for v0.6.0. The attack vector (external network access to an exposed gRPC service) is entirely outside Vectimus's tool-call enforcement boundary: the exploit chain contains no AI agent tool call.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0139",
+    "title": "Microsoft Entra ID Agent ID Administrator Role Scope Overreach Enables Full Service Principal Takeover",
+    "discovered_at": "2026-05-07T00:00:00Z",
+    "incident_date": "2026-04-23",
+    "severity": 4,
+    "owasp_category": "ASI03: Identity and Privilege Abuse",
+    "nist_ai_rmf": "GV-1",
+    "cis_controls": [
+      "CIS 5.4",
+      "CIS 6.8"
+    ],
+    "cve_ids": [],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No Vectimus Cedar policy addresses cloud IAM role permission-scope validation flaws. Vectimus enforces policy at the tool-call boundary (shell commands, file reads/writes, MCP tool invocations, web fetches issued by an AI agent). The Agent ID Administrator scope overreach is a server-side authorization flaw within Microsoft Entra ID's identity control plane, exploitable directly via the Microsoft Graph API by any account holder with the role \u2014 human or automated \u2014 without passing through any AI agent tool-call hook. Reviewed policies vectimus-infra-001 through -005 (cloud infrastructure commands), vectimus-secrets-001 through -005 (credential file access), vectimus-agentgov-001 through -004 (agent spawning), and vectimus-mcp-001 through -011 (MCP tool governance); none cover this attack vector.",
+    "existing_policy_ids": [],
+    "gap_description": "The root cause is a permission-scope validation gap in Entra ID's Agent ID Administrator role definition: the role's permission to update service principal owners was not restricted to agent-backed objects, allowing enumeration and credential injection across arbitrary privileged service principals in the tenant. Because the flaw resides entirely within Microsoft's cloud identity control plane, and because the exploit path (direct Graph API calls) does not require an AI agent to perform any tool call that Vectimus could intercept, this incident is outside Vectimus's enforcement boundary. Remediation required a server-side patch by Microsoft, shipped April 9, 2026. No Cedar policy can prevent authorization flaws in a third-party cloud IAM platform.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/04/microsoft-patches-entra-id-role-flaw.html",
+        "title": "Microsoft Patches Entra ID Role Flaw",
+        "r2_key": "sources/VTMS-2026-0139/entra-id-agent-role-priv-esc.md"
+      },
+      {
+        "url": "https://www.silverfort.com/blog/agent-id-administrator-scope-overreach-service-principal-takeover-in-entra-id/",
+        "title": "Agent ID Administrator Scope Overreach: Service Principal Takeover in Entra ID (Silverfort)",
+        "r2_key": null
+      },
+      {
+        "url": "https://hackread.com/microsoft-entra-agent-id-flaw-tenant-takeover/",
+        "title": "Microsoft Entra Agent ID Flaw Enables Tenant Takeover",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.scworld.com/news/microsoft-patches-entra-id-bug-that-let-ai-agents-escalate-privileges",
+        "title": "Microsoft Patches Entra ID Bug That Let AI Agents Escalate Privileges (SC World)",
+        "r2_key": null
+      },
+      {
+        "url": "https://securityaffairs.com/191414/security/microsoft-fixes-entra-id-flaw-enabling-privilege-escalation.html",
+        "title": "Microsoft Fixes Entra ID Flaw Enabling Privilege Escalation (Security Affairs)",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Microsoft Entra ID",
+      "Microsoft Agent Identity Platform",
+      "Microsoft Graph API"
+    ],
+    "summary": "Microsoft's Agent ID Administrator role \u2014 introduced as part of the Agent Identity Platform to grant AI agents first-class identities in Entra ID \u2014 contained a permission-scope validation gap that allowed any account holding the role to take over arbitrary service principals across the tenant. Because the role's permission to update service principal owners was not scoped to agent-backed objects, attackers could enumerate any privileged SP, inject credentials, and authenticate as that SP. Disclosed to MSRC March 1, 2026, patched across all Microsoft clouds by April 9, 2026, and publicly disclosed by Silverfort on April 23, 2026. The flaw illustrates a systemic risk in the nascent AI agent identity layer: cloud providers introducing AI-native IAM roles without adequate permission-scope isolation inadvertently create new tenant-wide privilege escalation paths that are independent of agent behaviour and not addressable by tool-call governance controls such as Vectimus Cedar policies.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0141",
+    "title": "CVE-2026-7191: QnABot on AWS Static-eval Sandbox Bypass Enables Lambda RCE and Backend Resource Exfiltration",
+    "discovered_at": "2026-05-07T00:00:00Z",
+    "incident_date": "2026-04-27",
+    "severity": 3,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 2.7",
+      "CIS 16.1"
+    ],
+    "cve_ids": [
+      "CVE-2026-7191"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No Vectimus Cedar policy addresses server-side sandbox bypass vulnerabilities in cloud-hosted conversational AI services. The attack vector \u2014 prototype manipulation inside the static-eval npm sandbox within an AWS Lambda fulfillment function, accessed via QnABot's administrative web interface \u2014 lies entirely outside Vectimus's tool-call enforcement boundary. Existing supply-chain policies (SUPPLY-001, vectimus-supchain-001 through -004, vectimus-supchain-010) block coding-agent package operations such as npm publish, non-registry installs, and unverified npm installs; they have no reach into the execution environment of an independently deployed AWS service. Existing secret-access policies (vectimus-secrets-001 through -005) block file reads and shell-based env enumeration by coding agents; they cannot intercept credential exposure that occurs inside a Lambda execution context triggered by a QnABot admin request.",
+    "existing_policy_ids": [],
+    "gap_description": "The exploit executes entirely within QnABot's backend Lambda function and is triggered through QnABot's own administrative interface, not through a coding agent (Claude Code, Cursor, or GitHub Copilot) issuing a tool call. Vectimus pretool hooks are not present in the QnABot Lambda execution environment or in any AWS-hosted service's runtime. A Cedar policy cannot intercept prototype manipulation that occurs server-side in a deployed cloud application. Remediation is at the dependency management and application-security layer: upgrading to QnABot v7.3.0 (which replaces static-eval with a restricted custom evaluator) and applying least-privilege IAM scoping to the Lambda execution role.",
+    "sources": [
+      {
+        "url": "https://aws.amazon.com/security/security-bulletins/rss/2026-020-aws/",
+        "title": "AWS Security Bulletin 2026-020: QnABot on AWS CVE-2026-7191",
+        "r2_key": "sources/VTMS-2026-0141/qnabot-cve-2026-7191-sandbox-bypass.md"
+      },
+      {
+        "url": "https://radar.offseq.com/threat/cve-2026-7191-cwe-94-improper-control-of-generatio-bdaccdc6",
+        "title": "CVE-2026-7191 CWE-94 Threat Radar: Improper Control of Code Generation in QnABot static-eval",
+        "r2_key": null
+      },
+      {
+        "url": "https://cve.threatint.eu/CVE/CVE-2026-7191",
+        "title": "CVE-2026-7191 Threat Intelligence Entry",
+        "r2_key": null
+      },
+      {
+        "url": "http://www.antihackingonline.com/potential-risk-of-cve/cve-2026-7191-static-eval-npm-package-in-qnabot-on-aws-versions-7-2-4-and-earlier-design-weakness-28th-apr-2026/",
+        "title": "CVE-2026-7191 Analysis: static-eval Design Weakness in QnABot \u2264 7.2.4",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "QnABot on AWS",
+      "Amazon Bedrock",
+      "Amazon Lex",
+      "AWS Lambda"
+    ],
+    "summary": "CVE-2026-7191 discloses a JavaScript sandbox bypass in the static-eval npm package used by QnABot on AWS (versions \u2264 7.2.4). An authenticated administrator can craft a prototype-manipulation expression through the QnABot admin interface, escaping the intended expression sandbox and achieving arbitrary code execution within the Lambda fulfillment function. Successful exploitation exposes Lambda environment variables (which typically contain cloud credentials and service endpoints), OpenSearch indices, S3 objects, and DynamoDB tables that are not accessible through the standard admin UI. AWS patched the vulnerability in QnABot v7.3.0 by removing static-eval and replacing it with a purpose-built restricted evaluator; the issue was responsibly disclosed by Endor Labs. The attack path runs entirely within AWS-hosted infrastructure and is triggered through QnABot's own web admin interface \u2014 no coding agent tool call is involved, placing this incident entirely outside Vectimus's tool-call enforcement boundary.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0142",
+    "title": "CVE-2026-35228: Unauthenticated SQL Injection in Oracle MCP Server Helper Tool Enables Remote Database Compromise",
+    "discovered_at": "2026-05-07T00:00:00Z",
+    "incident_date": "2026-04-01",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GV-6",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 7.1",
+      "CIS 16.1"
+    ],
+    "cve_ids": [
+      "CVE-2026-35228"
+    ],
+    "coverage_status": "partial",
+    "coverage_detail": "Policy vectimus-mcp-001 (MCP server allowlisting) prevents AI agents from calling any MCP server not explicitly approved by the organisation. If the Oracle MCP Server Helper Tool is absent from the approved list, Vectimus blocks all agent tool calls to it, reducing the agent-side attack surface. However, CVE-2026-35228 is exploitable by unauthenticated network attackers sending HTTP requests directly to the server \u2014 an attack path that bypasses the agent and therefore bypasses Vectimus's tool-call interception entirely. Server-side patching to a fixed version is the primary required mitigation.",
+    "existing_policy_ids": [
+      "vectimus-mcp-001"
+    ],
+    "gap_description": "Vectimus cannot intercept direct unauthenticated HTTP requests sent by external attackers to MCP server infrastructure; that attack vector is entirely outside the tool-call boundary. No Cedar policy can substitute for deploying a patched version of the Oracle MCP Server Helper Tool or restricting network access to it. The agent-side exposure (an agent being directed to use the vulnerable server) is already covered by vectimus-mcp-001 allowlisting.",
+    "sources": [
+      {
+        "url": "https://www.oracle.com/security-alerts/cpuapr2026.html",
+        "title": "Oracle Critical Patch Update Advisory \u2014 April 2026",
+        "r2_key": "sources/VTMS-2026-0142/oracle-mcp-server-cve-2026-35228.md"
+      },
+      {
+        "url": "https://bitninja.com/blog/oracle-mcp-tool-vulnerability-server-security-alert/",
+        "title": "Oracle MCP Tool Vulnerability: Server Security Alert \u2014 BitNinja",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.redpacketsecurity.com/cve-alert-cve-2026-35228-oracle-corporation-oracle-mcp-server-helper-tool-product-of-oracle-open-source-projects/",
+        "title": "CVE Alert: CVE-2026-35228 Oracle MCP Server Helper Tool \u2014 RedPacket Security",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Oracle MCP Server Helper Tool",
+      "Model Context Protocol"
+    ],
+    "summary": "CVE-2026-35228 is an easily exploitable, unauthenticated SQL injection vulnerability in Oracle's MCP Server Helper Tool (versions 1.0.1\u20131.0.156), accessible over HTTP without credentials. Attackers with network access can execute arbitrary SQL queries, enabling data theft and database integrity compromise; Oracle's advisory notes the vulnerability can cross trust boundaries to affect broader database infrastructure. The attack path is direct HTTP exploitation \u2014 it does not require an AI agent as an intermediary \u2014 placing the primary attack vector outside Vectimus's tool-call enforcement boundary. Oracle addressed this in its April 2026 Critical Patch Update. From a Vectimus perspective, the MCP server allowlisting policy (vectimus-mcp-001) reduces agent-side exposure by blocking unapproved MCP servers, but server-side patching is the essential remediation. This incident illustrates the supply-chain risk of deploying MCP server components from any vendor: a vulnerability in the server can be exploited independently of any AI agent controls layered on top.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0143",
+    "title": "CVE-2026-42237: SQL Injection in n8n Snowflake and Legacy MySQL v1 Nodes Affects AI Pipeline Infrastructure",
+    "discovered_at": "2026-05-07T00:00:00Z",
+    "incident_date": "2026-05-01",
+    "severity": 3,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 16.1"
+    ],
+    "cve_ids": [
+      "CVE-2026-42237"
+    ],
+    "coverage_status": "partial",
+    "coverage_detail": "Policy vectimus-supchain-010 blocks unverified npm package installs (package_operation action) and would incidentally prevent an AI agent from autonomously installing a vulnerable n8n version if the package has not been verified. However, this rule does not cover npm invocations made via shell_command (as opposed to the package_operation action type), does not target n8n version ranges specifically, and \u2014 critically \u2014 cannot protect against the SQL injection in an already-deployed n8n instance. The vulnerable query construction in n8n's Snowflake and legacy MySQL v1 nodes executes entirely server-side within n8n's runtime, outside Vectimus's tool-call enforcement boundary.",
+    "existing_policy_ids": [
+      "vectimus-supchain-010"
+    ],
+    "gap_description": "No Cedar policy specifically targets vulnerable n8n version installations. A dedicated rule in the supchain pack blocking package_operation and shell_command npm/npx installs of n8n below v1.123.32 (v1.x line) or below v2.17.4 / v2.18.1 (v2.x line) would close the autonomous-installation vector, analogous to SUPPLY-001 for langchain-core. The SQL injection in n8n nodes that are already deployed as infrastructure executes server-side and remains entirely outside Vectimus's enforcement boundary regardless of any Cedar policy.",
+    "sources": [
+      {
+        "url": "https://bitninja.com/blog/sql-injection-vulnerability-in-n8n-cve-2026-42237/",
+        "title": "SQL Injection Vulnerability in n8n \u2013 CVE-2026-42237",
+        "r2_key": "sources/VTMS-2026-0143/n8n-cve-2026-42237-sql-injection.md"
+      },
+      {
+        "url": "https://radar.offseq.com/threat/cve-2026-42237-cwe-89-improper-neutralization-of-s-5f1f0fbf",
+        "title": "CVE-2026-42237 CWE-89 Improper Neutralization \u2014 Offseq Radar",
+        "r2_key": null
+      },
+      {
+        "url": "https://cve.threatint.eu/CVE/CVE-2026-42237",
+        "title": "CVE-2026-42237 \u2014 ThreatInt CVE Database",
+        "r2_key": null
+      },
+      {
+        "url": "https://github.com/n8n-io/n8n/security/advisories/GHSA-v98v-ff95-f3cp",
+        "title": "GHSA-v98v-ff95-f3cp: n8n SQL Injection in Snowflake and Legacy MySQL v1 Nodes",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "n8n",
+      "Snowflake node",
+      "MySQL v1 node"
+    ],
+    "summary": "CVE-2026-42237 (CVSS 4.0: 5.3 Medium, CWE-89) is a SQL injection vulnerability in the n8n workflow automation platform that bypasses the fix for a prior SQL injection advisory. The Snowflake node and legacy MySQL v1 node construct queries by directly interpolating user-controlled table names, column names, and update keys without identifier escaping. An authenticated attacker with access to these nodes can inject SQL against connected databases, achieving unauthorised data access or manipulation. The vulnerability is patched in n8n v1.123.32, v2.17.4, and v2.18.1. n8n is widely adopted as orchestration infrastructure in AI agent pipelines; vulnerable deployments expose the underlying data stores that agents read from and write to, making this a meaningful supply chain risk for AI-pipeline-dependent organisations.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0144",
+    "title": "CVE-2026-33102: Microsoft 365 Copilot Open Redirect Enables Trust-Chain Elevation of Privilege in AI Service Path",
+    "discovered_at": "2026-05-07T00:00:00Z",
+    "incident_date": "2026-04-23",
+    "severity": 4,
+    "owasp_category": "ASI09: Trust Boundary Violations",
+    "nist_ai_rmf": "MG-2.4",
+    "cis_controls": [
+      "CIS 16.1",
+      "CIS 16.7",
+      "CIS 12.2"
+    ],
+    "cve_ids": [
+      "CVE-2026-33102"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses this vulnerability class. CVE-2026-33102 is a server-side open redirect (CWE-601) in Microsoft 365 Copilot's cloud service infrastructure \u2014 the flaw resides in Microsoft's HTTP service-path URL redirect handling, not in any local agent tool call that Vectimus pretool hooks can intercept. Cedar policies operate exclusively at the local tool-call boundary on the developer machine; they cannot reach into a remote AI service's network-layer redirect logic. This is a gateway/control-plane attack that is entirely outside the Vectimus enforcement boundary, and no Cedar policy can prevent it.",
+    "existing_policy_ids": [],
+    "gap_description": null,
+    "sources": [
+      {
+        "url": "https://thewindowsupdate.com/2026/04/23/cve-2026-33102-microsoft-365-copilot-elevation-of-privilege-vulnerability/",
+        "title": "CVE-2026-33102: Microsoft 365 Copilot Elevation of Privilege Vulnerability",
+        "r2_key": "sources/VTMS-2026-0144/m365-copilot-cve-2026-33102-eop.md"
+      },
+      {
+        "url": "https://cve.threatint.eu/CVE/CVE-2026-33102",
+        "title": "CVE-2026-33102 \u2014 cve.threatint.eu",
+        "r2_key": null
+      },
+      {
+        "url": "https://vulnerability.circl.lu/vuln/cve-2026-33102",
+        "title": "CVE-2026-33102 \u2014 vulnerability.circl.lu",
+        "r2_key": null
+      },
+      {
+        "url": "https://windowsforum.com/threads/cve-2026-33102-copilot-elevation-of-privilege-and-why-microsofts-confidence-matters.414941/",
+        "title": "CVE-2026-33102: Copilot Elevation of Privilege and Why Microsoft's Confidence Matters",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Microsoft 365 Copilot",
+      "Microsoft 365"
+    ],
+    "summary": "CVE-2026-33102 (CVSS 9.3) is a critical open redirect vulnerability (CWE-601) in Microsoft 365 Copilot patched in the April 2026 Patch Tuesday. An unauthorised network attacker can exploit the flaw to influence which URLs Copilot's service path follows, what content it accesses, how it responds, and which resources it reaches on behalf of users or tenants \u2014 a trust-chaining attack where the AI agent acts with more authority than authorised. Successful exploitation can expose embedded permissions, connected service data, and tenant content beyond user intent. The vulnerability is classified as an elevation of privilege because Copilot's effective access scope exceeds what the user sanctioned. Because the root cause is a server-side redirect flaw in Microsoft's cloud service infrastructure, it is entirely outside the Vectimus tool-call enforcement boundary; no Cedar pretool policy can intercept or mitigate it. Organisations should apply the April 2026 Patch Tuesday update immediately. The incident is content-worthy as a trend piece on trust-boundary vulnerabilities in hosted AI services \u2014 a class of risk that sits above local agent governance frameworks.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0145",
+    "title": "CVE-2026-42080: PPTAgent MCP Server Path Traversal via save_generated_slides Enables Arbitrary File Write Outside Workspace",
+    "discovered_at": "2026-05-07T00:00:00Z",
+    "incident_date": "2026-04-19",
+    "severity": 3,
+    "owasp_category": "ASI02: Tool Misuse",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 2.5",
+      "CIS 16.1",
+      "CIS 16.7"
+    ],
+    "cve_ids": [
+      "CVE-2026-42080"
+    ],
+    "coverage_status": "partial",
+    "coverage_detail": "vectimus-mcp-001 (server allowlisting) blocks all MCP servers by default, meaning PPTAgent's MCP server cannot be reached by the agent unless a user explicitly approves it. This provides baseline protection. However, once the server is allowlisted, no existing rule performs path traversal validation on MCP tool input parameters. The git-specific path traversal rules vectimus-mcp-010 and vectimus-mcp-011 cover mcp-server-git only and do not generalise to PPTAgent's save_generated_slides tool. The credential-path rules vectimus-mcp-003 and vectimus-mcp-004 check context.file_path for specific credential patterns but do not block traversal sequences generically, and PPTAgent uses the non-standard parameter name pptx_path which may not be surfaced as context.file_path in the Cedar evaluation context at all.",
+    "existing_policy_ids": [
+      "vectimus-mcp-001"
+    ],
+    "gap_description": "No defense-in-depth rule validates path-like MCP tool input parameters for traversal sequences (e.g. containing '..' or resolving to absolute paths outside the workspace) across approved MCP servers. The existing path checks in vectimus-mcp-010 target the mcp-server-git git_init tool specifically via context.file_path. PPTAgent's save_generated_slides tool exposes its path argument as pptx_path, a non-standard name that may not map to context.file_path, leaving it outside the reach of all current parameter inspection rules. Any user who approves the PPTAgent MCP server is therefore unprotected against a manipulated agent passing a traversal payload such as '../../.ssh/authorized_keys' or '/etc/cron.d/backdoor' as the pptx_path argument.",
+    "sources": [
+      {
+        "url": "https://cvereports.com/reports/CVE-2026-42080",
+        "title": "CVE-2026-42080: PPTAgent MCP Path Traversal Report",
+        "r2_key": "sources/VTMS-2026-0145/pptagent-cve-2026-42080-path-traversal.md"
+      },
+      {
+        "url": "https://dailycve.com/pptagent-path-traversal-arbitrary-file-write-critical/",
+        "title": "PPTAgent Path Traversal Arbitrary File Write \u2014 dailycve",
+        "r2_key": null
+      },
+      {
+        "url": "https://cve.threatint.eu/CVE/CVE-2026-42080",
+        "title": "CVE-2026-42080 Detail \u2014 threatint.eu",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "PPTAgent",
+      "Model Context Protocol",
+      "MCP server"
+    ],
+    "summary": "CVE-2026-42080 (CVSS 4.6, Medium) is a path traversal vulnerability in the MCP server bundled with PPTAgent, an agentic PowerPoint generation framework. The save_generated_slides MCP tool accepts a user-controlled pptx_path parameter and writes the generated file to that path without any workspace boundary enforcement or path normalisation. An authenticated low-privilege attacker \u2014 or a manipulated AI agent \u2014 can supply traversal sequences (e.g. ../../etc/cron.d/pwned) to write arbitrary content outside the project workspace, enabling privilege escalation via cron job overwrite, shell startup file persistence, SSH known_hosts tampering, and configuration file corruption. A fix implementing path normalisation and workspace boundary enforcement was released on 2026-04-19. The Vectimus allowlisting rule (vectimus-mcp-001) blocks all unapproved MCP servers by default, providing baseline protection, but no existing rule validates path parameters for traversal sequences once PPTAgent is approved \u2014 creating a defense-in-depth gap compounded by PPTAgent's use of the non-standard parameter name pptx_path.",
+    "recommended_action": "new_policy",
+    "recommended_policy_description": "Add a rule to the mcp pack (vectimus-mcp-012) that blocks MCP tool calls where any path-like input parameter contains path traversal sequences or absolute paths outside the workspace. The rule should check context.file_path for patterns containing '..' or starting with '/', and also introduce a parallel check on context.pptx_path (and equivalent non-standard path field names surfaced by MCP tools that do not follow the file_path convention). This generalises the existing git-specific traversal guard (vectimus-mcp-010) to all approved MCP servers whose tools accept filesystem path arguments, providing defense-in-depth for the class of arbitrary-path-write vulnerabilities exemplified by CVE-2026-42080.",
+    "content_worthy": true,
+    "content_angle": "new_policy_needed",
+    "enforcement_scope": "full"
+  }
+]
