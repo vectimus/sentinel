@@ -1,0 +1,109 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0146",
+    "title": "Microsoft Semantic Kernel Dual RCE: CVSS 9.8 eval() Bypass in Python SDK (CVE-2026-26030) and Arbitrary File Write via Exposed KernelFunction in .NET SDK (CVE-2026-25592)",
+    "discovered_at": "2026-05-08T00:00:00Z",
+    "incident_date": "2026-05-07",
+    "severity": 4,
+    "owasp_category": "ASI05: Unsafe Code Execution",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 2.7",
+      "CIS 18.3"
+    ],
+    "cve_ids": [
+      "CVE-2026-26030",
+      "CVE-2026-25592"
+    ],
+    "coverage_status": "partial",
+    "coverage_detail": "SUPPLY-001 (supchain pack) establishes version-pinning enforcement for vulnerable AI framework packages \u2014 blocking installation of langchain-core versions affected by CVE-2025-68664 (VTMS-2026-0032) at the shell_command and package_operation boundary \u2014 and this pattern is directly applicable to semantic-kernel. The fileint pack (vectimus-fileint-001 through vectimus-fileint-008) provides file write protections for CI/CD configs, key files, and governance config, but does not cover arbitrary host paths such as Windows Startup folders targeted by CVE-2026-25592. No existing policy in any pack blocks installation of vulnerable semantic-kernel Python SDK versions (<1.39.4) or .NET SDK versions (<1.71.0).",
+    "existing_policy_ids": [
+      "SUPPLY-001"
+    ],
+    "gap_description": "The supchain pack has no version-constraint rule for semantic-kernel analogous to SUPPLY-001 for langchain-core. Such a rule could intercept shell_command and package_operation calls that pin to semantic-kernel Python SDK versions below 1.39.4 (CVE-2026-26030) or issue dotnet package installs for Semantic Kernel .NET SDK versions below 1.71.0 (CVE-2026-25592), reducing exposure by preventing use of known-vulnerable releases. However, this addresses only the installation vector: the eval() bypass via Python class hierarchy traversal (CVE-2026-26030) and the inadvertently exposed DownloadFileAsync KernelFunction (CVE-2026-25592) both execute entirely inside Semantic Kernel's runtime after installation and cannot be intercepted at the tool-call boundary Vectimus monitors. Full remediation requires upgrading to patched framework versions.",
+    "sources": [
+      {
+        "url": "https://www.microsoft.com/en-us/security/blog/2026/05/07/prompts-become-shells-rce-vulnerabilities-ai-agent-frameworks/",
+        "title": "Prompts Become Shells: RCE Vulnerabilities in AI Agent Frameworks",
+        "r2_key": "sources/VTMS-2026-0146/semantic-kernel-cve-2026-26030-25592.txt"
+      },
+      {
+        "url": "https://advisories.gitlab.com/pkg/pypi/semantic-kernel/CVE-2026-26030/",
+        "title": "CVE-2026-26030 \u2014 semantic-kernel PyPI Advisory (GitLab)",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.sentinelone.com/vulnerability-database/cve-2026-25592/",
+        "title": "CVE-2026-25592 \u2014 SentinelOne Vulnerability Database",
+        "r2_key": null
+      },
+      {
+        "url": "https://nvd.nist.gov/vuln/detail/cve-2026-26030",
+        "title": "CVE-2026-26030 Detail \u2014 NVD",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Semantic Kernel",
+      "Microsoft Semantic Kernel Python SDK",
+      "Microsoft Semantic Kernel .NET SDK"
+    ],
+    "summary": "Microsoft's Defender Security Research Team (Uri Oren, Amit Eliahu, Dor Edry) disclosed two RCE-class vulnerabilities in the Semantic Kernel AI agent framework on 2026-05-07. CVE-2026-26030 (CVSS 9.8) exploits unsafe eval() string interpolation in the Python SDK's InMemoryVectorStore default filter: prompt injection drives Python class hierarchy traversal to bypass a blocklist and execute arbitrary host code; patched in Python SDK >=1.39.4. CVE-2026-25592 affects the .NET SDK's SessionsPythonPlugin, where DownloadFileAsync was inadvertently decorated as a [KernelFunction] tool, allowing a prompt injection to invoke the function directly and write arbitrary files to the host \u2014 including Windows Startup folders for persistence; patched in .NET SDK >=1.71.0. Both exploit chains use the LLM as an unwitting intermediary, converting prompt injection into host-level code or filesystem access via flaws in the framework's own execution mechanisms rather than through the agent's exposed tool-call surface.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "tool_calling_only"
+  },
+  {
+    "vtms_id": "VTMS-2026-0147",
+    "title": "CVE-2026-33626: LMDeploy SSRF in Vision-Language Image Loader Actively Exploited Within 13 Hours of Disclosure for Cloud Credential Reconnaissance",
+    "discovered_at": "2026-05-08T00:00:00Z",
+    "incident_date": "2026-04-21",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 12.2",
+      "CIS 16.1"
+    ],
+    "cve_ids": [
+      "CVE-2026-33626",
+      "GHSA-6w67-hwm5-92mq"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses SSRF vulnerabilities in standalone LLM inference server frameworks such as LMDeploy. The closest existing policy (SUPPLY-001, supchain pack) targets langchain-core version pinning only and does not extend to LMDeploy or its vision-language image-loading components. The attack vector \u2014 an external attacker calling LMDeploy's HTTP inference API directly with a crafted image URL \u2014 does not transit any AI coding agent tool-call boundary that Vectimus monitors, placing this incident outside Vectimus's pretool-hook enforcement scope entirely.",
+    "existing_policy_ids": [],
+    "gap_description": "Exploitation occurs entirely within LMDeploy's server-side load_image() pipeline (lmdeploy/vl/utils.py): the attacker calls the inference endpoint directly; LMDeploy then makes outbound HTTP requests to attacker-controlled destinations (AWS IMDS via IMDSv1, Redis port 6379, MySQL port 3306, an internal admin UI, and an OOB DNS resolver) without any AI coding agent involvement. Vectimus Cedar pretool hooks evaluate at the point where Claude Code, Cursor, or GitHub Copilot issue a tool call \u2014 that boundary is never reached in this attack chain. Appropriate mitigations are network-level SSRF egress filtering, IMDSv2 enforcement (hop-limit = 1 on EC2 instances), and upgrading LMDeploy to a patched version above 0.12.0; all of these controls lie outside Vectimus's enforcement boundary.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/04/lmdeploy-cve-2026-33626-flaw-exploited.html",
+        "title": "LMDeploy CVE-2026-33626 Flaw Exploited \u2014 The Hacker News",
+        "r2_key": "sources/VTMS-2026-0147/lmdeploy-cve-2026-33626.txt"
+      },
+      {
+        "url": "https://webflow.sysdig.com/blog/cve-2026-33626-how-attackers-exploited-lmdeploy-llm-inference-engines-in-12-hours",
+        "title": "CVE-2026-33626: How Attackers Exploited LMDeploy LLM Inference Engines in 12 Hours \u2014 Sysdig",
+        "r2_key": "sources/VTMS-2026-0147/lmdeploy-cve-2026-33626.txt"
+      },
+      {
+        "url": "https://vulert.com/blog/lmdeploy-cve-2026-33626-ssrf/",
+        "title": "LMDeploy CVE-2026-33626 SSRF \u2014 Vulert",
+        "r2_key": "sources/VTMS-2026-0147/lmdeploy-cve-2026-33626.txt"
+      }
+    ],
+    "tools_involved": [
+      "LMDeploy",
+      "InternLM",
+      "LLM inference engine"
+    ],
+    "summary": "CVE-2026-33626 (CVSS 7.5, GHSA-6w67-hwm5-92mq) is a server-side request forgery vulnerability in LMDeploy \u22640.12.0's load_image() function (lmdeploy/vl/utils.py). The function fetches attacker-supplied image URLs without validating RFC-1918 or link-local address ranges, enabling blind probing and data exfiltration from internal services. Disclosed 21 April 2026, the first confirmed in-the-wild exploitation was captured by Sysdig's honeypot just 12 hours 31 minutes later: an attacker made 10 requests over 8 minutes probing AWS IMDSv1, Redis, MySQL, an internal admin interface, and an out-of-band DNS exfiltration endpoint, rotating between vision-language models to evade detection. GPU inference nodes running LMDeploy commonly carry broad IAM roles over S3 training artifacts and datasets, making IMDSv1 credential harvesting the primary objective. Because exploitation occurs entirely within LMDeploy's own HTTP request pipeline \u2014 triggered by an external attacker calling the inference API directly, with no AI coding agent tool call involved \u2014 this incident is outside Vectimus's Cedar pretool-hook enforcement boundary. Comparable precedents in VTMS (0023, 0024, 0055) are classified identically. Recommended mitigations are IMDSv2 enforcement, network-egress filtering for SSRF-prone address ranges, and upgrading to a patched LMDeploy release.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  }
+]
