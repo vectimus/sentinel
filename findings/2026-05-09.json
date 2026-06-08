@@ -1,0 +1,46 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0152",
+    "title": "CVE-2026-44479: Vercel CLI Leaks Auth Tokens Verbatim in JSON Output When Running as AI Agent in Non-Interactive Mode",
+    "discovered_at": "2026-05-09T00:00:00Z",
+    "incident_date": "2026-05-07",
+    "severity": 3,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GV-1",
+    "cis_controls": [
+      "CIS 2.7",
+      "CIS 4.1",
+      "CIS 14.6"
+    ],
+    "cve_ids": [
+      "CVE-2026-44479"
+    ],
+    "coverage_status": "partial",
+    "coverage_detail": "Policy vectimus-supchain-010 blocks npm package installs that are not verified against an approved hash allowlist. Because it applies to all npm install actions, it would prevent an agent from introducing Vercel CLI versions 50.16.0\u201352.0.0 into an environment without hash verification, providing indirect install-time protection. However, no existing policy specifically targets the CVE-2026-44479 vulnerable version range by name, and no policy detects or blocks shell_command invocations of Vercel CLI that pass a plaintext --token vca_* credential argument. The core disclosure mechanism \u2014 the CLI embedding the live token verbatim in its JSON stdout error payload \u2014 occurs after the tool call executes and is therefore outside Vectimus's tool-call-time enforcement boundary.",
+    "existing_policy_ids": [
+      "vectimus-supchain-010"
+    ],
+    "gap_description": "Two enforcement gaps exist within the tool-call boundary. First, there is no version-specific supchain policy (analogous to SUPPLY-001 for langchain-core) that blocks npm install or npx commands pinning vercel to the 50.16.0\u201352.0.0 range. Second, there is no secrets-pack rule detecting --token vca_* credential arguments embedded in Vercel CLI shell_command invocations. Beyond the tool-call boundary \u2014 and therefore out of Vectimus scope \u2014 the CLI's stdout-level token emission and the downstream capture of that output by CI/CD pipeline loggers or AI agent transcript recorders cannot be intercepted by Cedar policy evaluation.",
+    "sources": [
+      {
+        "url": "https://advisories.gitlab.com/npm/vercel/CVE-2026-44479/",
+        "title": "CVE-2026-44479 Advisory \u2014 Vercel CLI Information Disclosure in Non-Interactive Mode (GitLab Advisory Database)",
+        "r2_key": "sources/VTMS-2026-0152/cve-2026-44479-vercel-cli-token-disclosure.txt"
+      },
+      {
+        "url": "https://dailycve.com/vercel-cli-information-disclosure-cve-2026-44479-medium/",
+        "title": "Vercel CLI Information Disclosure CVE-2026-44479 (CVSS 5.5 Medium) \u2014 Daily CVE",
+        "r2_key": "sources/VTMS-2026-0152/cve-2026-44479-vercel-cli-token-disclosure.txt"
+      }
+    ],
+    "tools_involved": [
+      "Vercel CLI"
+    ],
+    "summary": "CVE-2026-44479 (CVSS 5.5 Medium, disclosed 7 May 2026) affects Vercel CLI versions 50.16.0 through 52.0.0. The CLI auto-detects non-interactive mode when running inside an AI agent environment. In this mode, when the CLI cannot complete an operation autonomously, it emits a JSON payload of suggested follow-up commands that includes the live --token credential value verbatim. Any system logging CLI stdout \u2014 including CI/CD pipelines, AI agent transcripts, and build log aggregators \u2014 captures the exposed token, which is identifiable by the distinctive 'vca_' prefix. Stolen tokens enable unauthorised Vercel project deployments and access to project environment variables and build artifacts. The vulnerability is specifically triggered by the AI agent execution context, making it a novel supply chain credential-exposure pattern in agentic toolchains rather than a general CLI bug. Patched in Vercel CLI v52.0.1. Distinct from VTMS-2026-0088 (Vercel infrastructure breach via Context.ai OAuth supply chain compromise).",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "tool_calling_only"
+  }
+]
