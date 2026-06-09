@@ -1,0 +1,91 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0160",
+    "title": "CVE-2026-44843 (CVSS 8.2): langchain-core Unsafe Deserialization via Overly Broad load() Allowlists Enables Unauthenticated Remote Object Instantiation Across Agentic Runtime Surfaces",
+    "discovered_at": "2026-05-10T00:00:00Z",
+    "incident_date": "2026-05-08",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "MANAGE-3.2",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 2.7",
+      "CIS 16.1"
+    ],
+    "cve_ids": [
+      "CVE-2026-44843"
+    ],
+    "coverage_status": "partial",
+    "coverage_detail": "Policy SUPPLY-001 (supply_chain_version.cedar) blocks installation of langchain-core versions below the CVE-2025-68664 patch floor: < 0.3.81 on the 0.3.x line and < 1.2.5 on the 1.x line. However, CVE-2026-44843 requires langchain-core >= 0.3.85 (0.3.x) or >= 1.3.3 (1.x). Versions 0.3.81\u20130.3.84 and 1.2.5\u20131.3.2 pass SUPPLY-001 unblocked but remain fully exploitable under this new deserialization class. The gap window is the range between the two CVE patch floors. Vectimus can fully prevent agents from pinning to any version in this gap window at package_operation / shell_command tool-call time, following the same enforcement pattern established by SUPPLY-001 for CVE-2025-68664.",
+    "existing_policy_ids": [
+      "SUPPLY-001"
+    ],
+    "gap_description": "SUPPLY-001's version block list tops out at the CVE-2025-68664 patch floor (0.3.81 / 1.2.5). CVE-2026-44843 raises the safe minimum to 0.3.85 / 1.3.3, leaving a window of versions (0.3.81\u20130.3.84 and 1.2.5\u20131.3.2) that agents may install without triggering a deny. A new rule in the supchain pack must extend the forbidden range to cover these intermediate versions, mirroring the pattern used in SUPPLY-001 for the prior CVE. The new rule should forbid package_operation and shell_command actions whose command string pins langchain-core to any version in the gap window (0.3.81\u20130.3.84 on 0.3.x; 1.2.5\u20131.3.2 on 1.x) and recommend upgrading to >= 0.3.85 or >= 1.3.3.",
+    "sources": [
+      {
+        "url": "https://advisories.gitlab.com/pypi/langchain-core/CVE-2026-44843/",
+        "title": "CVE-2026-44843 \u2014 langchain-core Unsafe Deserialization via Overly Broad load() Allowlists",
+        "r2_key": "sources/VTMS-2026-0160/langchain-core-cve-2026-44843-unsafe-deserialization.txt"
+      }
+    ],
+    "tools_involved": [
+      "LangChain",
+      "LangGraph"
+    ],
+    "summary": "CVE-2026-44843 (CVSS 8.2, CWE-502: Deserialization of Untrusted Data) discloses that langchain-core runtime code paths \u2014 including RunnableWithMessageHistory, astream_log(), and astream_events() \u2014 call load() with allowed_objects='all', permitting attacker-supplied serialised LangChain constructor dictionaries to instantiate arbitrary trusted classes with attacker-controlled constructor arguments when an application accepts unvalidated structured input. All langchain-core versions before 0.3.85 (0.3.x) and before 1.3.3 (1.x) are affected; patches are available in 0.3.85 and 1.3.3. Existing policy SUPPLY-001 partially covers this class by blocking installation of versions below the CVE-2025-68664 patch floor (0.3.81 / 1.2.5), but leaves a gap window of versions 0.3.81\u20130.3.84 and 1.2.5\u20131.3.2 that are blocked by neither SUPPLY-001 nor any other existing rule. The runtime deserialization exploit occurs within langchain-core framework internals and is outside Vectimus's tool-call enforcement boundary; the addressable mitigation is blocking installation of the gap-window versions. This is a distinct vulnerability class from the three LangChain CVEs tracked under VTMS-2026-0006.",
+    "recommended_action": "new_policy",
+    "recommended_policy_description": "Add a new rule to the supchain pack (e.g. SUPPLY-002) that forbids package_operation and shell_command actions whose command string explicitly pins langchain-core to any version in the gap window: 0.3.81, 0.3.82, 0.3.83, or 0.3.84 on the 0.3.x line, and 1.2.5, 1.2.6, 1.3.0, 1.3.1, or 1.3.2 on the 1.x line. The suggested_alternative annotation should direct developers to upgrade to langchain-core >= 0.3.85 (0.3.x) or >= 1.3.3 (1.x). The rule should follow the same pattern as SUPPLY-001, using context.command like '*langchain-core==0.3.81*' || ... clauses for each gap version. Annotate with CVE-2026-44843 and link to this VTMS entry.",
+    "content_worthy": true,
+    "content_angle": "new_policy_needed",
+    "enforcement_scope": "full"
+  },
+  {
+    "vtms_id": "VTMS-2026-0161",
+    "title": "CVE-2026-42298: Postiz GitHub Actions Pwn Request Enables Unauthenticated RCE and Write-All GITHUB_TOKEN Exfiltration via Malicious PR Dockerfile",
+    "discovered_at": "2026-05-10T00:00:00Z",
+    "incident_date": "2026-05-08",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GV-6",
+    "cis_controls": [
+      "CIS 15.1",
+      "CIS 16.1",
+      "CIS 2.7"
+    ],
+    "cve_ids": [
+      "CVE-2026-42298"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses GitHub Actions pwn-request exploitation. The attack vector \u2014 an external contributor submitting a malicious Dockerfile in a PR that triggers a privileged CI/CD workflow \u2014 executes entirely inside a GitHub Actions runner. No Cedar pretool hook is in the execution path at any stage of the kill chain: the malicious Dockerfile is built by the runner, not by an AI coding agent invoking a tool. Policies vectimus-git-001/002/003 (git_safety pack) block dangerous git operations performed by agents but have no visibility into GitHub Actions runner processes. SUPPLY-001 (supchain pack) blocks installation of specific known-vulnerable package versions by agents but cannot intercept CI/CD workflow execution or GITHUB_TOKEN exfiltration. No infra, secrets, or mcp pack policy is applicable.",
+    "existing_policy_ids": [],
+    "gap_description": "The root attack vector is a GitHub Actions 'pwn request': an untrusted PR triggers a pull_request_target-equivalent privileged workflow that runs a malicious Dockerfile.dev, yielding RCE in the CI/CD runner and exfiltration of the workflow's write-all GITHUB_TOKEN. This entire chain occurs within GitHub Actions infrastructure, outside the developer machine tool-call boundary enforced by Vectimus. Remediation lies in hardening the GitHub Actions workflow itself: restrict privileged triggers (pull_request_target) to trusted contributors, pin all referenced actions to full commit SHAs, apply least-privilege GITHUB_TOKEN permissions (contents: read only), and add a required reviewer gate before any PR-triggered build accesses secrets. These controls are applied in the repository's workflow YAML and GitHub repository settings, not at the AI agent tool-call layer.",
+    "sources": [
+      {
+        "url": "https://cve.threatint.eu/CVE/CVE-2026-42298",
+        "title": "CVE-2026-42298 \u2014 Postiz GitHub Actions RCE via Malicious PR Dockerfile (CVSS 10.0)",
+        "r2_key": "sources/VTMS-2026-0161/postiz-cve-2026-42298-github-actions-pwn-request.txt"
+      },
+      {
+        "url": "https://www.thehackerwire.com/postiz-ai-scheduler-rce-via-malicious-pr-dockerfile-cve-2026-42298/",
+        "title": "Postiz AI Scheduler: RCE via Malicious PR Dockerfile (CVE-2026-42298) \u2014 The Hacker Wire",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.productcool.com/product/postiz-3",
+        "title": "Postiz Product Page \u2014 ProductCool",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Postiz",
+      "OpenClaw",
+      "GitHub Actions"
+    ],
+    "summary": "CVE-2026-42298 (CVSS 10.0), published 2026-05-08, discloses a 'pwn request' vulnerability in the Postiz open-source agentic AI social media scheduler. The pr-docker-build.yml GitHub Actions workflow was misconfigured to run with write-all GITHUB_TOKEN permissions on pull requests from untrusted forks. Any unauthenticated external contributor could submit a PR containing a modified Dockerfile.dev to obtain arbitrary code execution inside the GitHub Actions runner and exfiltrate the write-all GITHUB_TOKEN, enabling downstream supply chain compromise of the Postiz package. Postiz is used as an AI agent platform component by OpenClaw and other agentic AI systems, making this a direct supply chain threat to AI agent runtimes that depend on it. The issue was patched in commit da44801. The attack vector operates entirely within GitHub Actions CI/CD infrastructure and is outside Vectimus's tool-call enforcement boundary \u2014 no Cedar policy can prevent or detect this class of vulnerability.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  }
+]
