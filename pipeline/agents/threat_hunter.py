@@ -126,21 +126,27 @@ async def _run_research_scout(
         f"Write your output JSON array to {output_path}"
     )
 
-    await _run_sub_agent(
-        name="research-scout",
-        config=config,
-        system_prompt=system_prompt,
-        user_message=user_message,
-        allowed_tools=[
-            "WebSearch",
-            "WebFetch",
-            "Read",
-            "Write",
-            "Bash",
-            "mcp__sentinel__r2_put",
-        ],
-        max_turns=20,
-    )
+    try:
+        await _run_sub_agent(
+            name="research-scout",
+            config=config,
+            system_prompt=system_prompt,
+            user_message=user_message,
+            allowed_tools=[
+                "WebSearch",
+                "WebFetch",
+                "Read",
+                "Write",
+                "Bash",
+                "mcp__sentinel__r2_put",
+            ],
+            max_turns=30,
+        )
+    except Exception as e:
+        # The CLI exits non-zero when the scout runs out of turns on busy
+        # news days; fall through to the output-file check rather than
+        # failing the whole pipeline run.
+        logger.error("[research-scout] Query aborted; using any partial output: %s", e)
 
     if not output_path.exists():
         logger.warning("Research Scout did not write output file; returning empty list")
