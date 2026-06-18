@@ -1,6 +1,6 @@
 boto3==1.43.29
 cedarpy==4.8.4
-claude-agent-sdk==0.1.72
+claude-agent-sdk==0.2.104
 deepeval==4.0.6
 cisco-ai-mcp-scanner==4.4.0
 deepteam==1.0.6
