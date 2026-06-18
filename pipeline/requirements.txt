@@ -1,12 +1,12 @@
-boto3==1.43.26
+boto3==1.43.29
 cedarpy==4.8.4
 claude-agent-sdk==0.1.72
-deepeval==4.0.3
+deepeval==4.0.6
 cisco-ai-mcp-scanner==4.4.0
 deepteam==1.0.6
 arize-phoenix==16.0.0
 arize-phoenix-otel==0.16.1
-openinference-instrumentation-claude-agent-sdk==0.1.5
+openinference-instrumentation-claude-agent-sdk==0.1.6
 fastmcp==3.4.2
 httpx==0.28.1
 nemoguardrails==0.21.0
