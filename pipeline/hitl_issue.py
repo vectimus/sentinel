@@ -53,6 +53,26 @@ def _find_findings_file() -> Path:
     raise FileNotFoundError("No findings file found")
 
 
+def _classify(findings: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Split findings into (actionable policy work, content-worthy advisories).
+
+    Out-of-scope findings are never actionable or content-worthy for Vectimus,
+    so they never on their own warrant a human review gate.
+    """
+    actionable = [
+        f
+        for f in findings
+        if f.get("recommended_action") != "no_change"
+        and f.get("enforcement_scope") != "out_of_scope"
+    ]
+    content_worthy = [
+        f
+        for f in findings
+        if f.get("content_worthy") and f.get("enforcement_scope") != "out_of_scope"
+    ]
+    return actionable, content_worthy
+
+
 def _build_issue_body(findings: list[dict]) -> str:
     """Build the issue body with a checkbox per finding.
 
@@ -83,12 +103,7 @@ def _build_issue_body(findings: list[dict]) -> str:
         lines.append("")
 
     # Summary stats
-    actionable = [f for f in findings if f.get("recommended_action") != "no_change"]
-    content_worthy = [
-        f
-        for f in findings
-        if f.get("content_worthy") and f.get("enforcement_scope") != "out_of_scope"
-    ]
+    actionable, content_worthy = _classify(findings)
     pending = [
         f
         for f in findings
@@ -117,6 +132,23 @@ def create() -> None:
     if not findings:
         print("No findings to review, skipping issue creation")
         _set_output("issue_number", "")
+        _set_output("skip_review", "true")
+        return
+
+    # Decide whether a human review gate is warranted. Only findings that are
+    # actionable (policy work) or content-worthy (advisories) require review;
+    # a run that is all out-of-scope / no_change noise should not block the
+    # pipeline waiting for approval that never comes. `skip_review` is worded
+    # fail-safe: the workflow only skips the gate on an explicit "true", so any
+    # error here leaves the human gate in place.
+    actionable, content_worthy = _classify(findings)
+    if not actionable and not content_worthy:
+        print(
+            f"None of {len(findings)} findings are actionable or content-worthy; "
+            "skipping review gate. Findings are still recorded by the publish stage."
+        )
+        _set_output("issue_number", "")
+        _set_output("skip_review", "true")
         return
 
     body = _build_issue_body(findings)
@@ -140,6 +172,7 @@ def create() -> None:
     print(f"Created review issue #{number}: {issue_number}")
 
     _set_output("issue_number", number)
+    _set_output("skip_review", "false")
 
     # Also add the issue link to the job summary
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
