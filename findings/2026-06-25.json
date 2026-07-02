@@ -1,0 +1,355 @@
+[
+  {
+    "vtms_id": "VTMS-2026-0277",
+    "title": "DifyTap: Cross-Tenant AI Conversation Wiretapping and Unauthorized Document Access via Broken Authorization in Dify Platform (CVE-2026-41947 / CVE-2026-41949 / CVE-2026-41950)",
+    "discovered_at": "2026-06-25T00:00:00Z",
+    "incident_date": "2026-06-23",
+    "severity": 4,
+    "owasp_category": "ASI09: Trust Boundary Violations",
+    "nist_ai_rmf": "GOVERN-1.5",
+    "cis_controls": [
+      "CIS 6.1",
+      "CIS 3.3",
+      "CIS 16"
+    ],
+    "cve_ids": [
+      "CVE-2026-41947",
+      "CVE-2026-41949",
+      "CVE-2026-41950"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses these vulnerabilities. The attack surface is entirely outside Vectimus's enforcement boundary: CVE-2026-41947, CVE-2026-41949, and CVE-2026-41950 are server-side IDOR/broken-access-control flaws in Dify's REST API backend, exploited by authenticated human users making direct HTTP calls \u2014 not by AI coding agent tool calls that Vectimus intercepts. Vectimus hooks tool calls at the developer workstation (Claude Code, Cursor, GitHub Copilot); it has no presence in Dify's internal API authorization layer. No Cedar policy can prevent or detect server-side tenant isolation failures in a third-party AI platform.",
+    "existing_policy_ids": [],
+    "gap_description": "Server-side multi-tenant authorization bypass in a third-party AI platform backend is structurally outside the tool-call boundary where Vectimus operates. The root cause \u2014 missing tenant ownership validation in Dify's REST API handlers \u2014 must be remediated by the AI platform vendor (patched in Dify 1.14.2, June 2026) and enforced through platform-level access controls, not AI coding agent governance policies. No new Cedar policy is appropriate.",
+    "sources": [
+      {
+        "url": "https://www.securityweek.com/data-exposure-flaws-threaten-dify-ai-platform-powering-over-1-million-apps/",
+        "title": "Data Exposure Flaws Threaten Dify AI Platform Powering Over 1 Million Apps",
+        "r2_key": "sources/VTMS-2026-0277/difytap-cve-2026-41947-41949-41950-securityweek.txt"
+      },
+      {
+        "url": "https://thehackernews.com/2026/06/researchers-detail-difytap-flaws-in.html",
+        "title": "Researchers Detail DifyTap Flaws in Dify AI Agent Platform",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.darkreading.com/application-security/difytap-bugs-wiretap-ai-chat-histories",
+        "title": "DifyTap Bugs Can Wiretap AI Chat Histories",
+        "r2_key": null
+      },
+      {
+        "url": "https://cybersecuritynews.com/difytap-flaws-wiretap-ai-data-across-tenants/",
+        "title": "DifyTap Flaws Let Attackers Wiretap AI Data Across Tenants",
+        "r2_key": null
+      },
+      {
+        "url": "https://cybernews.com/security/dify-critical-vulnerabilities-disclosed/",
+        "title": "Critical Vulnerabilities Disclosed in Dify AI Platform",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Dify"
+    ],
+    "summary": "Zafran Security disclosed three server-side broken-access-control vulnerabilities in Dify (146K+ GitHub stars, powering 1M+ applications) on 2026-06-23 as part of the 'DifyTap' cluster. CVE-2026-41947 (CVSS 9.1) allows any authenticated editor-role user to configure LLM tracing on an arbitrary tenant's application without ownership validation, enabling persistent cross-tenant wiretapping of AI conversations by redirecting trace output to an attacker-controlled provider. CVE-2026-41949 allows any authenticated user to read up to 3,000 characters of documents uploaded by arbitrary tenants via an improperly guarded file-preview endpoint. CVE-2026-41950 enables cross-file access within the same tenant through enumeration of arbitrary file UUIDs. All three are classic IDOR/broken-access-control flaws at the REST API layer, directly exploited by authenticated human users \u2014 not through AI coding agent tool calls. All three are patched in Dify 1.14.2 (June 2026). The companion CVE-2026-41948 (Plugin Daemon path traversal from the same DifyTap cluster) is tracked separately as VTMS-2026-0174. Enforcement is out of scope for Vectimus: the attack surface is Dify's server-side API authorization, entirely outside the tool-call boundary where Cedar policies are evaluated.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0278",
+    "title": "CVE-2026-56121 (CVSS 9.8): Feast ML Feature Store Unauthenticated RCE via dill Deserialization in OnDemandFeatureView gRPC Handler",
+    "discovered_at": "2026-06-25T00:00:00Z",
+    "incident_date": "2026-06-24",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "GV-6",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 2.7",
+      "CIS 7.4",
+      "CIS 7.7"
+    ],
+    "cve_ids": [
+      "CVE-2026-56121"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses Feast ML Feature Store or CVE-2026-56121. The attack vector \u2014 an unauthenticated gRPC request that triggers dill.loads() server-side before any auth check \u2014 occurs entirely outside the AI coding agent tool-call boundary that Vectimus enforces. The closest analogous policy is SUPPLY-001 (supchain pack), which blocks installation of specific vulnerable langchain-core versions; no equivalent exists for Feast. This incident follows the same out-of-scope classification applied to VTMS-2026-0230 (SGLang CVE-2026-7301/7304), where pickle/dill deserialisation RCE in an ML serving component was also found to be outside Vectimus's enforcement boundary for identical reasons.",
+    "existing_policy_ids": [],
+    "gap_description": "The exploit chain does not pass through any AI coding agent tool call. An external, unauthenticated attacker sends a crafted gRPC ApplyFeatureView request directly to the Feast serving endpoint; the user_defined_function.body field is base64-decoded and passed to dill.loads() before authentication, allowing arbitrary code execution as the Feast service account. Because Vectimus Cedar policy evaluation fires only at AI agent tool-call time, there is no hook into the Feast gRPC handler. A version-blocking supchain policy (analogous to SUPPLY-001) could prevent an AI coding agent from installing feast < 0.63.0, but that does not address the primary attack vector \u2014 a running Feast service exposed to the network \u2014 and would therefore misrepresent Vectimus's actual enforcement boundary. No Cedar policy is applicable.",
+    "sources": [
+      {
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-56121",
+        "title": "NVD \u2014 CVE-2026-56121: Feast dill Deserialization RCE (CVSS 9.8)",
+        "r2_key": "sources/VTMS-2026-0278/feast-cve-2026-56121-dill-deserialization-rce.txt"
+      },
+      {
+        "url": "https://www.vulncheck.com/advisories/feast-unauthenticated-rce-via-applyfeatureview-grpc-deserialization",
+        "title": "VulnCheck Advisory: Feast Unauthenticated RCE via ApplyFeatureView gRPC Deserialization",
+        "r2_key": null
+      },
+      {
+        "url": "https://huntr.com/bounties/d64b8111-180b-46ba-afa3-c877fda2ede6",
+        "title": "Huntr Bounty Report \u2014 Feast dill Deserialization RCE in OnDemandFeatureView",
+        "r2_key": null
+      },
+      {
+        "url": "https://github.com/feast-dev/feast/commit/835cda8e2c1359f1f496ad72701dbd6a73bdb25a",
+        "title": "feast-dev/feast commit 835cda8: Move auth check before dill.loads() in OnDemandFeatureView gRPC handler",
+        "r2_key": null
+      },
+      {
+        "url": "https://github.com/feast-dev/feast/releases/tag/v0.63.0",
+        "title": "Feast v0.63.0 Release Notes \u2014 Security fix for CVE-2026-56121",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Feast",
+      "feast-dev"
+    ],
+    "summary": "CVE-2026-56121 (CVSS 9.8 Critical, disclosed 24 June 2026) is an unauthenticated remote code execution vulnerability in Feast, the widely-used open-source ML feature store, affecting all versions before 0.63.0. The Feast gRPC handler for OnDemandFeatureView accepts an ApplyFeatureView request whose user_defined_function.body field is base64-decoded and passed directly to dill.loads() before any authentication or authorisation check. An unauthenticated network attacker can submit a crafted gRPC request embedding a Python object whose __reduce__ method encodes arbitrary OS commands; dill instantiates the object and executes those commands as the Feast service account. Because Feast is routinely deployed as the feature serving layer for AI and LLM inference pipelines \u2014 providing real-time feature lookups to model-serving endpoints \u2014 a successful exploit can pivot from the feature store into the broader ML infrastructure. The vulnerability is fixed in feast 0.63.0 by moving the authentication check before the deserialisation call. This incident is the third confirmed instance of unsafe Python deserialisation (pickle/dill) in ML serving infrastructure within the VTMS dataset, following SGLang (VTMS-2026-0230, CVE-2026-7301/7304, no patch) and langchain-core (VTMS-2026-0032, CVE-2025-68664, patched). In all three cases the attack vector targets the ML component's own network interface rather than passing through an AI coding agent tool call, placing it outside Vectimus's enforcement boundary.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0279",
+    "title": "CVE-2026-4372 (Hugging Face Transformers): trust_remote_code=False Bypass via config.json Injection Enables Unauthenticated RCE \u2014 232 Million Vulnerable Downloads",
+    "discovered_at": "2026-06-25T00:00:00Z",
+    "incident_date": "2026-05-24",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "MANAGE-3.2",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 2.7",
+      "CIS 16.1",
+      "CIS 16.4"
+    ],
+    "cve_ids": [
+      "CVE-2026-4372"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy targets Hugging Face Transformers. The most analogous rule is SUPPLY-001 (supply_chain_version.cedar), which blocks installation of vulnerable langchain-core versions via pip/shell interception, but covers only that package. No supchain, codexec, infra, or any other pack rule addresses transformers versions 4.56.0\u20135.2.x. An AI agent prompted to set up a model training workflow could execute 'pip install transformers==5.2.x' or 'pip install transformers[kernels]==5.2.x' without triggering any existing Vectimus deny.",
+    "existing_policy_ids": [],
+    "gap_description": "CVE-2026-4372 requires a Vectimus pretool hook to block 'pip install transformers==<vulnerable_version>' and 'pip install transformers[kernels]==<vulnerable_version>' before an agent can acquire the exploit-enabling dependency. The optional kernels extra is required for exploitation (the _attn_implementation_internal bypass only fires when the kernels package is present). The supchain pack has no rule targeting the transformers package at all; a new rule following the SUPPLY-001 pattern must enumerate the vulnerable minor series (4.56.x, 4.57.x, 4.58.x, 4.59.x, 5.0.x, 5.1.x, 5.2.x) and match them against the command string in both plain and [kernels]-extra forms. The 81-day NVD blind spot (patch shipped 2026-03-04, NVD published 2026-05-24) means many installations in developer environments are still on vulnerable builds; blocking agent-initiated installs or upgrades to those versions remains the highest-leverage mitigation available at the tool-call boundary.",
+    "sources": [
+      {
+        "url": "https://pluto.security/blog/unauthenticated-remote-code-execution-in-huggingface-transformers-via-config-injection/",
+        "title": "Unauthenticated Remote Code Execution in HuggingFace Transformers via Config Injection (Pluto Security)",
+        "r2_key": "sources/VTMS-2026-0279/huggingface-transformers-cve-2026-4372-config-injection-rce.txt"
+      },
+      {
+        "url": "https://www.csoonline.com/article/4181094/hugging-face-transformers-rce-flaw-enables-stealthy-compromise-via-ai-model-configs.html",
+        "title": "Hugging Face Transformers RCE Flaw Enables Stealthy Compromise via AI Model Configs (CSO Online)",
+        "r2_key": null
+      },
+      {
+        "url": "https://gbhackers.com/hugging-face-transformers-security-flaw/",
+        "title": "Hugging Face Transformers Security Flaw (GBHackers)",
+        "r2_key": null
+      },
+      {
+        "url": "https://cybersecuritynews.com/hugging-face-rce-vulnerability/",
+        "title": "Hugging Face RCE Vulnerability (Cybersecurity News)",
+        "r2_key": null
+      },
+      {
+        "url": "https://threat-modeling.com/vulnerability-intelligence-report-june-6-2026/",
+        "title": "Vulnerability Intelligence Report \u2014 June 6, 2026 (Threat Modeling)",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "Hugging Face Transformers",
+      "Hugging Face Hub"
+    ],
+    "summary": "CVE-2026-4372 (CVSS 7.8) is a critical vulnerability in Hugging Face Transformers versions 4.56.0 through 5.2.x (when the optional kernels package is installed) that allows an attacker to achieve unauthenticated remote code execution by injecting a malicious '_attn_implementation_internal' field into a model's config.json on the Hugging Face Hub. When a developer or AI agent calls AutoModelForCausalLM.from_pretrained() against the poisoned model, the library fetches and executes attacker-controlled code despite trust_remote_code=False being the default setting \u2014 bypassing the safeguard entirely. The flaw was introduced in August 2025 and patched in transformers 5.3.0 on March 4, 2026, but was not disclosed via NVD until May 24, 2026, creating an 81-day window during which approximately 232 million vulnerable downloads occurred with no public CVE reference. Broad public reporting began June 5\u20136, 2026. The attack surface is directly relevant to AI coding agents: agents asked to set up model fine-tuning or inference workflows routinely execute pip install transformers and call from_pretrained() with user-supplied model identifiers, making them a natural delivery mechanism for this exploit chain. No existing Vectimus Cedar policy addresses the transformers package version range; a new supchain rule following the SUPPLY-001 pattern is required.",
+    "recommended_action": "new_policy",
+    "recommended_policy_description": "Add a new rule (e.g. SUPPLY-003) to the supchain pack that forbids package_operation and shell_command actions whose command string pins the transformers package (including the [kernels] extra) to any version in the vulnerable range 4.56.x through 5.2.x. The rule should use context.command like '*transformers==4.56.*' through '*transformers==5.2.*' clauses (covering both 'transformers==X.Y.Z' and 'transformers[kernels]==X.Y.Z' forms) for each minor series in the vulnerable range. The @suggested_alternative annotation should direct developers to upgrade to 'transformers>=5.3.0'. Annotate with CVE-2026-4372 and link to VTMS-2026-0279. The policy follows the same enforcement mechanism as SUPPLY-001 (which addresses langchain-core CVE-2025-68664) \u2014 intercepting the pip install or shell command at tool-call time before the vulnerable dependency can be acquired.",
+    "content_worthy": true,
+    "content_angle": "new_policy_needed",
+    "enforcement_scope": "full"
+  },
+  {
+    "vtms_id": "VTMS-2026-0280",
+    "title": "vLLM June 2026 Four-CVE Cluster: Assert-Based RCE (CVE-2026-41523), Dependency Confusion (CVE-2026-54232), Artifact Pin Decay (CVE-2026-47155), and Incomplete Fix Leaks Heap Addresses (CVE-2026-54236)",
+    "discovered_at": "2026-06-25T00:00:00Z",
+    "incident_date": "2026-06-14",
+    "severity": 4,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "MANAGE-2.2",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 2.7",
+      "CIS 16.1"
+    ],
+    "cve_ids": [
+      "CVE-2026-41523",
+      "CVE-2026-54232",
+      "CVE-2026-47155",
+      "CVE-2026-54236"
+    ],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses any of the four CVEs in this cluster. All four attack vectors operate within vLLM's server runtime or Docker build pipeline \u2014 outside the AI coding agent tool-call boundary where Cedar policies are evaluated. CVE-2026-41523 (assert-based RCE) requires both a malicious HuggingFace model and that vLLM be invoked with the Python optimised-mode flag (`python -O`); while a shell_command rule could theoretically block `-O` invocations, the vulnerability is in the vLLM activation-function loader itself, a server-side runtime path with no tool-call interception point. CVE-2026-54232 (dependency confusion via `flashinfer-jit-cache`) manifests at Docker image build time, which is a CI/CD deployment concern explicitly outside Vectimus's enforcement boundary. CVE-2026-47155 (artifact pin decay) operates entirely within vLLM's internal model-artifact retrieval logic. CVE-2026-54236 (heap address echo in the Anthropic router) is server-side information disclosure from an incomplete patch, with no tool-call surface for Cedar to intercept. This classification is consistent with prior out-of-scope decisions for vLLM server-side vulnerabilities: VTMS-2026-0190 (CVE-2026-27893, trust_remote_code bypass RCE), VTMS-2026-0239 (CVE-2026-5817, Docker Model Runner unconditional trust_remote_code=True), and VTMS-2026-0194 (CVE-2026-48710, Starlette host-header auth bypass affecting vLLM).",
+    "existing_policy_ids": [],
+    "gap_description": null,
+    "sources": [
+      {
+        "url": "https://github.com/vllm-project/vllm/security/advisories/GHSA-q8gq-377p-jq3r",
+        "title": "GHSA-q8gq-377p-jq3r: vLLM Assert-Based Security Check Bypass Enables RCE via Malicious HuggingFace Model (CVE-2026-41523)",
+        "r2_key": "sources/VTMS-2026-0280/vllm-june-2026-cve-cluster-41523-54232-47155-54236.txt"
+      },
+      {
+        "url": "https://github.com/vllm-project/vllm/security/advisories",
+        "title": "vLLM Security Advisories \u2014 June 2026 Cluster Overview",
+        "r2_key": null
+      },
+      {
+        "url": "https://nvd.nist.gov/vuln/detail/CVE-2026-41523",
+        "title": "NVD: CVE-2026-41523 \u2014 vLLM Assert Bypass RCE (CVSS 7.5)",
+        "r2_key": null
+      },
+      {
+        "url": "https://advisories.gitlab.com/pypi/vllm/CVE-2026-54236/",
+        "title": "GitLab Advisory: CVE-2026-54236 \u2014 Incomplete CVE-2026-22778 Fix Leaks Heap Addresses via PIL Exception Echo in Anthropic Router",
+        "r2_key": null
+      },
+      {
+        "url": "https://advisories.gitlab.com/pypi/vllm/CVE-2026-41523/",
+        "title": "GitLab Advisory: CVE-2026-41523 \u2014 vLLM Activation Function Loader Assert-Based Security Check Bypass",
+        "r2_key": null
+      },
+      {
+        "url": "https://cyberpress.org/vllm-vulnerability/",
+        "title": "CyberPress: vLLM June 2026 Vulnerability Roundup \u2014 Four CVEs in Nine Days",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "vLLM",
+      "HuggingFace",
+      "Docker",
+      "pip",
+      "flashinfer-jit-cache"
+    ],
+    "summary": "Between 9\u201317 June 2026, the vLLM project published four security advisories constituting a significant cluster of supply chain and infrastructure vulnerabilities in one of the most widely deployed LLM inference frameworks. CVE-2026-41523 (CVSS 7.5, GHSA-q8gq-377p-jq3r, fixed in 0.22.0) is an unauthenticated RCE: security checks in vLLM's activation function loader relied on Python assert statements, which are silently no-ops when the interpreter runs in optimised mode (`python -O`), allowing any attacker to achieve remote code execution by serving a malicious HuggingFace model to a vLLM instance started with the optimisation flag. CVE-2026-54232 (High, GHSA-jrf6-vqxq-pjv2, fixed in 0.22.1) is a dependency confusion attack: the official vLLM Dockerfile references the `flashinfer-jit-cache` package, which an attacker can shadow by registering a malicious public package of the same name on PyPI, causing any build of the official image to install attacker-controlled code. CVE-2026-47155 (Moderate, GHSA-3ww4-5jv9-j5gm, fixed in 0.22.0) reveals that vLLM's revision-pinning controls do not apply uniformly to all model artifacts; deployments configured to run pinned, deterministic models can silently load unpinned \u2014 and potentially attacker-substituted \u2014 code alongside the pinned components. CVE-2026-54236 (no CVSS assigned, GHSA-hgg8-fqqc-vfmw, no patch available in any version through 0.23.0) is an incomplete fix for the February 2026 video-processing RCE (CVE-2026-22778): the Anthropic router in vLLM still echoes raw PIL (Pillow) exception messages to API clients, and those messages contain heap memory addresses that can be used to defeat ASLR in subsequent exploitation attempts. All four CVEs affect vLLM's server runtime or Docker build pipeline \u2014 outside the tool-call boundary where Vectimus Cedar policies operate. This classification is consistent with prior out-of-scope decisions for analogous vLLM server-side vulnerabilities (VTMS-2026-0190, VTMS-2026-0239, VTMS-2026-0194). Operators should upgrade to vLLM 0.22.1 or later, audit Dockerfiles for dependency confusion exposure, and treat CVE-2026-54236 as an unpatched information disclosure risk in any deployment exposing the Anthropic-compatible router endpoint.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0281",
+    "title": "ChatGPhish: Cross-Prompt Injection in ChatGPT Web-Summary Mode Renders Trusted Phishing UI and Exfiltrates Visitor Metadata",
+    "discovered_at": "2026-06-25T00:00:00Z",
+    "incident_date": "2026-05-29",
+    "severity": 3,
+    "owasp_category": "ASI01: Goal Hijacking",
+    "nist_ai_rmf": "MEASURE-2.5",
+    "cis_controls": [
+      "CIS-16"
+    ],
+    "cve_ids": [],
+    "coverage_status": "policy_pending",
+    "coverage_detail": "No existing Vectimus Cedar policy addresses this attack vector. The root cause \u2014 cross-prompt injection occurring within the LLM's reasoning while processing fetched web content \u2014 is entirely outside the tool-call boundary that Cedar enforces. While the initiating web_fetch call is a tool action, Cedar policy evaluation cannot inspect arbitrary page content for embedded adversarial Markdown instructions, nor govern how the LLM renders its output in a browser UI. No policy in the current pack set (destruct, secrets, supchain, infra, codexec, exfil, fileint, db, git, mcp, agentgov) targets this vector. This incident is analogous to VTMS-2026-0020 (Perplexity Comet), VTMS-2026-0038 (claude.ai Files API), and VTMS-2026-0065 (Grafana AI), all of which are classified out_of_scope for the same structural reason.",
+    "existing_policy_ids": [],
+    "gap_description": "The attack exploits the LLM's output rendering layer: Markdown embedded in attacker-controlled web content is processed by the LLM and rendered as trusted assistant output in the ChatGPT UI. The trust boundary violation \u2014 external web content influencing trusted UI rendering \u2014 occurs entirely within LLM reasoning and the browser rendering pipeline, neither of which Vectimus Cedar pretool hooks can intercept. Additionally, ChatGPT is not a supported Vectimus target agent (supported: Claude Code, Cursor, GitHub Copilot). Remediation requires vendor-side controls: Markdown sanitisation or partitioning of web-sourced content before rendering, UI-level trust labelling distinguishing assistant-generated from externally-sourced content, and Content Security Policy hardening to block third-party tracking pixel requests.",
+    "sources": [
+      {
+        "url": "https://thehackernews.com/2026/05/chatgphish-vulnerability-turns-chatgpt.html",
+        "title": "ChatGPhish Vulnerability Turns ChatGPT Web Summaries Into a Phishing Surface",
+        "r2_key": "sources/VTMS-2026-0281/chatgphish-chatgpt-web-summary-prompt-injection-phishing.txt"
+      },
+      {
+        "url": "https://labs.cloudsecurityalliance.org/research/csa-research-note-chatgphish-prompt-injection-phishing-20260/",
+        "title": "CSA Research Note: ChatGPhish Prompt Injection Phishing",
+        "r2_key": null
+      },
+      {
+        "url": "https://aviatrix.ai/threat-research-center/chatgphish-vulnerability-turns-chatgpt-web-summaries-into-a-phishing-surface/",
+        "title": "ChatGPhish: Vulnerability Turns ChatGPT Web Summaries Into a Phishing Surface \u2014 Aviatrix Threat Research",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.gblock.app/articles/chatgphish-permiso-chatgpt-markdown-rendering-phishing-may-2026",
+        "title": "ChatGPhish: Permiso ChatGPT Markdown Rendering Phishing (May 2026)",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "ChatGPT",
+      "OpenAI web-browsing mode"
+    ],
+    "summary": "ChatGPhish is a cross-prompt injection vulnerability in ChatGPT's web-browsing/summarisation agent mode, disclosed by Permiso Security researcher Andi Ahmeti on 2026-05-29 following a 30-day disclosure window with no vendor remediation. Any webpage that ChatGPT is asked to summarise can embed Markdown instructions that the LLM incorporates into its output; the ChatGPT UI then renders this attacker-controlled content as trusted assistant output. The attack enables three capability tiers: (1) UI phishing \u2014 fake OpenAI security-alert buttons displayed as native UI elements to harvest credentials; (2) visual social engineering \u2014 attacker-hosted QR codes presented as part of the summarised content; (3) passive reconnaissance \u2014 tracking pixels that fire silently on page render, exfiltrating victim IP address, User-Agent string, and Referer header to attacker infrastructure. OpenAI declined to alter the rendering behaviour after Bugcrowd disclosure, leaving the attack surface live as of publication. No CVE was assigned. The attack vector is LLM output manipulation within ChatGPT's rendering pipeline \u2014 squarely within the 'LLM input/output manipulation' category that is outside Vectimus Cedar's tool-call enforcement boundary \u2014 and ChatGPT is not a supported Vectimus target agent.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "out_of_scope"
+  },
+  {
+    "vtms_id": "VTMS-2026-0283",
+    "title": "CVE-2026-56351: Authenticated SQL Injection in n8n MySQL, PostgreSQL, and MSSQL Nodes Exposes Connected Databases",
+    "discovered_at": "2026-06-25T00:00:00Z",
+    "incident_date": "2026-02-25",
+    "severity": 3,
+    "owasp_category": "ASI04: Supply Chain Vulnerabilities",
+    "nist_ai_rmf": "MS-2.5",
+    "cis_controls": [
+      "CIS 2.2",
+      "CIS 2.7",
+      "CIS 16.1"
+    ],
+    "cve_ids": [
+      "CVE-2026-56351"
+    ],
+    "coverage_status": "partial",
+    "coverage_detail": "Policy vectimus-supchain-010 partially mitigates the installation vector: it blocks npm install of packages not hash-verified against the approved allowlist (via the package_operation action), which would incidentally prevent an AI agent from autonomously installing a vulnerable n8n version (<2.4.0). This protection does not extend to n8n installed via shell_command (bypassing the package_operation action type), does not target n8n version ranges specifically, and cannot protect against SQL injection in an already-deployed n8n instance. Policy vectimus-mcp-001 provides additional partial coverage when n8n is accessed as an MCP server by a Vectimus-monitored agent (Claude Code, Cursor): unapproved n8n MCP servers are blocked before any workflow tool call can reach n8n's vulnerable database nodes.",
+    "existing_policy_ids": [
+      "vectimus-supchain-010",
+      "vectimus-mcp-001"
+    ],
+    "gap_description": "No version-specific supply-chain policy targets n8n <2.4.0 for CVE-2026-56351. A dedicated supchain pack rule blocking installation of vulnerable n8n versions \u2014 mirroring the SUPPLY-001 pattern used for langchain-core \u2014 would close the npm-installation gap and cover both the shell_command and package_operation vectors. However, such a rule still cannot address SQL injection in an already-deployed n8n instance; patching to n8n >=2.4.0 remains the definitive remediation. This is the second SQL injection CVE reported against n8n's database node suite in 2026 (cf. VTMS-2026-0143, CVE-2026-42237, Snowflake and Legacy MySQL v1 nodes), suggesting a systemic failure to escape SQL identifiers across n8n's database integration codebase rather than an isolated defect.",
+    "sources": [
+      {
+        "url": "https://cve.report/CVE-2026-56351",
+        "title": "CVE-2026-56351 \u2014 cve.report",
+        "r2_key": "sources/VTMS-2026-0283/n8n-cve-2026-56351-ghsa-f3f2-mcxc-pwjx-sql-injection-mysql-postgresql-mssql.txt"
+      },
+      {
+        "url": "https://github.com/n8n-io/n8n/security/advisories/GHSA-f3f2-mcxc-pwjx",
+        "title": "GHSA-f3f2-mcxc-pwjx: n8n Authenticated SQL Injection in MySQL, PostgreSQL, and Microsoft SQL Nodes",
+        "r2_key": null
+      },
+      {
+        "url": "https://advisories.gitlab.com/npm/n8n/GHSA-f3f2-mcxc-pwjx/",
+        "title": "GHSA-f3f2-mcxc-pwjx \u2014 GitLab Advisory Database",
+        "r2_key": null
+      },
+      {
+        "url": "https://www.vulncheck.com/advisories/n8n-sql-injection-in-mysql-postgresql-and-microsoft-sql-nodes",
+        "title": "n8n SQL Injection in MySQL, PostgreSQL, and Microsoft SQL Nodes \u2014 VulnCheck",
+        "r2_key": null
+      }
+    ],
+    "tools_involved": [
+      "n8n",
+      "MySQL node",
+      "PostgreSQL node",
+      "Microsoft SQL node"
+    ],
+    "summary": "n8n AI workflow automation platform before version 2.4.0 contains an authenticated SQL injection vulnerability in its MySQL, PostgreSQL, and Microsoft SQL database nodes (CVE-2026-56351, CVSS 8.2 HIGH, GHSA-f3f2-mcxc-pwjx). Authenticated users holding workflow-creation permissions can inject arbitrary SQL by supplying unescaped identifier values \u2014 such as table or column names \u2014 in node configuration parameters, achieving high-integrity and high-confidentiality impact against connected databases. A GitHub security advisory was published on 25 February 2026 without a CVE; CVE-2026-56351 was formally assigned and published to NVD on 24 June 2026. Fixed in n8n 2.4.0; reported by Pawel Bednarz of the NATO Cyber Security Centre. This is the second SQL injection CVE in n8n's database node suite in 2026, following VTMS-2026-0143 (CVE-2026-42237, Snowflake and Legacy MySQL v1 nodes), indicating a systemic identifier-escaping deficiency across n8n's database integrations. Vectimus provides partial mitigation: vectimus-supchain-010 blocks unverified npm installs (incidentally covering autonomous installation of vulnerable n8n via the package_operation action), and vectimus-mcp-001 blocks unapproved MCP server calls (covering the n8n-MCP usage pattern). Neither policy addresses SQL injection in an already-deployed n8n instance.",
+    "recommended_action": "no_change",
+    "recommended_policy_description": null,
+    "content_worthy": true,
+    "content_angle": "trend_piece",
+    "enforcement_scope": "tool_calling_only"
+  }
+]
