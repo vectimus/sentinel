@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Checkout sentinel
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -57,7 +57,7 @@ jobs:
 
     steps:
       - name: Checkout sentinel
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
@@ -139,7 +139,7 @@ jobs:
     environment: sentinel-review
     steps:
       - name: Checkout sentinel
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
@@ -174,10 +174,10 @@ jobs:
 
     steps:
       - name: Checkout sentinel
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Checkout policies repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: vectimus/policies
           token: ${{ secrets.BOT_GITHUB_TOKEN }}
@@ -254,7 +254,7 @@ jobs:
 
     steps:
       - name: Checkout sentinel
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
@@ -327,7 +327,7 @@ jobs:
 
     steps:
       - name: Checkout sentinel
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v6
