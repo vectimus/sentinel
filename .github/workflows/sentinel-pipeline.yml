@@ -53,6 +53,7 @@ jobs:
     timeout-minutes: 35
     outputs:
       review_issue: ${{ steps.create-review-issue.outputs.issue_number }}
+      skip_review: ${{ steps.create-review-issue.outputs.skip_review }}
 
     steps:
       - name: Checkout sentinel
@@ -129,6 +130,11 @@ jobs:
   # -----------------------------------------------------------------------
   review-gate:
     needs: threat-hunter
+    # Skip the human gate (and the downstream policy/analyst stages that depend
+    # on it) when the threat-hunter surfaced nothing actionable or content-worthy.
+    # Fail-safe: only an explicit "true" skips; a missing/failed output keeps the
+    # gate. Findings are still recorded by the publish stage regardless.
+    if: needs.threat-hunter.outputs.skip_review != 'true'
     runs-on: ubuntu-latest
     environment: sentinel-review
     steps:
