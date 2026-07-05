@@ -8,7 +8,7 @@ arize-phoenix==17.16.0
 arize-phoenix-otel==0.16.1
 # arize-phoenix 17.5.0 imports MCPServerStreamableHTTP, removed in pydantic-ai-slim 2.0.
 # Cap below 2 until phoenix is compatible, else pytest collection (phoenix plugin) fails.
-pydantic-ai-slim<2
+pydantic-ai-slim<3
 openinference-instrumentation-claude-agent-sdk==0.1.7
 fastmcp==3.4.2
 httpx==0.28.1
