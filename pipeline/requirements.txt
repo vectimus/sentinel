@@ -1,7 +1,7 @@
 boto3==1.43.40
 cedarpy==4.8.6
 claude-agent-sdk==0.2.110
-deepeval==4.0.7
+deepeval==4.1.0
 cisco-ai-mcp-scanner==4.4.0
 deepteam==1.0.6
 arize-phoenix==17.16.0
