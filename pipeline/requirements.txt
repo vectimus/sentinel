@@ -1,6 +1,6 @@
-boto3==1.43.40
-cedarpy==4.8.6
-claude-agent-sdk==0.2.110
+boto3==1.43.87
+cedarpy==4.8.7
+claude-agent-sdk==0.2.152
 deepeval==4.0.7
 cisco-ai-mcp-scanner==4.4.0
 deepteam==1.0.6
@@ -9,9 +9,9 @@ arize-phoenix-otel==0.16.1
 # arize-phoenix 17.5.0 imports MCPServerStreamableHTTP, removed in pydantic-ai-slim 2.0.
 # Cap below 2 until phoenix is compatible, else pytest collection (phoenix plugin) fails.
 pydantic-ai-slim<2
-openinference-instrumentation-claude-agent-sdk==0.1.7
+openinference-instrumentation-claude-agent-sdk==0.1.15
 fastmcp==3.4.2
 httpx==0.28.1
 nemoguardrails==0.21.0
-pydantic==2.13.4
+pydantic==2.13.5
 PyGithub==2.9.1
